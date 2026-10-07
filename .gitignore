@@ -1,0 +1,35 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.trx
+coverage/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+.nx/
+
+# IDEs
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Segredos e ambiente (RNF05 — nunca versionar)
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+secrets.json
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Dados locais
+docker-data/
+*.log
