@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Domain.Catalog;
 using Ecommerce.Domain.Common;
+using Ecommerce.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ecommerce.Infrastructure.Persistence;
@@ -13,8 +14,16 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
 {
     public DbSet<Part> Parts => Set<Part>();
 
+    /// <summary>Tenant visto por este contexto (o mesmo usado pelo filtro global e pelo interceptor de RLS).</summary>
+    public Guid? TenantId => tenant.TenantId;
+
     // Lido pelo filtro global a cada consulta.
     private Guid? CurrentTenantId => tenant.TenantId;
+
+    // O interceptor nasce com o mesmo ITenantContext do contexto: não depende de qual escopo de DI montou as opções
+    // (o Wolverine pode montar as opções fora do escopo da mensagem — ADR-0002).
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
+        optionsBuilder.AddInterceptors(new TenantConnectionInterceptor(tenant));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

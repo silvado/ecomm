@@ -13,6 +13,10 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.12" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="WolverineFx" Version="6.48.0" />
+    <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="6.48.0" />
+    <PackageReference Include="WolverineFx.Postgresql" Version="6.48.0" />
+    <PackageReference Include="WolverineFx.RuntimeCompilation" Version="6.48.0" />
   </ItemGroup>
 
   <PropertyGroup>

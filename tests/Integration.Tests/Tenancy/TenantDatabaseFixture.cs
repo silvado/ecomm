@@ -64,14 +64,20 @@ public sealed class TenantDatabaseFixture : IAsyncLifetime
 
     public TenantDbContext CreateAppContext(Guid? tenantId) => CreateContext(AppConnectionString, tenantId);
 
+    /// <summary>Contexto cujo tenant ainda não foi definido; o teste decide quando chamar <see cref="TenantScope.Set"/>.</summary>
+    public TenantDbContext CreateAppContext(TenantScope scope) => CreateContext(AppConnectionString, scope);
+
     private static TenantDbContext CreateContext(string connectionString, Guid? tenantId)
     {
-        var tenant = new TenantContext();
+        var tenant = new TenantScope();
         if (tenantId is { } id) tenant.Set(id);
+        return CreateContext(connectionString, tenant);
+    }
 
+    private static TenantDbContext CreateContext(string connectionString, TenantScope tenant)
+    {
         var options = new DbContextOptionsBuilder<TenantDbContext>();
         DependencyInjection.ConfigureTenantDb(options, connectionString);
-        options.AddInterceptors(new TenantConnectionInterceptor(tenant));
         return new TenantDbContext(options.Options, tenant);
     }
 

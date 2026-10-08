@@ -14,14 +14,12 @@ public static class DependencyInjection
         var tenantsConnection = configuration.GetConnectionString("Tenants")
             ?? throw new InvalidOperationException("ConnectionStrings:Tenants não configurada.");
 
-        services.AddScoped<TenantContext>();
-        services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
-        services.AddScoped<TenantConnectionInterceptor>();
-        services.AddDbContext<TenantDbContext>((sp, options) =>
-        {
-            ConfigureTenantDb(options, tenantsConnection);
-            options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>());
-        });
+        services.AddScoped<TenantScope>();
+        services.AddScoped<ITenantContext, TenantScopeAccessor>();
+        // Opções singleton (recomendado pelo Wolverine): nada nelas depende do escopo; o tenant entra pelo construtor do contexto.
+        services.AddDbContext<TenantDbContext>(
+            options => ConfigureTenantDb(options, tenantsConnection),
+            optionsLifetime: ServiceLifetime.Singleton);
 
         return services;
     }

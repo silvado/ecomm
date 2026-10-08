@@ -42,3 +42,29 @@ Precisamos de: outbox transacional (evento gravado na mesma transação da alter
 - Wolverine — PostgreSQL: https://wolverinefx.net/guide/durability/postgresql.html
 - Wolverine — repositório e licença MIT: https://github.com/JasperFx/wolverine
 - MassTransit — licença comercial a partir da v9: https://www.nuget.org/packages/MassTransit/9.1.2 e https://masstransit.io/support/upgrade
+
+## Resultado do spike (2026-10-08)
+
+PBI "Spike: Wolverine + EF Core + RLS". Testes em `tests/Integration.Tests/Messaging/OutboxSpikeTests.cs` (PostgreSQL real, papéis de produção). **Decisão confirmada**, com os ajustes abaixo.
+
+| Pergunta | Resultado |
+|---|---|
+| Outbox transacional com EF Core? | Sim. `IDbContextOutbox<TenantDbContext>` + `SaveChangesAndFlushMessagesAsync`; transação não confirmada não entrega a mensagem. |
+| Tenant chega ao handler? | Sim, via `DeliveryOptions.TenantId` → `Envelope.TenantId` → `TenantMessageMiddleware`. |
+| RLS vale dentro do handler? | Sim, após os ajustes 1–3. Handler de B não enxerga dados de A; mensagem sem tenant não enxerga nada. |
+| Gravação no handler persiste? | Sim (`AutoApplyTransactions` + transação do EF). |
+| Latência commit → handler (local, 50 msgs) | **p50 ≈ 6 ms, p95 ≈ 8 ms, máx ≈ 13 ms** — muito abaixo da meta de 60 s (RNF03). Filas locais duráveis não esperam polling. |
+| Roda sem DDL na aplicação? | Sim. Tabelas do Wolverine criadas pelo `app_migrator` (`AutoCreate.CreateOrUpdate` só no host de migração); a aplicação usa `AutoCreate.None` + `GRANT`s em `MessagingConfiguration.GrantPrivileges`. |
+
+### Problemas encontrados e ajustes
+
+1. **Wolverine 6 não traz mais o compilador em tempo de execução.** Adicionado `WolverineFx.RuntimeCompilation`. Para produção, avaliar código pré-gerado (`codegen write` + `TypeLoadMode.Static`) — tarefa no PBI de implantação.
+2. **Registros por fábrica lambda são recusados** (`ServiceLocationPolicy.NotAllowed`). `ITenantContext` passou a ser `TenantScopeAccessor`, registrado por tipo.
+3. **O código gerado criava instâncias próprias dos serviços de tenant**, e o DbContext do handler via tenant `null` enquanto o middleware via o tenant certo (falha fechada: nenhuma linha — seguro, mas inútil). Correção: `AlwaysUseServiceLocationFor<TenantScope | ITenantContext | TenantDbContext>()`, que resolve tudo do escopo de DI da mensagem. A classe concreta foi renomeada de `TenantContext` para `TenantScope` porque o gerador dava o mesmo nome de variável a `ITenantContext` e `TenantContext`.
+4. **Defesa adicional:** o interceptor de RLS reaplica `app.tenant_id` antes de cada comando se o tenant mudou depois da abertura da conexão; o DbContext cria o próprio interceptor com o `ITenantContext` que recebe (opções do DbContext agora singleton, como o Wolverine recomenda). Coberto por `Tenant_definido_depois_de_abrir_a_conexao_vale_para_o_proximo_comando`.
+
+### Regras que ficam
+
+- Handler que toca dados de tenant recebe `TenantDbContext`/`ITenantContext` por parâmetro; nunca cria escopo próprio.
+- Toda publicação de evento de tenant usa `DeliveryOptions { TenantId = ... }` (ou herda do envelope em mensagens em cascata).
+- Novos serviços scoped que dependam do tenant devem entrar em `AlwaysUseServiceLocationFor`.
