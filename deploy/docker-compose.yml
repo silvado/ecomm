@@ -46,13 +46,19 @@ services:
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
     depends_on: { postgres: { condition: service_healthy } }
 
+  storefront:
+    build: { context: ../web/storefront }
+    environment:
+      API_URL: http://api:8080
+    depends_on: [api]
+
   caddy:
     image: caddy:2.10-alpine
     ports: ["80:80", "443:443"]
     volumes:
       - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
       - caddydata:/data
-    depends_on: [api]
+    depends_on: [api, storefront]
 
 volumes:
   pgdata:
