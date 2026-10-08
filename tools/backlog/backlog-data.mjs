@@ -14,7 +14,7 @@ export const epics = [
           {
             title: 'Estrutura da solução, ambiente local e CI',
             rf: 'RNF09',
-            ac: 'Solução .NET (Domain, Application, Infrastructure, Api, Worker) e apps Angular compilam; docker compose sobe API, PostgreSQL, MinIO e Caddy; CI no GitHub Actions roda build, testes e gitleaks a cada PR.',
+            ac: 'Solução .NET (Domain, Application, Infrastructure, Api, Worker) e apps Angular compilam; docker compose sobe API, PostgreSQL, storage S3 (SeaweedFS) e Caddy; CI no GitHub Actions roda build, testes e gitleaks a cada PR.',
             t: [['Criar projetos .NET e referências entre camadas', 4], ['Criar apps Angular storefront (SSR) e admin', 6], ['docker-compose de desenvolvimento', 4], ['Pipeline GitHub Actions (build, testes, gitleaks)', 4]],
           },
           {
