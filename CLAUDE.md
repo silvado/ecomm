@@ -13,7 +13,7 @@ SaaS de e-commerce **multi-tenant** por assinatura para lojas de **autopeças (p
 | Camada | Tecnologia |
 |---|---|
 | Back-end | .NET 10, ASP.NET Core Web API, EF Core (Npgsql), Clean Architecture |
-| Mensageria/jobs | Outbox transacional + fila no PostgreSQL (ver [ADR-0002](docs/adr/0002-fila-e-outbox.md)) |
+| Mensageria/jobs | Wolverine 6: outbox transacional + filas duráveis no PostgreSQL (ver [ADR-0002](docs/adr/0002-fila-e-outbox.md)) |
 | Front-end | Angular (última estável): `storefront` (com SSR, tema por tenant) e `admin` |
 | Banco | PostgreSQL 17, isolamento por `tenant_id` + Row-Level Security |
 | Arquivos | Storage compatível com S3 (MinIO em dev) |
@@ -70,9 +70,10 @@ node tools/backlog/azure-sync.mjs --dry-run    # sincroniza com Azure Boards (re
 2. **Sem venda dupla (RNF02).** Baixa e reserva de estoque são **atômicas no banco** (`UPDATE ... SET disponivel = disponivel - @n WHERE id = @id AND disponivel >= @n`, verificando linhas afetadas). Nunca "ler, checar em memória e gravar". Qualquer mudança nesse caminho exige teste de concorrência.
 3. **Segredos (RNF05/RF06).** Nada de segredo no Git, em `appsettings.json`, em log ou em mensagem de exceção. Segredos de tenant ficam no cofre (criptografia envelope); segredos da plataforma em variáveis de ambiente. Logs usam redação de campos sensíveis.
 4. **IA não age sozinha (RF35).** A IA nunca altera preço, estoque ou status de pedido. Toda chamada de IA é registrada (entrada resumida, saída, modelo, custo, usuário/tenant).
-5. **Integrações externas atrás de interfaces** (`IChannelConnector`, `IPaymentGateway`, `IFiscalProvider`, `IShippingProvider`, `IAiProvider`, `IFileStorage`), sempre com implementação *fake* para dev e testes.
-6. **Webhooks**: responder 2xx imediatamente, persistir o evento com chave de idempotência e processar pela fila.
-7. **Não inventar APIs externas**: consultar a documentação oficial e citar a fonte no ADR ou em comentário no adapter.
+5. **Mensageria (ADR-0002):** eventos de tenant publicados com `DeliveryOptions { TenantId }`; handlers recebem `TenantDbContext`/`ITenantContext` por parâmetro; serviços scoped que dependem do tenant entram em `AlwaysUseServiceLocationFor` (`MessagingConfiguration`).
+6. **Integrações externas atrás de interfaces** (`IChannelConnector`, `IPaymentGateway`, `IFiscalProvider`, `IShippingProvider`, `IAiProvider`, `IFileStorage`), sempre com implementação *fake* para dev e testes.
+7. **Webhooks**: responder 2xx imediatamente, persistir o evento com chave de idempotência e processar pela fila.
+8. **Não inventar APIs externas**: consultar a documentação oficial e citar a fonte no ADR ou em comentário no adapter.
 
 ## Convenções
 

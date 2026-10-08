@@ -11,6 +11,6 @@ internal sealed class DesignTimeTenantDbContextFactory : IDesignTimeDbContextFac
     {
         var options = new DbContextOptionsBuilder<TenantDbContext>();
         DependencyInjection.ConfigureTenantDb(options, "Host=localhost;Database=lojas;Username=app_migrator");
-        return new TenantDbContext(options.Options, new TenantContext());
+        return new TenantDbContext(options.Options, new TenantScope());
     }
 }

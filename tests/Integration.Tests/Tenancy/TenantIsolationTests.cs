@@ -1,4 +1,5 @@
 using Ecommerce.Domain.Catalog;
+using Ecommerce.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -105,6 +106,21 @@ public sealed class TenantIsolationTests(TenantDatabaseFixture db) : IClassFixtu
 
         Assert.Equal(string.Empty, await setting.ExecuteScalarAsync());
         Assert.Equal(0, await count.ExecuteScalarAsync());
+    }
+
+    [Fact]
+    public async Task Tenant_definido_depois_de_abrir_a_conexao_vale_para_o_proximo_comando()
+    {
+        // Simula um framework que abre a conexão antes de o tenant ser conhecido (ex.: transação do Wolverine — ADR-0002).
+        var scope = new TenantScope();
+        await using var context = db.CreateAppContext(scope);
+        await context.Database.OpenConnectionAsync();
+
+        scope.Set(db.TenantA);
+        var parts = await context.Parts.IgnoreQueryFilters().ToListAsync();
+
+        Assert.Equal(2, parts.Count);
+        Assert.All(parts, p => Assert.Equal(db.TenantA, p.TenantId));
     }
 
     [Fact]
