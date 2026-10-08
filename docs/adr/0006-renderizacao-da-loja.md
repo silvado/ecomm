@@ -1,6 +1,6 @@
 # ADR-0006 — Renderização da loja (SSR)
 
-- **Status:** Proposto
+- **Status:** Aceito
 - **Data:** 2026-10-07
 - **Requisitos:** RF13, RF04, RF22
 

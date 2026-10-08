@@ -1,6 +1,6 @@
 # ADR-0001 — Isolamento multi-tenant
 
-- **Status:** Proposto
+- **Status:** Aceito
 - **Data:** 2026-10-07
 - **Requisitos:** RNF01, RNF08, RF04, RF07
 

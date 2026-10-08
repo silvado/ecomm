@@ -1,6 +1,6 @@
 # ADR-0005 — Armazenamento de fotos e arquivos
 
-- **Status:** Proposto
+- **Status:** Aceito
 - **Data:** 2026-10-07
 - **Requisitos:** RF08, RF19 (DANFE/XML), RF39, RNF07
 

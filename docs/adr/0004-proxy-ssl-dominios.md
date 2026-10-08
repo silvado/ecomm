@@ -1,6 +1,6 @@
 # ADR-0004 — Proxy, SSL e domínios próprios
 
-- **Status:** Proposto
+- **Status:** Aceito
 - **Data:** 2026-10-07
 - **Requisitos:** RF02, RF03, RF04
 

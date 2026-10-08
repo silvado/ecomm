@@ -1,6 +1,6 @@
 # ADR-0002 — Fila, outbox e jobs
 
-- **Status:** Proposto
+- **Status:** Aceito
 - **Data:** 2026-10-07
 - **Requisitos:** RF21 (webhooks via fila), RF24, RF25–RF28, RNF03, RNF06, RNF08
 
