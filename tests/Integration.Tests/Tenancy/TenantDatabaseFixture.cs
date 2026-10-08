@@ -31,7 +31,8 @@ public sealed class TenantDatabaseFixture : IAsyncLifetime
         var superuser = new NpgsqlConnectionStringBuilder(_container.GetConnectionString());
 
         await ExecuteAsync(superuser.ConnectionString,
-            TenantDatabaseBootstrap.CreateRolesAndDatabase(Database, MigratorPassword, AppPassword));
+            TenantDatabaseBootstrap.CreateRoles(MigratorPassword, AppPassword));
+        await ExecuteAsync(superuser.ConnectionString, TenantDatabaseBootstrap.CreateDatabase(Database));
         await ExecuteAsync(new NpgsqlConnectionStringBuilder(superuser.ConnectionString) { Database = Database }.ConnectionString,
             TenantDatabaseBootstrap.GrantPrivileges);
 

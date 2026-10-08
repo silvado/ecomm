@@ -10,11 +10,13 @@ public static class TenantDatabaseBootstrap
     public const string AppRole = "app_user";
 
     /// <summary>Executar no banco <c>postgres</c>.</summary>
-    public static string CreateRolesAndDatabase(string database, string migratorPassword, string appPassword) => $"""
+    public static string CreateRoles(string migratorPassword, string appPassword) => $"""
         CREATE ROLE {MigratorRole} LOGIN NOBYPASSRLS PASSWORD '{migratorPassword}';
         CREATE ROLE {AppRole} LOGIN NOBYPASSRLS NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD '{appPassword}';
-        CREATE DATABASE {database} OWNER {MigratorRole};
         """;
+
+    /// <summary>Executar no banco <c>postgres</c>, em comando separado (CREATE DATABASE não roda em lote).</summary>
+    public static string CreateDatabase(string database) => $"CREATE DATABASE {database} OWNER {MigratorRole};";
 
     /// <summary>Executar dentro do banco de tenant, como superusuário.</summary>
     public const string GrantPrivileges = $"""
