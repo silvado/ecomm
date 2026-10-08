@@ -29,6 +29,15 @@ services:
     ports: ["9000:9000", "9001:9001"]
     volumes: [miniodata:/data]
 
+  # Passo de deploy: migrações + tabelas do Wolverine, como app_migrator. API e Worker só sobem depois dele.
+  migrator:
+    build: { context: .., dockerfile: src/Migrator/Dockerfile }
+    environment:
+      ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_migrator;Password=${APP_MIGRATOR_PASSWORD}
+      ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_migrator;Password=${APP_MIGRATOR_PASSWORD}
+    depends_on: { postgres: { condition: service_healthy } }
+    restart: "no"
+
   api:
     build: { context: .., dockerfile: src/Api/Dockerfile }
     environment:
@@ -36,7 +45,7 @@ services:
       ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD:?defina no .env}
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
       Network__Internal__0: 172.16.0.0/12   # rede padrão do Docker: Caddy e storefront são proxies confiáveis
-    depends_on: { postgres: { condition: service_healthy } }
+    depends_on: { migrator: { condition: service_completed_successfully } }
     ports: ["8080:8080"]
 
   worker:
@@ -45,7 +54,7 @@ services:
       DOTNET_ENVIRONMENT: Development
       ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD}
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
-    depends_on: { postgres: { condition: service_healthy } }
+    depends_on: { migrator: { condition: service_completed_successfully } }
 
   storefront:
     build: { context: ../web/storefront }

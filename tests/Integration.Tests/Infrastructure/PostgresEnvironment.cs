@@ -48,7 +48,12 @@ public sealed class PostgresEnvironment : IAsyncDisposable
     {
         ["ConnectionStrings:Platform"] = PlatformConnectionString,
         ["ConnectionStrings:Tenants"] = With(TenantsConnectionString, tenantsConnection ?? (_ => { })),
+        ["Vault:CurrentMasterKeyVersion"] = "v1",
+        ["Vault:MasterKeys:v1"] = MasterKeyV1,
     };
+
+    /// <summary>Chave mestra do cofre gerada por ambiente de teste (nunca uma chave fixa no código).</summary>
+    public string MasterKeyV1 { get; } = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
 
     public static string With(string connectionString, Action<NpgsqlConnectionStringBuilder> change)
     {
@@ -82,23 +87,19 @@ public sealed class PostgresEnvironment : IAsyncDisposable
         PlatformConnectionString = AppUser(PlatformDatabase);
         TenantsConnectionString = AppUser(TenantsDatabase);
 
-        // Migrações de negócio e tabelas do Wolverine, como app_migrator (mesmo fluxo de um deploy).
+        await RunMigratorAsync();
+    }
+
+    /// <summary>Mesmo passo do deploy (src/Migrator): migrações + tabelas do Wolverine + permissões, como app_migrator.</summary>
+    public async Task RunMigratorAsync()
+    {
         var migrationConfig = new Dictionary<string, string?>
         {
             ["ConnectionStrings:Platform"] = Migrator(PlatformDatabase),
             ["ConnectionStrings:Tenants"] = Migrator(TenantsDatabase),
         };
-        using (var migrationHost = BuildHost(migrationConfig, Migrator(TenantsDatabase), buildMessageStorage: true))
-        {
-            await migrationHost.StartAsync();
-            await using (var scope = migrationHost.Services.CreateAsyncScope())
-            {
-                await scope.ServiceProvider.GetRequiredService<PlatformDbContext>().Database.MigrateAsync();
-                await scope.ServiceProvider.GetRequiredService<TenantDbContext>().Database.MigrateAsync();
-            }
-            await migrationHost.StopAsync();
-        }
-        await ExecuteAsync(Superuser(TenantsDatabase), MessagingConfiguration.GrantPrivileges);
+        using var migrationHost = BuildHost(migrationConfig, Migrator(TenantsDatabase), buildMessageStorage: true);
+        await DatabaseMigrator.RunAsync(migrationHost);
     }
 
     /// <summary>Host genérico com infraestrutura + Wolverine (sem handlers além dos do assembly de testes).</summary>
