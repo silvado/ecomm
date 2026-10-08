@@ -1,0 +1,20 @@
+# Desenvolvimento: certificados internos do Caddy (sem Let's Encrypt).
+# Produção (ADR-0004): curinga *.plataforma.com.br via DNS-01 + on_demand_tls com ask.
+{
+	local_certs
+	on_demand_tls {
+		ask http://api:8080/internal/tls/ask
+	}
+}
+
+api.localhost {
+	reverse_proxy api:8080
+}
+
+# Lojas: qualquer host autorizado pelo ask.
+https:// {
+	tls {
+		on_demand
+	}
+	reverse_proxy api:8080
+}

@@ -43,14 +43,21 @@ Dependências apontam para dentro: `Api/Worker → Infrastructure → Applicatio
 
 ## Comandos
 
-> A definir quando a estrutura da solução for criada (item 7 do BRIEF). Manter esta seção atualizada.
+Pré-requisitos: .NET SDK 10, Docker em execução (Testcontainers), Node ≥ 24.15 (Angular 22).
 
 ```bash
-# dotnet build
-# dotnet test                       # requer Docker (Testcontainers)
-# docker compose -f deploy/docker-compose.yml up -d
-# npm --prefix web/storefront start
+dotnet build                                   # TreatWarningsAsErrors ativo
+dotnet test                                    # Integration.Tests sobe PostgreSQL via Docker
+dotnet test tests/Domain.Tests                 # só unitários, sem Docker
+dotnet ef migrations add <Nome> --project src/Infrastructure --startup-project src/Infrastructure --output-dir Persistence/Migrations
+cp deploy/.env.example deploy/.env             # e troque as senhas
+docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
+node tools/backlog/generate.mjs                # regenera docs/backlog.md e .csv
+node tools/backlog/azure-sync.mjs --dry-run    # sincroniza com Azure Boards (requer AZURE_DEVOPS_EXT_PAT)
 ```
+
+- Nova tabela de tenant: na migração, chamar `migrationBuilder.Sql(RowLevelSecurity.EnableFor("<tabela>"))`. O teste `Toda_tabela_do_schema_public_tem_RLS_habilitado_e_forcado` falha se esquecer.
+- `nuget.config` do repositório usa só nuget.org (isola de feeds corporativos da máquina).
 
 ## Regras inegociáveis
 

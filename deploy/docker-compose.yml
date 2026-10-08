@@ -1,0 +1,60 @@
+# Ambiente de desenvolvimento. Produção: deploy/docker-compose.prod.yml (E1 — "Implantação na VPS").
+# Uso: docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
+# Segredos ficam em deploy/.env (não versionado) — copie de deploy/.env.example.
+name: ecommerce
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?defina no .env}
+      APP_MIGRATOR_PASSWORD: ${APP_MIGRATOR_PASSWORD:?defina no .env}
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD:?defina no .env}
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_SUPERUSER:-postgres}"]
+      interval: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?defina no .env}
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [miniodata:/data]
+
+  api:
+    build: { context: .., dockerfile: src/Api/Dockerfile }
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD:?defina no .env}
+      ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
+    depends_on: { postgres: { condition: service_healthy } }
+    ports: ["8080:8080"]
+
+  worker:
+    build: { context: .., dockerfile: src/Worker/Dockerfile }
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD}
+      ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
+    depends_on: { postgres: { condition: service_healthy } }
+
+  caddy:
+    image: caddy:2.10-alpine
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+    depends_on: [api]
+
+volumes:
+  pgdata:
+  miniodata:
+  caddydata:
