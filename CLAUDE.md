@@ -92,4 +92,4 @@ node tools/backlog/azure-sync.mjs --dry-run    # sincroniza com Azure Boards (re
 - Parar e perguntar em decisões difíceis de desfazer: modelo de dados, isolamento, fila, contrato de API pública.
 - Faltou informação de negócio: registrar em `docs/requisitos.md` → "Em aberto" e seguir com a hipótese mais conservadora, sinalizada com `HIPÓTESE`.
 - Ao fim de cada etapa: rodar testes, resumir o que mudou, propor a próxima.
-- Backlog oficial no Azure Boards (`dev.azure.com/silvado/Ecommerce`, processo Scrum); `docs/backlog.md` é o espelho legível.
+- Backlog oficial no Azure Boards (`dev.azure.com/silvado/Ecomm`, processo Scrum; ids em `tools/backlog/azure-ids.Ecomm.json`); `docs/backlog.md` é o espelho legível.

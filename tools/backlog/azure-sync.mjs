@@ -3,7 +3,7 @@
 //   $env:AZURE_DEVOPS_EXT_PAT = '<PAT com escopo Work Items: Read & Write>'
 //   node tools/backlog/azure-sync.mjs --dry-run   # mostra o que faria
 //   node tools/backlog/azure-sync.mjs             # cria os itens
-// Idempotente: ids criados ficam em tools/backlog/azure-ids.json; itens já criados são pulados.
+// Idempotente: ids criados ficam em tools/backlog/azure-ids.<projeto>.json; itens já criados são pulados.
 // Referência: https://learn.microsoft.com/rest/api/azure/devops/wit/work-items/create
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +11,7 @@ import { dirname, join } from 'node:path';
 import { epics } from './backlog-data.mjs';
 
 const ORG = process.env.AZDO_ORG ?? 'silvado';
-const PROJECT = process.env.AZDO_PROJECT ?? 'Ecommerce';
+const PROJECT = process.env.AZDO_PROJECT ?? 'Ecomm';
 const dryRun = process.argv.includes('--dry-run');
 const pat = process.env.AZURE_DEVOPS_EXT_PAT;
 if (!dryRun && !pat) {
@@ -19,7 +19,7 @@ if (!dryRun && !pat) {
   process.exit(1);
 }
 
-const idsFile = join(dirname(fileURLToPath(import.meta.url)), 'azure-ids.json');
+const idsFile = join(dirname(fileURLToPath(import.meta.url)), `azure-ids.${PROJECT}.json`);
 const ids = existsSync(idsFile) ? JSON.parse(readFileSync(idsFile, 'utf8')) : {};
 const save = () => writeFileSync(idsFile, JSON.stringify(ids, null, 2));
 const base = `https://dev.azure.com/${ORG}/${encodeURIComponent(PROJECT)}/_apis/wit/workitems`;
