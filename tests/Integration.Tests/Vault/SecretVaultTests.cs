@@ -136,6 +136,45 @@ public sealed class SecretVaultTests(VaultFixture fx) : IClassFixture<VaultFixtu
     }
 
     [Fact]
+    public async Task Chave_de_dados_e_texto_cifrado_copiados_para_outro_tenant_nao_decifram()
+    {
+        var (a, b) = (Guid.CreateVersion7(), Guid.CreateVersion7());
+        await fx.InTenantAsync(a, (v, _) => v.SetAsync(SecretKind.ApiKey, "chave", Utf8(NewToken())));
+        var stolenKey = await fx.InTenantAsync(a, (_, db) => db.TenantDataKeys.AsNoTracking().SingleAsync());
+        var stolen = await fx.InTenantAsync(a, (_, db) => db.TenantSecrets.AsNoTracking().SingleAsync());
+
+        // B ainda não tem DEK: o atacante copia a DEK embrulhada de A junto com o segredo.
+        await fx.InTenantAsync(b, (_, db) => db.Database.ExecuteSqlAsync($"""
+            INSERT INTO tenant_data_keys (tenant_id, version, wrapped_key, master_key_version, created_at)
+            VALUES ({b}, {stolenKey.Version}, {stolenKey.WrappedKey}, {stolenKey.MasterKeyVersion}, now());
+            INSERT INTO tenant_secrets (id, tenant_id, kind, name, ciphertext, key_version, hint, created_at, updated_at)
+            VALUES ({Guid.CreateVersion7()}, {b}, 'ApiKey', 'chave', {stolen.Ciphertext}, '1', '', now(), now())
+            """));
+
+        await Assert.ThrowsAnyAsync<CryptographicException>(() =>
+            fx.InTenantAsync(b, (v, _) => v.GetAsync(SecretKind.ApiKey, "chave")));
+        // A DEK de A também não desembrulha como DEK de B: B não passa a cifrar nada com a chave de A.
+        await Assert.ThrowsAnyAsync<CryptographicException>(() =>
+            fx.InTenantAsync(b, (v, _) => v.SetAsync(SecretKind.ApiKey, "nova", Utf8(NewToken()))));
+    }
+
+    [Fact]
+    public async Task Texto_cifrado_copiado_para_outro_segredo_do_mesmo_tenant_nao_decifra()
+    {
+        var tenant = Guid.CreateVersion7();
+        await fx.InTenantAsync(tenant, (v, _) => v.SetAsync(SecretKind.ApiKey, "chave-a", Utf8(NewToken())));
+        await fx.InTenantAsync(tenant, (v, _) => v.SetAsync(SecretKind.ApiKey, "chave-b", Utf8(NewToken())));
+
+        await fx.InTenantAsync(tenant, (_, db) => db.Database.ExecuteSqlAsync($"""
+            UPDATE tenant_secrets SET ciphertext = (SELECT ciphertext FROM tenant_secrets WHERE name = 'chave-a')
+            WHERE name = 'chave-b'
+            """));
+
+        await Assert.ThrowsAnyAsync<CryptographicException>(() =>
+            fx.InTenantAsync(tenant, (v, _) => v.GetAsync(SecretKind.ApiKey, "chave-b")));
+    }
+
+    [Fact]
     public async Task Substituir_segredo_mantem_um_registro_com_o_valor_novo()
     {
         var tenant = Guid.CreateVersion7();
