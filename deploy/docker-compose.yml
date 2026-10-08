@@ -44,6 +44,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD:?defina no .env}
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
+      Vault__CurrentMasterKeyVersion: v1
+      Vault__MasterKeys__v1: ${VAULT_MASTER_KEY_V1:?defina no .env}
       Network__Internal__0: 172.16.0.0/12   # rede padrão do Docker: Caddy e storefront são proxies confiáveis
     depends_on: { migrator: { condition: service_completed_successfully } }
     ports: ["8080:8080"]
@@ -54,6 +56,8 @@ services:
       DOTNET_ENVIRONMENT: Development
       ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD}
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
+      Vault__CurrentMasterKeyVersion: v1
+      Vault__MasterKeys__v1: ${VAULT_MASTER_KEY_V1:?defina no .env}
     depends_on: { migrator: { condition: service_completed_successfully } }
 
   storefront:

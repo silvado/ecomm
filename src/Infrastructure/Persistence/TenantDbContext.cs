@@ -3,6 +3,7 @@ using Ecommerce.Application.Tenancy;
 using Ecommerce.Domain.Catalog;
 using Ecommerce.Domain.Common;
 using Ecommerce.Domain.Inventory;
+using Ecommerce.Domain.Vault;
 using Ecommerce.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,8 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<StockReservation> StockReservations => Set<StockReservation>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<StoreSettings> StoreSettings => Set<StoreSettings>();
+    public DbSet<TenantSecret> TenantSecrets => Set<TenantSecret>();
+    public DbSet<TenantDataKey> TenantDataKeys => Set<TenantDataKey>();
 
     /// <summary>Tenant visto por este contexto (o mesmo usado pelo filtro global e pelo interceptor de RLS).</summary>
     public Guid? TenantId => tenant.TenantId;

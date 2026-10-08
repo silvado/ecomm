@@ -1,7 +1,9 @@
 using Ecommerce.Application.Tenancy;
+using Ecommerce.Application.Vault;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Infrastructure.Platform;
 using Ecommerce.Infrastructure.Tenancy;
+using Ecommerce.Infrastructure.Vault;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +33,10 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<ITenantCatalog, CachedTenantCatalog>();
+
+        services.Configure<VaultOptions>(configuration.GetSection(VaultOptions.Section));
+        services.AddScoped<SecretVault>();
+        services.AddScoped<ISecretVault, SecretVault>();
 
         return services;
     }
