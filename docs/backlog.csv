@@ -1,7 +1,7 @@
 ﻿Work Item Type,Title 1,Title 2,Title 3,Title 4,Description,Acceptance Criteria,Tags,Effort,Remaining Work
 Epic,E1 — Núcleo e loja (meses 1–3),,,,"Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto vendendo pelo site.",,E1,470,
 Feature,,Fundação da plataforma,,,,,E1,132,
-Product Backlog Item,,,"Estrutura da solução, ambiente local e CI",,Requisitos: RNF09,"Solução .NET (Domain, Application, Infrastructure, Api, Worker) e apps Angular compilam; docker compose sobe API, PostgreSQL, MinIO e Caddy; CI no GitHub Actions roda build, testes e gitleaks a cada PR.",E1; RNF09,18,
+Product Backlog Item,,,"Estrutura da solução, ambiente local e CI",,Requisitos: RNF09,"Solução .NET (Domain, Application, Infrastructure, Api, Worker) e apps Angular compilam; docker compose sobe API, PostgreSQL, storage S3 (SeaweedFS) e Caddy; CI no GitHub Actions roda build, testes e gitleaks a cada PR.",E1; RNF09,18,
 Task,,,,Criar projetos .NET e referências entre camadas,,,E1,,4
 Task,,,,Criar apps Angular storefront (SSR) e admin,,,E1,,6
 Task,,,,docker-compose de desenvolvimento,,,E1,,4

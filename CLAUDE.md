@@ -16,7 +16,7 @@ SaaS de e-commerce **multi-tenant** por assinatura para lojas de **autopeças (p
 | Mensageria/jobs | Wolverine 6: outbox transacional + filas duráveis no PostgreSQL (ver [ADR-0002](docs/adr/0002-fila-e-outbox.md)) |
 | Front-end | Angular (última estável): `storefront` (com SSR, tema por tenant) e `admin` |
 | Banco | PostgreSQL 17, isolamento por `tenant_id` + Row-Level Security |
-| Arquivos | Storage compatível com S3 (MinIO em dev) |
+| Arquivos | Storage compatível com S3 (SeaweedFS em dev) |
 | Proxy/SSL | Caddy com on-demand TLS restrito por endpoint `ask` |
 | IA | Anthropic Claude (visão) atrás de `IAiProvider` |
 | Infra | Docker Compose (dev e VPS), GitHub Actions |

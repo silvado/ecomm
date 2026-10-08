@@ -20,14 +20,16 @@ services:
       interval: 5s
       retries: 10
 
-  minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
-    command: server /data --console-address ":9001"
+  # Storage S3 de dev (ADR-0005). SeaweedFS em modo "mini" (nó único): credencial pelas variáveis AWS_*,
+  # buckets criados na primeira subida (S3_BUCKET). Docs: https://github.com/seaweedfs/seaweedfs/wiki/Quick-Start-with-weed-mini
+  s3:
+    image: chrislusf/seaweedfs:4.47
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?defina no .env}
-    ports: ["9000:9000", "9001:9001"]
-    volumes: [miniodata:/data]
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?defina no .env}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?defina no .env}
+      S3_BUCKET: fotos,documentos   # fotos: público (produto); documentos: privado (XML/DANFE, exportações)
+    ports: ["8333:8333", "23646:23646"]   # API S3; painel de administração
+    volumes: [s3data:/data]
 
   # Passo de deploy: migrações + tabelas do Wolverine, como app_migrator. API e Worker só sobem depois dele.
   migrator:
@@ -76,5 +78,5 @@ services:
 
 volumes:
   pgdata:
-  miniodata:
+  s3data:
   caddydata:

@@ -23,7 +23,7 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 
 #### Estrutura da solução, ambiente local e CI — 18 h  `RNF09`
 
-**Critérios de aceite:** Solução .NET (Domain, Application, Infrastructure, Api, Worker) e apps Angular compilam; docker compose sobe API, PostgreSQL, MinIO e Caddy; CI no GitHub Actions roda build, testes e gitleaks a cada PR.
+**Critérios de aceite:** Solução .NET (Domain, Application, Infrastructure, Api, Worker) e apps Angular compilam; docker compose sobe API, PostgreSQL, storage S3 (SeaweedFS) e Caddy; CI no GitHub Actions roda build, testes e gitleaks a cada PR.
 
 - [ ] Criar projetos .NET e referências entre camadas — 4 h
 - [ ] Criar apps Angular storefront (SSR) e admin — 6 h
