@@ -403,15 +403,16 @@ public sealed class PanelAuthTests(ApiFactory api) : IClassFixture<ApiFactory>
         var existing = await api.CreateUserAsync(a.Id, TenantRole.Owner, Password);
         var ownerB = await OwnerSessionAsync(b);
         var client = api.PanelClient();
+        var otherPassword = "outra-" + Guid.NewGuid().ToString("N");
 
         var added = await SendAsync(client, ownerB, HttpMethod.Post, "/api/painel/usuarios",
-            new { email = existing.Email.ToUpperInvariant(), role = "operator", temporaryPassword = "outra-senha-123" });
+            new { email = existing.Email.ToUpperInvariant(), role = "operator", temporaryPassword = otherPassword });
         Assert.Equal(HttpStatusCode.OK, added.StatusCode);
 
         Assert.Equal(HttpStatusCode.OK, (await LoginAsync(client, existing.Email, Password)).Response.StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(client, existing.Email, "outra-senha-123")).Response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(client, existing.Email, otherPassword)).Response.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await SendAsync(client, ownerB, HttpMethod.Post, "/api/painel/usuarios",
-            new { email = existing.Email, role = "operator", temporaryPassword = "outra-senha-123" })).StatusCode);
+            new { email = existing.Email, role = "operator", temporaryPassword = otherPassword })).StatusCode);
     }
 
     [Fact]

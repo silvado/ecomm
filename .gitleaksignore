@@ -1,0 +1,3 @@
+# Falsos positivos: senhas literais de teste (generic-api-key), já trocadas por senhas geradas em tempo de execução.
+1df0838a8046855d2b302f39e89c959bf5c32886:tests/Integration.Tests/Api/PanelAuthTests.cs:generic-api-key:408
+1df0838a8046855d2b302f39e89c959bf5c32886:tests/Integration.Tests/Api/PanelAuthTests.cs:generic-api-key:414
