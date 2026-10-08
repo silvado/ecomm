@@ -112,6 +112,7 @@ erDiagram
 Notas:
 - Identidade fica no catálogo porque o login acontece **antes** de sabermos o tenant; um e-mail pode participar de mais de um tenant.
 - `PLATFORM_AUDIT_LOG` (não desenhado) registra ações de superadmin (RF07 CA3).
+- Implementado no RF07 (E1): `user_account` com `failed_login_count`, `locked_until` e `must_change_password` (sem `mfa_enabled`/`is_platform_admin` até o E4); `tenant.plan_code` → `plan.code` (plano vigente até existir `subscription`); `plan_limit` chaveado por `(plan_code, key)`; `refresh_token` (só o hash SHA-256, `family_id` para revogar a sessão inteira, `tenant_id` da loja escolhida, `used_at`/`revoked_at`). Tabelas com `tenant_id` neste banco não têm RLS: todo acesso filtra o tenant explicitamente e tem teste de isolamento.
 
 ## Banco `lojas` — todas as tabelas abaixo têm `tenant_id` + RLS
 

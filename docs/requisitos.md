@@ -48,9 +48,9 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 
 ### RF07 — Usuários e perfis · E1 (dono/operador) / E4 (superadmin)
 - CA1: perfis por tenant: **Dono** (tudo, inclusive cofre, plano e usuários) e **Operador** (catálogo, pedidos, atendimento; sem cofre, plano, usuários, exportação).
-- CA2: número de usuários respeita o limite do plano.
+- CA2: número de usuários respeita o limite do plano. **HIPÓTESE:** 2 / 5 / 10 (Q17).
 - CA3: superadmin da plataforma é um papel separado, com MFA obrigatório; todo acesso de superadmin a dados de um tenant é registrado em log de auditoria.
-- CA4: login com e-mail + senha (hash Argon2id/PBKDF2), MFA opcional para Dono; bloqueio após 5 tentativas.
+- CA4: login com e-mail + senha (hash Argon2id/PBKDF2), MFA opcional para Dono; bloqueio após 5 tentativas. **HIPÓTESE:** bloqueio de 15 min, senha de 10+ caracteres, sem recuperação por e-mail por enquanto (Q18, Q19).
 
 ## 2. Catálogo e estoque
 
@@ -269,6 +269,9 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q14 | Uma peça pode ter mais de 1 unidade (peças novas) ou usadas são sempre quantidade 1? | Quantidade genérica (≥ 0) para todas. | RF08, RF12 |
 | Q15 | Variações (lado esquerdo/direito, cor) como produtos distintos? | Sem variações: cada variação é uma peça. | RF08 |
 | Q16 | Transportadoras além do Melhor Envio; Mercado Envios para vendas do ML é gerido pelo ML? | Melhor Envio no site; envio das vendas do ML fica com o ML. | RF14 |
+| Q17 | Quantos usuários cada plano permite? | Essencial 2, Profissional 5, Completo 10 (tabela `plan_limits`, muda sem deploy). Loja nova começa no Essencial até existir assinatura (E4). | RF07, RF37 |
+| Q18 | Regras de bloqueio e senha do painel. | Bloqueio de 15 min após 5 senhas erradas seguidas (o Dono pode desbloquear); 10 tentativas de login por minuto por IP; senha de 10 a 128 caracteres, sem regras de composição; sessão expira após 7 dias sem uso. | RF07 |
+| Q19 | Como o lojista recupera a senha esquecida? Não há provedor de e-mail ainda. | O Dono cadastra usuários com senha provisória (troca obrigatória no primeiro acesso) e pode removê-los e cadastrá-los de novo. Recuperação por e-mail entra quando houver provedor (RF33/E4). | RF07 |
 
 ## Fontes
 

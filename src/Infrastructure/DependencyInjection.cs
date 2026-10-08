@@ -1,4 +1,6 @@
+using Ecommerce.Application.Identity;
 using Ecommerce.Application.Tenancy;
+using Ecommerce.Infrastructure.Identity;
 using Ecommerce.Application.Vault;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Infrastructure.Platform;
@@ -33,6 +35,11 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<ITenantCatalog, CachedTenantCatalog>();
+
+        services.AddSingleton<PasswordHashing>();
+        services.AddSingleton<IMembershipLookup, CachedMembershipLookup>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserAdministration, UserAdministration>();
 
         services.Configure<VaultOptions>(configuration.GetSection(VaultOptions.Section));
         services.AddScoped<SecretVault>();

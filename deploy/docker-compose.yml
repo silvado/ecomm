@@ -37,6 +37,9 @@ services:
     environment:
       ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_migrator;Password=${APP_MIGRATOR_PASSWORD}
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_migrator;Password=${APP_MIGRATOR_PASSWORD}
+      # Só dev: loja demo (demo.localhost) com este Dono. Vazio = sem semente.
+      DevSeed__OwnerEmail: ${DEV_OWNER_EMAIL:-}
+      DevSeed__OwnerPassword: ${DEV_OWNER_PASSWORD:-}
     depends_on: { postgres: { condition: service_healthy } }
     restart: "no"
 
@@ -48,6 +51,7 @@ services:
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
       Vault__CurrentMasterKeyVersion: v1
       Vault__MasterKeys__v1: ${VAULT_MASTER_KEY_V1:?defina no .env}
+      Auth__SigningKey: ${AUTH_SIGNING_KEY:?defina no .env}
       Network__Internal__0: 172.16.0.0/12   # rede padrão do Docker: Caddy e storefront são proxies confiáveis
     depends_on: { migrator: { condition: service_completed_successfully } }
     ports: ["8080:8080"]
