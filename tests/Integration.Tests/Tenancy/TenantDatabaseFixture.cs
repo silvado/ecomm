@@ -1,23 +1,14 @@
-using Ecommerce.Infrastructure;
+using Ecommerce.Domain.Catalog;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Infrastructure.Tenancy;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using Testcontainers.PostgreSql;
+using Ecommerce.Integration.Tests.Infrastructure;
 
 namespace Ecommerce.Integration.Tests.Tenancy;
 
-/// <summary>
-/// PostgreSQL real (Testcontainers) com os mesmos papéis da produção: migrações como app_migrator, testes como app_user.
-/// </summary>
+/// <summary>Banco de tenant com dois tenants e peças de cada um.</summary>
 public sealed class TenantDatabaseFixture : IAsyncLifetime
 {
-    private const string Database = "lojas";
-    private const string MigratorPassword = "migrator-test";
-    private const string AppPassword = "app-test";
-
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17-alpine")
-        .Build();
+    private PostgresEnvironment _env = null!;
 
     public Guid TenantA { get; } = Guid.CreateVersion7();
     public Guid TenantB { get; } = Guid.CreateVersion7();
@@ -27,72 +18,31 @@ public sealed class TenantDatabaseFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        await _container.StartAsync();
-        var superuser = new NpgsqlConnectionStringBuilder(_container.GetConnectionString());
-
-        await ExecuteAsync(superuser.ConnectionString,
-            TenantDatabaseBootstrap.CreateRoles(MigratorPassword, AppPassword));
-        await ExecuteAsync(superuser.ConnectionString, TenantDatabaseBootstrap.CreateDatabase(Database));
-        await ExecuteAsync(new NpgsqlConnectionStringBuilder(superuser.ConnectionString) { Database = Database }.ConnectionString,
-            TenantDatabaseBootstrap.GrantPrivileges);
-
-        var migrator = new NpgsqlConnectionStringBuilder(superuser.ConnectionString)
-        {
-            Database = Database,
-            Username = TenantDatabaseBootstrap.MigratorRole,
-            Password = MigratorPassword,
-        };
-        await using (var migrationContext = CreateContext(migrator.ConnectionString, tenantId: null))
-        {
-            await migrationContext.Database.MigrateAsync();
-        }
-
-        AppConnectionString = new NpgsqlConnectionStringBuilder(superuser.ConnectionString)
-        {
-            Database = Database,
-            Username = TenantDatabaseBootstrap.AppRole,
-            Password = AppPassword,
-            MaxPoolSize = 1,
-        }.ConnectionString;
+        _env = await PostgresEnvironment.StartAsync();
+        AppConnectionString = PostgresEnvironment.With(_env.TenantsConnectionString, b => b.MaxPoolSize = 1);
 
         await SeedAsync(TenantA, "A-001", "Farol Gol G5 esquerdo");
         await SeedAsync(TenantA, "A-002", "Retrovisor Onix direito");
         await SeedAsync(TenantB, "B-001", "Para-choque Civic 2015");
     }
 
-    public Task DisposeAsync() => _container.DisposeAsync().AsTask();
+    public async Task DisposeAsync() => await _env.DisposeAsync();
 
-    public TenantDbContext CreateAppContext(Guid? tenantId) => CreateContext(AppConnectionString, tenantId);
-
-    /// <summary>Contexto cujo tenant ainda não foi definido; o teste decide quando chamar <see cref="TenantScope.Set"/>.</summary>
-    public TenantDbContext CreateAppContext(TenantScope scope) => CreateContext(AppConnectionString, scope);
-
-    private static TenantDbContext CreateContext(string connectionString, Guid? tenantId)
+    public TenantDbContext CreateAppContext(Guid? tenantId)
     {
-        var tenant = new TenantScope();
-        if (tenantId is { } id) tenant.Set(id);
-        return CreateContext(connectionString, tenant);
+        var scope = new TenantScope();
+        if (tenantId is { } id) scope.Set(id);
+        return CreateAppContext(scope);
     }
 
-    private static TenantDbContext CreateContext(string connectionString, TenantScope tenant)
-    {
-        var options = new DbContextOptionsBuilder<TenantDbContext>();
-        DependencyInjection.ConfigureTenantDb(options, connectionString);
-        return new TenantDbContext(options.Options, tenant);
-    }
+    /// <summary>Contexto cujo tenant o teste controla; útil para definir o tenant depois de abrir a conexão.</summary>
+    public TenantDbContext CreateAppContext(TenantScope scope) =>
+        PostgresEnvironment.CreateTenantContext(AppConnectionString, scope);
 
     private async Task SeedAsync(Guid tenantId, string code, string title)
     {
         await using var context = CreateAppContext(tenantId);
-        context.Parts.Add(new Domain.Catalog.Part(tenantId, code, title, 100m));
+        context.Parts.Add(new Part(tenantId, code, title, 100m));
         await context.SaveChangesAsync();
-    }
-
-    private static async Task ExecuteAsync(string connectionString, string sql)
-    {
-        await using var connection = new NpgsqlConnection(connectionString);
-        await connection.OpenAsync();
-        await using var command = new NpgsqlCommand(sql, connection);
-        await command.ExecuteNonQueryAsync();
     }
 }

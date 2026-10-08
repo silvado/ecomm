@@ -49,7 +49,8 @@ Pré-requisitos: .NET SDK 10, Docker em execução (Testcontainers), Node ≥ 24
 dotnet build                                   # TreatWarningsAsErrors ativo
 dotnet test                                    # Integration.Tests sobe PostgreSQL via Docker
 dotnet test tests/Domain.Tests                 # só unitários, sem Docker
-dotnet ef migrations add <Nome> --project src/Infrastructure --startup-project src/Infrastructure --output-dir Persistence/Migrations
+dotnet ef migrations add <Nome> --context TenantDbContext --project src/Infrastructure --startup-project src/Infrastructure --output-dir Persistence/Migrations    # banco lojas (RLS)
+dotnet ef migrations add <Nome> --context PlatformDbContext --project src/Infrastructure --startup-project src/Infrastructure --output-dir Platform/Migrations    # banco plataforma
 cp deploy/.env.example deploy/.env             # e troque as senhas
 docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
 node tools/backlog/generate.mjs                # regenera docs/backlog.md e .csv
