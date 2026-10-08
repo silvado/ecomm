@@ -20,6 +20,7 @@ public static class MessagingConfiguration
     public static WolverineOptions ConfigureMessaging(this WolverineOptions opts, string connectionString, bool buildStorage = false)
     {
         opts.PersistMessagesWithPostgresql(connectionString, Schema);
+        opts.Discovery.IncludeAssembly(typeof(MessagingConfiguration).Assembly); // handlers de negócio (ex.: estoque)
         opts.UseEntityFrameworkCoreTransactions();
         // O código gerado pelo Wolverine instancia serviços "inline"; o contexto de tenant precisa ser a MESMA
         // instância no middleware, no handler e no DbContext — então vem sempre do contêiner do escopo da mensagem.

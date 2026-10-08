@@ -1,9 +1,11 @@
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure.Persistence;
+using Ecommerce.Infrastructure.Platform;
 using Ecommerce.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Ecommerce.Infrastructure;
 
@@ -13,6 +15,8 @@ public static class DependencyInjection
     {
         var tenantsConnection = configuration.GetConnectionString("Tenants")
             ?? throw new InvalidOperationException("ConnectionStrings:Tenants não configurada.");
+        var platformConnection = configuration.GetConnectionString("Platform")
+            ?? throw new InvalidOperationException("ConnectionStrings:Platform não configurada.");
 
         services.AddScoped<TenantScope>();
         services.AddScoped<ITenantContext, TenantScopeAccessor>();
@@ -21,10 +25,22 @@ public static class DependencyInjection
             options => ConfigureTenantDb(options, tenantsConnection),
             optionsLifetime: ServiceLifetime.Singleton);
 
+        services.AddDbContext<PlatformDbContext>(
+            options => ConfigurePlatformDb(options, platformConnection),
+            optionsLifetime: ServiceLifetime.Singleton);
+        services.AddMemoryCache();
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<ITenantCatalog, CachedTenantCatalog>();
+
         return services;
     }
 
     internal static void ConfigureTenantDb(DbContextOptionsBuilder options, string connectionString) =>
+        options
+            .UseNpgsql(connectionString, npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history"))
+            .UseSnakeCaseNamingConvention();
+
+    internal static void ConfigurePlatformDb(DbContextOptionsBuilder options, string connectionString) =>
         options
             .UseNpgsql(connectionString, npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history"))
             .UseSnakeCaseNamingConvention();

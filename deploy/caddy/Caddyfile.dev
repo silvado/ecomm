@@ -3,16 +3,24 @@
 {
 	local_certs
 	on_demand_tls {
+		# Chamada direta na rede interna (sem X-Forwarded-For), única forma aceita pelos endpoints /internal.
 		ask http://api:8080/internal/tls/ask
 	}
 }
 
+(sem_internos) {
+	@internal path /internal /internal/*
+	respond @internal 404
+}
+
 api.localhost {
+	import sem_internos
 	reverse_proxy api:8080
 }
 
 # Lojas: qualquer host autorizado pelo ask.
 https:// {
+	import sem_internos
 	tls {
 		on_demand
 	}

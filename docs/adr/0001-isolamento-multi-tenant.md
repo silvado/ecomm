@@ -53,3 +53,8 @@ Todos os tenants compartilham o mesmo código. Vazamento de dados entre lojas é
 - PostgreSQL — Row Security Policies: https://www.postgresql.org/docs/current/ddl-rowsecurity.html
 - Npgsql — connection pooling e reset de estado: https://www.npgsql.org/doc/connection-string-parameters.html (parâmetro `No Reset On Close`)
 - EF Core — Global Query Filters: https://learn.microsoft.com/ef/core/querying/filters
+
+## Implementação (2026-10-08)
+
+- Catálogo: `PlatformDbContext` (banco `plataforma`) com `tenant` e `tenant_domain`; consulta via `ITenantCatalog` com cache de 60 s (10 s para hosts desconhecidos).
+- `tenant.database_key` existe e vale `default` (banco compartilhado). **O roteamento para bancos dedicados ainda não está implementado**: exige também o outbox do Wolverine por banco (multi-tenancy do Wolverine com tabela mestre). Fica para um PBI próprio, quando houver o primeiro tenant grande.

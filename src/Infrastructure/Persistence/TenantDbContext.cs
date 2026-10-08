@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Domain.Catalog;
 using Ecommerce.Domain.Common;
+using Ecommerce.Domain.Inventory;
 using Ecommerce.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,9 +14,16 @@ namespace Ecommerce.Infrastructure.Persistence;
 public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, ITenantContext tenant) : DbContext(options)
 {
     public DbSet<Part> Parts => Set<Part>();
+    public DbSet<Stock> Stocks => Set<Stock>();
+    public DbSet<StockReservation> StockReservations => Set<StockReservation>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<StoreSettings> StoreSettings => Set<StoreSettings>();
 
     /// <summary>Tenant visto por este contexto (o mesmo usado pelo filtro global e pelo interceptor de RLS).</summary>
     public Guid? TenantId => tenant.TenantId;
+
+    /// <summary>Tenant do escopo para novas entidades; falha se não houver (nunca gravar dados sem tenant).</summary>
+    public Guid RequireTenantId() => tenant.TenantId ?? throw new InvalidOperationException("Operação de tenant sem tenant no escopo.");
 
     // Lido pelo filtro global a cada consulta.
     private Guid? CurrentTenantId => tenant.TenantId;

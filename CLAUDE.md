@@ -49,7 +49,8 @@ Pré-requisitos: .NET SDK 10, Docker em execução (Testcontainers), Node ≥ 24
 dotnet build                                   # TreatWarningsAsErrors ativo
 dotnet test                                    # Integration.Tests sobe PostgreSQL via Docker
 dotnet test tests/Domain.Tests                 # só unitários, sem Docker
-dotnet ef migrations add <Nome> --project src/Infrastructure --startup-project src/Infrastructure --output-dir Persistence/Migrations
+dotnet ef migrations add <Nome> --context TenantDbContext --project src/Infrastructure --startup-project src/Infrastructure --output-dir Persistence/Migrations    # banco lojas (RLS)
+dotnet ef migrations add <Nome> --context PlatformDbContext --project src/Infrastructure --startup-project src/Infrastructure --output-dir Platform/Migrations    # banco plataforma
 cp deploy/.env.example deploy/.env             # e troque as senhas
 docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
 node tools/backlog/generate.mjs                # regenera docs/backlog.md e .csv
@@ -83,6 +84,8 @@ node tools/backlog/azure-sync.mjs --dry-run    # sincroniza com Azure Boards (re
 - Dinheiro: `decimal(12,2)` + moeda; nunca `float`/`double`.
 - Datas: `timestamptz`, sempre UTC; conversão para `America/Sao_Paulo` só na apresentação.
 - Validação na Application (FluentValidation); invariantes no Domain.
+- Mensagens (comandos, resultados, eventos) são records na Application; os handlers do Wolverine ficam na Infrastructure quando precisam de SQL/EF (ex.: `Inventory/StockHandler.cs`). Quem chama usa `IMessageBus.InvokeForTenantAsync`.
+- SQL cru com `SqlQuery<T>` de tipo não mapeado: colunas em snake_case (a convenção de nomes vale também ali) e sem compor (`UPDATE ... RETURNING` + `ToListAsync`).
 - Logs estruturados (Serilog) com `tenant_id` e `correlation_id` em todo log.
 - Testes: unitários no domínio; integração com PostgreSQL real (Testcontainers); contratos dos adapters contra mocks HTTP dos canais.
 - Commits pequenos, em português, no imperativo (`Adiciona reserva atômica de estoque`).
