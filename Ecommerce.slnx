@@ -12,6 +12,9 @@
   <Folder Name="/src/Infrastructure/">
     <Project Path="src/Infrastructure/Ecommerce.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Migrator/">
+    <Project Path="src/Migrator/Ecommerce.Migrator.csproj" />
+  </Folder>
   <Folder Name="/src/Worker/">
     <Project Path="src/Worker/Ecommerce.Worker.csproj" />
   </Folder>
