@@ -84,6 +84,8 @@ node tools/backlog/azure-sync.mjs --dry-run    # sincroniza com Azure Boards (re
 - Dinheiro: `decimal(12,2)` + moeda; nunca `float`/`double`.
 - Datas: `timestamptz`, sempre UTC; conversão para `America/Sao_Paulo` só na apresentação.
 - Validação na Application (FluentValidation); invariantes no Domain.
+- Mensagens (comandos, resultados, eventos) são records na Application; os handlers do Wolverine ficam na Infrastructure quando precisam de SQL/EF (ex.: `Inventory/StockHandler.cs`). Quem chama usa `IMessageBus.InvokeForTenantAsync`.
+- SQL cru com `SqlQuery<T>` de tipo não mapeado: colunas em snake_case (a convenção de nomes vale também ali) e sem compor (`UPDATE ... RETURNING` + `ToListAsync`).
 - Logs estruturados (Serilog) com `tenant_id` e `correlation_id` em todo log.
 - Testes: unitários no domínio; integração com PostgreSQL real (Testcontainers); contratos dos adapters contra mocks HTTP dos canais.
 - Commits pequenos, em português, no imperativo (`Adiciona reserva atômica de estoque`).

@@ -5,6 +5,7 @@ using Ecommerce.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Ecommerce.Infrastructure;
 
@@ -28,6 +29,7 @@ public static class DependencyInjection
             options => ConfigurePlatformDb(options, platformConnection),
             optionsLifetime: ServiceLifetime.Singleton);
         services.AddMemoryCache();
+        services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<ITenantCatalog, CachedTenantCatalog>();
 
         return services;

@@ -2,7 +2,9 @@ using Ecommerce.Api.Internal;
 using Ecommerce.Api.Tenancy;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure;
+using Ecommerce.Infrastructure.Messaging;
 using Microsoft.AspNetCore.HttpOverrides;
+using Wolverine;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +12,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks();
+builder.UseWolverine(opts => opts.ConfigureMessaging(builder.Configuration.GetConnectionString("Tenants")!));
 
 builder.Services.Configure<InternalNetworkOptions>(builder.Configuration.GetSection(InternalNetworkOptions.Section));
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
