@@ -15,12 +15,12 @@ public sealed class PartQueries(TenantDbContext db) : IPartQueries
 
         var parts = db.Parts.AsNoTracking();
         if (search.Status is { } status) parts = parts.Where(p => p.Status == status);
-        if (search.Vehicle is { } vehicle) parts = CompatibleWith(parts, vehicle);
+        if (search.Vehicle is { } vehicle) parts = CatalogFilters.CompatibleWith(db, parts, vehicle);
         if (!string.IsNullOrWhiteSpace(search.Search))
         {
             var text = search.Search.Trim();
-            var like = $"%{EscapeLike(text)}%";
-            var oem = OemOrEmpty(text);
+            var like = CatalogFilters.Contains(text);
+            var oem = CatalogFilters.OemOrEmpty(text);
             parts = parts.Where(p => EF.Functions.ILike(p.Title, like, "\\")
                 || EF.Functions.ILike(p.InternalCode, like, "\\")
                 || (oem != "" && p.OemCodes.Any(c => c.Code == oem)));
@@ -37,23 +37,6 @@ public sealed class PartQueries(TenantDbContext db) : IPartQueries
                                db.PartPhotos.Where(f => f.PartId == p.Id && f.Position == 0).Select(f => (Guid?)f.Id).FirstOrDefault()))
             .Skip((page - 1) * size).Take(size).ToListAsync(ct);
         return new PartPage(items, total, page, size);
-    }
-
-    public async Task<(IReadOnlyList<StorePartSummary> Items, int Total)> SearchStoreAsync(
-        VehicleFilter vehicle, int page, int pageSize, CancellationToken ct = default)
-    {
-        page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, PartSearch.MaxPageSize);
-        var parts = CompatibleWith(db.Parts.AsNoTracking().Where(p => p.Status == PartStatus.Active), vehicle);
-
-        var total = await parts.CountAsync(ct);
-        var items = await (from p in parts
-                           join s in db.Stocks on p.Id equals s.PartId
-                           orderby p.Title, p.Id
-                           select new StorePartSummary(p.Id, p.Title, p.Condition, p.Price, s.OnHand - s.Reserved,
-                               db.PartPhotos.Where(f => f.PartId == p.Id && f.Position == 0).Select(f => (Guid?)f.Id).FirstOrDefault()))
-            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
-        return (items, total);
     }
 
     public async Task<PartView?> GetAsync(Guid partId, CancellationToken ct = default)
@@ -75,26 +58,5 @@ public sealed class PartQueries(TenantDbContext db) : IPartQueries
             part.LengthCm, part.WidthCm, part.HeightCm, part.WeightG, part.OemCodes.Select(c => c.Code).Order().ToList(),
             part.Status, stock, part.HasShippingDimensions, part.CreatedAt, part.UpdatedAt,
             part.Photos.Select(f => new PhotoView(f.Id, f.Position)).ToList(), compatibilities);
-    }
-
-    /// <summary>
-    /// RF09 CA3: peças com alguma compatibilidade no modelo (e na versão, se informada) cujo intervalo efetivo de anos
-    /// (o da compatibilidade ou, sem ele, o da versão) contém o ano-modelo pedido.
-    /// </summary>
-    private IQueryable<Part> CompatibleWith(IQueryable<Part> parts, VehicleFilter vehicle)
-    {
-        var (modelId, versionId, year) = (vehicle.ModelId, vehicle.VersionId, vehicle.Year);
-        return parts.Where(p => db.PartCompatibilities.Any(c => c.PartId == p.Id && db.VehicleVersions.Any(v =>
-            v.Id == c.VehicleVersionId && v.ModelId == modelId && (versionId == null || v.Id == versionId) &&
-            (year == null || (year >= (c.YearFrom ?? v.YearFrom) && year <= (c.YearTo ?? v.YearTo ?? int.MaxValue))))));
-    }
-
-    private static string EscapeLike(string value) =>
-        value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("%", "\\%", StringComparison.Ordinal).Replace("_", "\\_", StringComparison.Ordinal);
-
-    private static string OemOrEmpty(string text)
-    {
-        try { return PartOemCode.Normalize(text); }
-        catch (ArgumentException) { return string.Empty; }
     }
 }

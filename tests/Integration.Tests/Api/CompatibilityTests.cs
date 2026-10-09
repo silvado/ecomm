@@ -129,8 +129,7 @@ public sealed class CompatibilityTests(ApiFactory api) : IClassFixture<ApiFactor
         Assert.Equal([lanterna], await StoreSearchAsync(tenant, $"modelo={v.Gol}&versao={v.Gol16}"));
         Assert.Empty(await StoreSearchAsync(tenant, $"modelo={v.Gol}&ano=2013"));
         Assert.Equal([retrovisor], await StoreSearchAsync(tenant, $"modelo={v.Fox}&ano=2006"));
-        var withoutModel = await api.ClientFor($"{tenant.Slug}.plataforma.test").GetAsync("/api/loja/pecas");
-        Assert.Equal(HttpStatusCode.BadRequest, withoutModel.StatusCode);
+        Assert.Equal(new[] { farol, lanterna, retrovisor }.Order(), (await StoreSearchAsync(tenant, "")).Order()); // sem veículo: todas as ativas
     }
 
     [Fact]

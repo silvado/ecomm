@@ -74,17 +74,31 @@ var store = app.MapGroup("/api/loja").AddEndpointFilter<StoreTenantFilter>();
 // Nome, tema e textos: o storefront SSR desenha a loja com isto a cada página (RF01 CA3, ADR-0006).
 store.MapGet("/identidade", async (IStoreProfileService profiles, CancellationToken ct) => TypedResults.Ok(await profiles.GetPublicAsync(ct)));
 
-// Busca por veículo (RF09 CA3): só peças ativas da loja do Host compatíveis com o modelo/versão/ano.
+// Vitrine (RF13): só peças ativas da loja do Host; busca por texto (sem acento), código/OEM e veículo (RF09 CA3).
 store.MapVehicleCatalog();
-store.MapGet("/pecas", async Task<Results<Ok<StorePartsPage>, ProblemHttpResult>> (
-    Guid? modelo, Guid? versao, int? ano, int? pagina, int? tamanho, IPartQueries queries, CancellationToken ct) =>
+store.MapGet("/pecas", async (string? busca, Guid? modelo, Guid? versao, int? ano, int? pagina, int? tamanho,
+    IStoreCatalog catalog, HttpResponse response, CancellationToken ct) =>
 {
-    if (VehicleEndpoints.VehicleFilterFrom(modelo, versao, ano) is not { } vehicle)
-        return TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: "Escolha o modelo do veículo.");
-    var (items, total) = await queries.SearchStoreAsync(vehicle, pagina ?? 1, tamanho ?? 24, ct);
-    return TypedResults.Ok(new StorePartsPage(items, total));
+    response.Headers.CacheControl = "public, max-age=30";
+    return TypedResults.Ok(await catalog.SearchAsync(
+        new StoreSearch(busca, VehicleEndpoints.VehicleFilterFrom(modelo, versao, ano), pagina ?? 1, tamanho ?? 24), ct));
 });
-
+store.MapGet("/pecas/{id:guid}", async Task<Results<Ok<StorePartView>, ProblemHttpResult>> (
+    Guid id, IStoreCatalog catalog, HttpResponse response, CancellationToken ct) =>
+{
+    if (await catalog.GetAsync(id, ct) is not { } part)
+        return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Peça não encontrada.");
+    response.Headers.CacheControl = "public, max-age=30";
+    return TypedResults.Ok(part);
+});
+// Foto de peça ativa: o id muda a cada foto, então pode ficar em cache por um ano.
+store.MapGet("/fotos/{photoId:guid}/{size:int}", async Task<Results<FileStreamHttpResult, NotFound>> (
+    Guid photoId, int size, IStoreCatalog catalog, HttpResponse response, CancellationToken ct) =>
+{
+    if (await catalog.GetPhotoAsync(photoId, size, ct) is not { } photo) return TypedResults.NotFound();
+    response.Headers.CacheControl = "public, max-age=31536000, immutable";
+    return PanelEndpoints.UploadedImage(response, photo);
+});
 // Logo da loja (RF01 CA2): o id muda a cada troca, então a URL pode ficar em cache por um ano.
 store.MapGet("/logo/{logoId:guid}", async Task<Results<FileStreamHttpResult, NotFound>> (
     Guid logoId, HttpResponse response, IStoreProfileService profiles, CancellationToken ct) =>
@@ -106,8 +120,6 @@ internalApi.MapGet("/tls/ask", async (string domain, ITenantCatalog catalog, Can
 });
 
 app.Run();
-
-internal sealed record StorePartsPage(IReadOnlyList<StorePartSummary> Items, int Total);
 
 /// <summary>Exposto para os testes de integração (WebApplicationFactory).</summary>
 public partial class Program;

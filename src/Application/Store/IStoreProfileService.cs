@@ -10,11 +10,12 @@ public sealed record StoreTexts(string About, string ReturnPolicy, string Footer
 /// <summary>Dados da loja vistos pelo Dono no painel (RF01).</summary>
 public sealed record StoreProfile(
     string Slug, string Cnpj, string LegalName, string TradeName,
-    StoreTheme Theme, StoreTexts Texts, IReadOnlyList<ContrastWarning> Warnings, Guid? LogoId);
+    StoreTheme Theme, StoreTexts Texts, IReadOnlyList<ContrastWarning> Warnings, Guid? LogoId, bool HideOutOfStock);
 
+/// <param name="HideOutOfStock">RF13 CA4; nulo = mantém a configuração atual.</param>
 public sealed record UpdateStoreProfile(
     string TradeName, string PrimaryColor, string BackgroundColor, string TextColor,
-    string? About, string? ReturnPolicy, string? Footer);
+    string? About, string? ReturnPolicy, string? Footer, bool? HideOutOfStock = null);
 
 /// <summary>
 /// O que a loja pública precisa para se desenhar (storefront SSR). <see cref="LogoUrl"/> é relativo ao domínio
