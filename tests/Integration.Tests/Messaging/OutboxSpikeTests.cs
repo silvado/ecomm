@@ -71,12 +71,20 @@ public sealed class OutboxSpikeTests(MessagingFixture fx, ITestOutputHelper outp
         var probeId = await PublishAsync(fx.TenantA, fx.PartA, commit: true);
         Assert.NotNull(await fx.Probe.WaitForAsync(probeId, Timeout));
 
-        await using var scope = fx.Host.Services.CreateAsyncScope();
-        scope.ServiceProvider.GetRequiredService<TenantScope>().Set(fx.TenantA);
-        var db = scope.ServiceProvider.GetRequiredService<TenantDbContext>();
-
+        // O probe é registrado dentro do handler, antes de o Wolverine confirmar a transação (após o handler):
+        // a gravação aparece logo depois — esperar por ela em vez de ler uma vez só.
         // Outras mensagens podem renomear a mesma peça depois; basta que alguma gravação do handler tenha persistido.
-        var title = await db.Parts.Where(p => p.Id == fx.PartA).Select(p => p.Title).SingleAsync();
+        string? title = null;
+        var deadline = DateTimeOffset.UtcNow + Timeout;
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            await using var scope = fx.Host.Services.CreateAsyncScope();
+            scope.ServiceProvider.GetRequiredService<TenantScope>().Set(fx.TenantA);
+            var db = scope.ServiceProvider.GetRequiredService<TenantDbContext>();
+            title = await db.Parts.Where(p => p.Id == fx.PartA).Select(p => p.Title).SingleAsync();
+            if (title.StartsWith("Processado ", StringComparison.Ordinal)) break;
+            await Task.Delay(20);
+        }
         Assert.StartsWith("Processado ", title);
     }
 
