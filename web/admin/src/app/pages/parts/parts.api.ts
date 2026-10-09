@@ -1,0 +1,95 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+
+export type PartCondition = 'new' | 'used' | 'refurbished';
+export type PartStatus = 'draft' | 'active' | 'inactive';
+
+export interface StockView {
+  onHand: number;
+  reserved: number;
+  available: number;
+}
+
+export interface PartSummary {
+  id: string;
+  internalCode: string;
+  title: string;
+  condition: PartCondition;
+  price: number;
+  status: PartStatus;
+  stock: StockView;
+  hasShippingDimensions: boolean;
+  updatedAt: string;
+}
+
+export interface PartView extends PartSummary {
+  description: string;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  weightG: number | null;
+  oemCodes: string[];
+  createdAt: string;
+}
+
+export interface PartPage {
+  items: PartSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface PartRequest {
+  internalCode?: string;
+  title: string;
+  description: string;
+  condition: PartCondition;
+  price: number;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  weightG: number | null;
+  oemCodes: string[];
+  quantity: number;
+}
+
+export const CONDITION_LABELS: Record<PartCondition, string> = { new: 'Nova', used: 'Usada', refurbished: 'Recondicionada' };
+export const STATUS_LABELS: Record<PartStatus, string> = { draft: 'Rascunho', active: 'Ativa', inactive: 'Inativa' };
+
+/** Um código OEM por linha ou separados por vírgula/ponto e vírgula; a API normaliza (maiúsculas, sem espaços e hífens). */
+export function parseOemCodes(text: string): string[] {
+  return text
+    .split(/[\n,;]+/)
+    .map((code) => code.trim())
+    .filter((code) => code.length > 0);
+}
+
+@Injectable({ providedIn: 'root' })
+export class PartsApi {
+  private readonly http = inject(HttpClient);
+  private readonly base = '/api/painel/pecas';
+
+  search(search: string, status: PartStatus | '', page: number, pageSize = 25): Promise<PartPage> {
+    let params = new HttpParams().set('pagina', page).set('tamanho', pageSize);
+    if (search.trim()) params = params.set('busca', search.trim());
+    if (status) params = params.set('situacao', status);
+    return firstValueFrom(this.http.get<PartPage>(this.base, { params }));
+  }
+
+  get(id: string): Promise<PartView> {
+    return firstValueFrom(this.http.get<PartView>(`${this.base}/${id}`));
+  }
+
+  create(request: PartRequest): Promise<PartView> {
+    return firstValueFrom(this.http.post<PartView>(this.base, request));
+  }
+
+  update(id: string, request: PartRequest): Promise<PartView> {
+    return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}`, request));
+  }
+
+  setStatus(id: string, status: PartStatus): Promise<PartView> {
+    return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}/situacao`, { status }));
+  }
+}
