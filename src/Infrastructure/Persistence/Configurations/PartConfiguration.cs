@@ -21,12 +21,27 @@ internal sealed class PartConfiguration : IEntityTypeConfiguration<Part>
         builder.HasIndex(p => new { p.TenantId, p.Status, p.UpdatedAt });
         builder.HasMany(p => p.OemCodes).WithOne().HasForeignKey(c => c.PartId).OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(p => p.OemCodes).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.HasMany(p => p.Photos).WithOne().HasForeignKey(f => f.PartId).OnDelete(DeleteBehavior.Cascade);
+        builder.Navigation(p => p.Photos).HasField("_photos").UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("ck_parts_price_positive", "price > 0");
             t.HasCheckConstraint("ck_parts_dimensions_positive",
                 "coalesce(length_cm, 1) > 0 AND coalesce(width_cm, 1) > 0 AND coalesce(height_cm, 1) > 0 AND coalesce(weight_g, 1) > 0");
         });
+    }
+}
+
+internal sealed class PartPhotoConfiguration : IEntityTypeConfiguration<PartPhoto>
+{
+    public void Configure(EntityTypeBuilder<PartPhoto> builder)
+    {
+        builder.HasKey(p => p.Id);
+        // O id vem da aplicação (é a chave dos arquivos no storage): foto nova na coleção da peça é INSERT, não UPDATE.
+        builder.Property(p => p.Id).ValueGeneratedNever();
+        builder.Property(p => p.OriginalContentType).HasMaxLength(20).IsRequired();
+        builder.HasIndex(p => new { p.TenantId, p.PartId, p.Position });
+        builder.ToTable(t => t.HasCheckConstraint("ck_part_photos_position", $"position >= 0 AND position < {Part.MaxPhotos}"));
     }
 }
 

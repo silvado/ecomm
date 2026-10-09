@@ -62,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantProvisioning, TenantProvisioning>();
         services.AddScoped<IStoreProfileService, StoreProfileService>();
         services.AddScoped<IPartQueries, PartQueries>();
+        services.AddScoped<IPartPhotos, PartPhotoService>();
 
         services.Configure<VaultOptions>(configuration.GetSection(VaultOptions.Section));
         services.AddScoped<SecretVault>();

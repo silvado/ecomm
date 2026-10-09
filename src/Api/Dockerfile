@@ -1,7 +1,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY . .
-RUN dotnet publish src/Api/Ecommerce.Api.csproj -c Release -o /app
+# Só os binários nativos da plataforma do container (ex.: libvips), não os de todas as plataformas.
+ARG TARGETARCH
+RUN dotnet publish src/Api/Ecommerce.Api.csproj -c Release -o /app --self-contained false \
+    -r linux-$([ "$TARGETARCH" = "arm64" ] && echo arm64 || echo x64)
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app

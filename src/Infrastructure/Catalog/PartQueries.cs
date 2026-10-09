@@ -32,20 +32,22 @@ public sealed class PartQueries(TenantDbContext db) : IPartQueries
                            select new PartSummary(p.Id, p.InternalCode, p.Title, p.Condition, p.Price, p.Status,
                                new StockView(s.OnHand, s.Reserved, s.OnHand - s.Reserved),
                                p.LengthCm != null && p.WidthCm != null && p.HeightCm != null && p.WeightG != null,
-                               p.UpdatedAt))
+                               p.UpdatedAt,
+                               db.PartPhotos.Where(f => f.PartId == p.Id && f.Position == 0).Select(f => (Guid?)f.Id).FirstOrDefault()))
             .Skip((page - 1) * size).Take(size).ToListAsync(ct);
         return new PartPage(items, total, page, size);
     }
 
     public async Task<PartView?> GetAsync(Guid partId, CancellationToken ct = default)
     {
-        var part = await db.Parts.AsNoTracking().Include(p => p.OemCodes).SingleOrDefaultAsync(p => p.Id == partId, ct);
+        var part = await db.Parts.AsNoTracking().Include(p => p.OemCodes).Include(p => p.Photos).SingleOrDefaultAsync(p => p.Id == partId, ct);
         if (part is null) return null;
         var stock = await db.Stocks.AsNoTracking().Where(s => s.PartId == partId)
             .Select(s => new StockView(s.OnHand, s.Reserved, s.OnHand - s.Reserved)).SingleAsync(ct);
         return new PartView(part.Id, part.InternalCode, part.Title, part.Description, part.Condition, part.Price,
             part.LengthCm, part.WidthCm, part.HeightCm, part.WeightG, part.OemCodes.Select(c => c.Code).Order().ToList(),
-            part.Status, stock, part.HasShippingDimensions, part.CreatedAt, part.UpdatedAt);
+            part.Status, stock, part.HasShippingDimensions, part.CreatedAt, part.UpdatedAt,
+            part.Photos.Select(f => new PhotoView(f.Id, f.Position)).ToList());
     }
 
     private static string EscapeLike(string value) =>

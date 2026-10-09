@@ -177,11 +177,12 @@ erDiagram
         timestamptz at
     }
     PART_PHOTO {
-        uuid id PK
+        uuid id PK "também é a chave dos arquivos no storage"
         uuid tenant_id "RLS"
         uuid part_id FK
-        string storage_key
-        int position
+        int position "0 = capa; 0..19"
+        string original_content_type
+        timestamptz created_at
     }
     PART_OEM_CODE {
         uuid tenant_id "RLS"

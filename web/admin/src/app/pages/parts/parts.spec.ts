@@ -28,6 +28,7 @@ describe('PartsListPage', () => {
         stock: { onHand: 3, reserved: 1, available: 2 },
         hasShippingDimensions: false,
         updatedAt: '2026-10-09T12:00:00Z',
+        coverPhotoId: null,
       },
     ],
     total: 1,

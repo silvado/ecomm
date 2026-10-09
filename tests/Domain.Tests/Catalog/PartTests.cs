@@ -110,6 +110,7 @@ public sealed class PartTests
     public void Ativar_e_inativar()
     {
         var part = Part.Create(Guid.CreateVersion7(), "A-1", Details(), Now);
+        part.AddPhoto(Guid.NewGuid(), "image/jpeg", Now);
 
         part.Activate(Now);
         Assert.Equal(PartStatus.Active, part.Status);

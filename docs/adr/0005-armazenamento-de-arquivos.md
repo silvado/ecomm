@@ -31,6 +31,14 @@ Peças usadas têm muitas fotos (até 20 por peça, 3 tamanhos cada). O BRIEF n�
 - Os checksums CRC que o SDK v4 envia por padrão funcionam com o SeaweedFS 4.47; ao escolher o provedor de produção, rodar `S3FileStorageTests` contra ele antes de trocar.
 - Logo da loja (RF01 CA2): `{tenantId}/marca/logo-{id}` no bucket público, **servido pela API** em `/api/loja/logo/{id}` no domínio da loja (cache de 1 ano, id novo a cada troca, `nosniff` + CSP `sandbox`). CDN/URL direta do bucket fica para quando houver volume.
 
+## Atualização (2026-10-09): fotos das peças (RF08 CA3)
+
+- Conversão com **NetVips** (MIT) sobre a **libvips** (LGPL-2.1, vinculada dinamicamente: `libvips.so.42` vai como biblioteca separada no container). Escolhida pela memória baixa (processa em fluxo) e licença compatível com SaaS; ImageSharp descartado pela licença Split (pagamento acima de US$ 1 mi/ano).
+- Upload até 10 MB e 40 MP (conferido pelo cabeçalho, antes de decodificar), JPEG/PNG/WebP pela assinatura do arquivo, `BlockUntrusted` (só decodificadores confiáveis), `failOn=error`, cache de operações desligado, no máximo 2 conversões simultâneas.
+- Saída: WebP q=82 com o lado maior em **1600, 800 e 300 px** (sem ampliar), orientação EXIF aplicada e **todos os metadados removidos** (GPS de celular). Original guardado no bucket privado para gerar tamanhos novos no futuro.
+- Chaves: `{tenantId}/pecas/{partId}/{photoId}-{tamanho}.webp` (público) e `{photoId}-original` (privado). No painel, servidas pela API com o token; a URL pública da loja vem com o catálogo da loja (RF13).
+- Imagens Docker publicadas só com os binários nativos da plataforma do container (`-r linux-x64|arm64`).
+
 ## Atualização (2026-10-08): MinIO substituído por SeaweedFS em dev
 
 A MinIO deixou de publicar as imagens Docker da edição comunitária (Docker Hub em out/2025, depois quay.io); o pull de `minio/minio` falha. Como só usamos a API S3, o servidor de dev é intercambiável.
