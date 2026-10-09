@@ -46,7 +46,11 @@ public sealed class Part : ITenantOwned
     public const int MaxWeightG = 1_000_000;
     public const decimal MaxPrice = 9_999_999_999.99m; // numeric(12,2)
 
+    /// <summary>RF08 CA1: de 1 a 20 fotos para estar à venda.</summary>
+    public const int MaxPhotos = 20;
+
     private readonly List<PartOemCode> _oemCodes = [];
+    private readonly List<PartPhoto> _photos = [];
 
     private Part() { }
 
@@ -87,6 +91,47 @@ public sealed class Part : ITenantOwned
     public DateTimeOffset UpdatedAt { get; private set; }
     public IReadOnlyCollection<PartOemCode> OemCodes => _oemCodes;
 
+    /// <summary>Em ordem de exibição (a primeira é a capa).</summary>
+    public IReadOnlyList<PartPhoto> Photos => _photos.OrderBy(p => p.Position).ToList();
+
+    /// <summary>Registra uma foto já gravada no storage, no fim da lista.</summary>
+    public PartPhoto AddPhoto(Guid photoId, string originalContentType, DateTimeOffset now)
+    {
+        if (_photos.Count >= MaxPhotos) throw new InvalidOperationException($"A peça já tem {MaxPhotos} fotos.");
+        var photo = new PartPhoto(TenantId, Id, photoId, _photos.Count, originalContentType, now);
+        _photos.Add(photo);
+        UpdatedAt = now;
+        return photo;
+    }
+
+    /// <summary>Peça à venda precisa de ao menos uma foto (RF08 CA1): a última não sai enquanto ela estiver ativa.</summary>
+    public PartPhoto RemovePhoto(Guid photoId, DateTimeOffset now)
+    {
+        var photo = _photos.SingleOrDefault(p => p.Id == photoId) ?? throw new KeyNotFoundException("Foto não encontrada.");
+        if (Status == PartStatus.Active && _photos.Count == 1)
+            throw new InvalidOperationException("Peça ativa precisa de ao menos uma foto. Inative a peça ou envie outra foto antes.");
+        _photos.Remove(photo);
+        Renumber(_photos.OrderBy(p => p.Position));
+        UpdatedAt = now;
+        return photo;
+    }
+
+    /// <summary>Nova ordem: precisa listar exatamente as fotos da peça, cada uma uma vez.</summary>
+    public void ReorderPhotos(IReadOnlyList<Guid> photoIds, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(photoIds);
+        if (photoIds.Count != _photos.Count || photoIds.Distinct().Count() != photoIds.Count || photoIds.Any(id => _photos.All(p => p.Id != id)))
+            throw new ArgumentException("A nova ordem precisa conter cada foto da peça exatamente uma vez.", nameof(photoIds));
+        Renumber(photoIds.Select(id => _photos.Single(p => p.Id == id)));
+        UpdatedAt = now;
+    }
+
+    private static void Renumber(IEnumerable<PartPhoto> ordered)
+    {
+        var position = 0;
+        foreach (var photo in ordered.ToList()) photo.Position = position++;
+    }
+
     /// <summary>RF08 CA4: sem as quatro medidas da embalagem, não publica em canal que calcula frete.</summary>
     public bool HasShippingDimensions => LengthCm is not null && WidthCm is not null && HeightCm is not null && WeightG is not null;
 
@@ -118,9 +163,10 @@ public sealed class Part : ITenantOwned
         UpdatedAt = now;
     }
 
-    /// <summary>Coloca à venda. HIPÓTESE: exigência de ao menos 1 foto entra com as fotos (RF08 CA1, PR B).</summary>
+    /// <summary>Coloca à venda: exige ao menos uma foto (RF08 CA1). Carregar a peça com as fotos antes.</summary>
     public void Activate(DateTimeOffset now)
     {
+        if (_photos.Count == 0) throw new InvalidOperationException("Envie ao menos uma foto antes de ativar a peça.");
         Status = PartStatus.Active;
         UpdatedAt = now;
     }

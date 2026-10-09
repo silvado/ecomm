@@ -4,14 +4,18 @@ namespace Ecommerce.Application.Catalog;
 
 public sealed record StockView(int OnHand, int Reserved, int Available);
 
+public sealed record PhotoView(Guid Id, int Position);
+
+/// <summary><see cref="CoverPhotoId"/>: primeira foto (miniatura da listagem), nula se a peça não tem fotos.</summary>
 public sealed record PartSummary(
     Guid Id, string InternalCode, string Title, PartCondition Condition, decimal Price, PartStatus Status,
-    StockView Stock, bool HasShippingDimensions, DateTimeOffset UpdatedAt);
+    StockView Stock, bool HasShippingDimensions, DateTimeOffset UpdatedAt, Guid? CoverPhotoId);
 
 public sealed record PartView(
     Guid Id, string InternalCode, string Title, string Description, PartCondition Condition, decimal Price,
     int? LengthCm, int? WidthCm, int? HeightCm, int? WeightG, IReadOnlyList<string> OemCodes,
-    PartStatus Status, StockView Stock, bool HasShippingDimensions, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+    PartStatus Status, StockView Stock, bool HasShippingDimensions, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt,
+    IReadOnlyList<PhotoView> Photos);
 
 /// <param name="Search">Trecho do título ou do código interno, ou um código OEM (com ou sem espaços e hífens).</param>
 public sealed record PartSearch(string? Search, PartStatus? Status, int Page = 1, int PageSize = 25)

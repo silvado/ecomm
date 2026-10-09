@@ -17,6 +17,7 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
 {
     public DbSet<Part> Parts => Set<Part>();
     public DbSet<PartOemCode> PartOemCodes => Set<PartOemCode>();
+    public DbSet<PartPhoto> PartPhotos => Set<PartPhoto>();
     public DbSet<Stock> Stocks => Set<Stock>();
     public DbSet<StockReservation> StockReservations => Set<StockReservation>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();

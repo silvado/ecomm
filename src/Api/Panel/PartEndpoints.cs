@@ -20,6 +20,8 @@ public sealed record PartRequest(
 
 public sealed record PartStatusRequest(PartStatus Status);
 
+public sealed record PhotoOrderRequest(IReadOnlyList<Guid>? PhotoIds);
+
 /// <summary>Catálogo de peças no painel (RF08): Dono e Operador (permissão de catálogo).</summary>
 public static class PartEndpoints
 {
@@ -69,6 +71,50 @@ public static class PartEndpoints
             return result.Outcome == PartCommandOutcome.Done ? TypedResults.Ok((await queries.GetAsync(id, ct))!) : Problem(result);
         });
     }
+
+    /// <summary>Fotos (RF08 CA3): corpo = bytes da imagem (sem multipart); o tipo é reconhecido pelo conteúdo.</summary>
+    public static void MapPartPhotoEndpoints(this RouteGroupBuilder panel)
+    {
+        var photos = panel.MapGroup("/pecas/{id:guid}/fotos").RequirePermission(Permission.CatalogManage);
+
+        photos.MapPost("/", async Task<Results<Created<PartView>, ProblemHttpResult>> (
+            Guid id, HttpRequest request, IPartPhotos service, IPartQueries queries, CancellationToken ct) =>
+        {
+            var result = await service.AddAsync(id, request.Body, ct);
+            if (result.Outcome != PhotoOutcome.Done) return PhotoProblem(result);
+            return TypedResults.Created($"/api/painel/pecas/{id}/fotos/{result.PhotoId}", (await queries.GetAsync(id, ct))!);
+        });
+
+        photos.MapDelete("/{photoId:guid}", async Task<Results<Ok<PartView>, ProblemHttpResult>> (
+            Guid id, Guid photoId, IPartPhotos service, IPartQueries queries, CancellationToken ct) =>
+        {
+            var result = await service.RemoveAsync(id, photoId, ct);
+            return result.Outcome == PhotoOutcome.Done ? TypedResults.Ok((await queries.GetAsync(id, ct))!) : PhotoProblem(result);
+        });
+
+        photos.MapPut("/ordem", async Task<Results<Ok<PartView>, ProblemHttpResult>> (
+            Guid id, PhotoOrderRequest request, IPartPhotos service, IPartQueries queries, CancellationToken ct) =>
+        {
+            var result = await service.ReorderAsync(id, request.PhotoIds ?? [], ct);
+            return result.Outcome == PhotoOutcome.Done ? TypedResults.Ok((await queries.GetAsync(id, ct))!) : PhotoProblem(result);
+        });
+
+        // Prévia no painel; o id muda a cada foto, então pode ficar em cache no navegador do lojista.
+        photos.MapGet("/{photoId:guid}/{size:int}", async Task<Results<FileStreamHttpResult, NotFound>> (
+            Guid id, Guid photoId, int size, HttpResponse response, IPartPhotos service, CancellationToken ct) =>
+        {
+            if (await service.GetAsync(id, photoId, size, ct) is not { } photo) return TypedResults.NotFound();
+            response.Headers.CacheControl = "private, max-age=86400";
+            return PanelEndpoints.UploadedImage(response, photo);
+        });
+    }
+
+    private static ProblemHttpResult PhotoProblem(PhotoResult result) => result.Outcome switch
+    {
+        PhotoOutcome.NotFound => AuthEndpoints.Problem(StatusCodes.Status404NotFound, "Peça ou foto não encontrada."),
+        PhotoOutcome.Conflict => AuthEndpoints.Problem(StatusCodes.Status409Conflict, result.Message!),
+        _ => AuthEndpoints.Problem(StatusCodes.Status400BadRequest, result.Message ?? "Imagem inválida."),
+    };
 
     /// <summary>Executa o comando na loja do usuário. Código repetido em corrida chega como violação do índice único.</summary>
     private static async Task<PartCommandResult> InvokeAsync<T>(IMessageBus bus, PanelUser user, T command, CancellationToken ct) where T : notnull

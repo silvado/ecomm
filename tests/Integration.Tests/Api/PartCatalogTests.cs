@@ -5,6 +5,7 @@ using Ecommerce.Domain.Identity;
 using Ecommerce.Domain.Inventory;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Infrastructure.Tenancy;
+using Ecommerce.Integration.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -34,6 +35,13 @@ public sealed class PartCatalogTests(ApiFactory api) : IClassFixture<ApiFactory>
         var response = await SendAsync(api.PanelClient(), token, HttpMethod.Post, "/api/painel/pecas", body);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<PartDto>())!;
+    }
+
+    private async Task AddPhotoAsync(string token, Guid partId)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/painel/pecas/{partId}/fotos") { Content = new ByteArrayContent(TestImages.Jpeg(200, 150)) };
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        Assert.Equal(HttpStatusCode.Created, (await api.PanelClient().SendAsync(request)).StatusCode);
     }
 
     private async Task<T> InTenantAsync<T>(Guid tenantId, Func<TenantDbContext, Task<T>> query)
@@ -115,6 +123,7 @@ public sealed class PartCatalogTests(ApiFactory api) : IClassFixture<ApiFactory>
         var farol = await CreateAsync(owner, Body(code: "FAR-100", title: "Farol Gol G5", oem: ["5U0 941 015"]));
         var lanterna = await CreateAsync(owner, Body(code: "LAN-200", title: "Lanterna traseira 100% original", oem: ["5U6945095"]));
         var motor = await CreateAsync(owner, Body(code: "MOT-300", title: "Motor de partida", oem: []));
+        await AddPhotoAsync(owner, motor.Id);
         await SendAsync(api.PanelClient(), owner, HttpMethod.Put, $"/api/painel/pecas/{motor.Id}/situacao", new { status = "active" });
 
         async Task<List<Guid>> Search(string query) =>
@@ -207,6 +216,7 @@ public sealed class PartCatalogTests(ApiFactory api) : IClassFixture<ApiFactory>
         var tenant = await api.CreateTenantAsync();
         var owner = await api.SessionForAsync(tenant);
         var part = await CreateAsync(owner, Body(code: Code()));
+        await AddPhotoAsync(owner, part.Id);
 
         async Task<HttpResponseMessage> Set(string status) =>
             await SendAsync(api.PanelClient(), owner, HttpMethod.Put, $"/api/painel/pecas/{part.Id}/situacao", new { status });

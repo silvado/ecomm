@@ -79,7 +79,7 @@ store.MapGet("/logo/{logoId:guid}", async Task<Results<FileStreamHttpResult, Not
 {
     if (await profiles.GetLogoAsync(logoId, ct) is not { } logo) return TypedResults.NotFound();
     response.Headers.CacheControl = "public, max-age=31536000, immutable";
-    return PanelEndpoints.LogoFile(response, logo);
+    return PanelEndpoints.UploadedImage(response, logo);
 });
 
 app.MapAuthEndpoints();

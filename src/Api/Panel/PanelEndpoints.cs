@@ -26,6 +26,7 @@ public static class PanelEndpoints
         });
 
         panel.MapPartEndpoints();
+        panel.MapPartPhotoEndpoints();
 
         var users = panel.MapGroup("/usuarios").RequirePermission(Permission.UsersManage);
 
@@ -88,7 +89,7 @@ public static class PanelEndpoints
         {
             if (await profiles.GetLogoAsync(null, ct) is not { } logo) return TypedResults.NotFound();
             response.Headers.CacheControl = "no-store";
-            return LogoFile(response, logo);
+            return UploadedImage(response, logo);
         });
 
         // RF06 CA3: só metadados (tipo, últimos 4 caracteres, validade).
@@ -100,7 +101,7 @@ public static class PanelEndpoints
     /// Serve uma imagem enviada por usuário: o navegador não pode reinterpretar o tipo (nosniff) nem executar nada
     /// mesmo que o arquivo seja aberto direto (CSP sem permissões).
     /// </summary>
-    internal static FileStreamHttpResult LogoFile(HttpResponse response, StoredFile logo)
+    internal static FileStreamHttpResult UploadedImage(HttpResponse response, StoredFile logo)
     {
         response.Headers.XContentTypeOptions = "nosniff";
         response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";

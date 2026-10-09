@@ -89,14 +89,21 @@ public static class PartHandler
 
     public static async Task<PartCommandResult> Handle(ChangePartStatus command, TenantDbContext db, TimeProvider clock, CancellationToken ct)
     {
-        var part = await db.Parts.SingleOrDefaultAsync(p => p.Id == command.PartId, ct);
+        var part = await db.Parts.Include(p => p.Photos).SingleOrDefaultAsync(p => p.Id == command.PartId, ct);
         if (part is null) return PartCommandResult.Fail(PartCommandOutcome.NotFound);
 
-        switch (command.Status)
+        try
         {
-            case PartStatus.Active: part.Activate(clock.GetUtcNow()); break;
-            case PartStatus.Inactive: part.Deactivate(clock.GetUtcNow()); break;
-            default: return Invalid("Uma peça não volta para rascunho.");
+            switch (command.Status)
+            {
+                case PartStatus.Active: part.Activate(clock.GetUtcNow()); break;
+                case PartStatus.Inactive: part.Deactivate(clock.GetUtcNow()); break;
+                default: return Invalid("Uma peça não volta para rascunho.");
+            }
+        }
+        catch (InvalidOperationException e)
+        {
+            return Invalid(e.Message);
         }
         return PartCommandResult.Ok(part.Id);
     }
