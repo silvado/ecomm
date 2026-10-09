@@ -51,6 +51,7 @@ public sealed class PostgresEnvironment : IAsyncDisposable
         ["Vault:CurrentMasterKeyVersion"] = "v1",
         ["Vault:MasterKeys:v1"] = MasterKeyV1,
         ["Platform:Domain"] = "plataforma.test",
+        ["Storage:Provider"] = "memory",
     };
 
     /// <summary>Chave mestra do cofre gerada por ambiente de teste (nunca uma chave fixa no código).</summary>

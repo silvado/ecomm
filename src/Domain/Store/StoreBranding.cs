@@ -42,6 +42,31 @@ public sealed class StoreBranding : ITenantOwned
     public string Footer { get; private set; } = string.Empty;
     public DateTimeOffset UpdatedAt { get; private set; }
 
+    /// <summary>Logo atual (nulo = sem logo). Muda a cada troca, para a URL pública poder ter cache longo.</summary>
+    public Guid? LogoId { get; private set; }
+
+    public string? LogoContentType { get; private set; }
+
+    /// <summary>Troca o logo e devolve o id do anterior (para apagar do storage depois de gravar).</summary>
+    public Guid? ReplaceLogo(Guid logoId, string contentType, DateTimeOffset now)
+    {
+        if (!LogoImage.AcceptedTypes.Contains(contentType)) throw new ArgumentException("Formato de logo não aceito.", nameof(contentType));
+        var previous = LogoId;
+        LogoId = logoId;
+        LogoContentType = contentType;
+        UpdatedAt = now;
+        return previous;
+    }
+
+    public Guid? RemoveLogo(DateTimeOffset now)
+    {
+        var previous = LogoId;
+        LogoId = null;
+        LogoContentType = null;
+        UpdatedAt = now;
+        return previous;
+    }
+
     /// <summary>Cor do texto de botões sobre a cor principal: calculada, para nunca ficar ilegível.</summary>
     public string OnPrimaryColor => HexColor.Parse(PrimaryColor).ReadableTextColor().Value;
 

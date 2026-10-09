@@ -1,5 +1,7 @@
 using Ecommerce.Application.Identity;
+using Ecommerce.Application.Storage;
 using Ecommerce.Application.Store;
+using Ecommerce.Infrastructure.Storage;
 using Ecommerce.Infrastructure.Store;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure.Identity;
@@ -42,6 +44,17 @@ public static class DependencyInjection
         services.AddSingleton<IMembershipLookup, CachedMembershipLookup>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserAdministration, UserAdministration>();
+
+        services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.Section));
+        if (string.Equals(configuration[$"{StorageOptions.Section}:Provider"], "memory", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<InMemoryFileStorage>();
+            services.AddSingleton<IFileStorage>(sp => sp.GetRequiredService<InMemoryFileStorage>());
+        }
+        else
+        {
+            services.AddSingleton<IFileStorage, S3FileStorage>();
+        }
 
         services.Configure<PlatformOptions>(configuration.GetSection(PlatformOptions.Section));
         services.AddScoped<ITenantProvisioning, TenantProvisioning>();
