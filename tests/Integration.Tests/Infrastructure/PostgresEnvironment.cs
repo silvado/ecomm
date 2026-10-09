@@ -104,6 +104,25 @@ public sealed class PostgresEnvironment : IAsyncDisposable
         await DatabaseMigrator.RunAsync(migrationHost);
     }
 
+    /// <summary>Host com o papel de migração (como o comando do migrador): importação de veículos e replicação.</summary>
+    public IHost MigratorHost()
+    {
+        var config = new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:Platform"] = Migrator(PlatformDatabase),
+            ["ConnectionStrings:Tenants"] = Migrator(TenantsDatabase),
+        };
+        return BuildHost(config, Migrator(TenantsDatabase));
+    }
+
+    /// <summary>Importa uma planilha de veículos (texto CSV) e replica para ref.*.</summary>
+    public async Task<Ecommerce.Infrastructure.Vehicles.VehicleImportReport> ImportVehiclesAsync(string csv)
+    {
+        using var host = MigratorHost();
+        await using var scope = host.Services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<Ecommerce.Infrastructure.Vehicles.VehicleImporter>().ImportAsync(new StringReader(csv));
+    }
+
     /// <summary>Host genérico com infraestrutura + Wolverine (sem handlers além dos do assembly de testes).</summary>
     public static IHost BuildHost(
         Dictionary<string, string?> configuration,

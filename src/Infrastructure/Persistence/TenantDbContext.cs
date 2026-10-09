@@ -4,6 +4,8 @@ using Ecommerce.Domain.Catalog;
 using Ecommerce.Domain.Common;
 using Ecommerce.Domain.Inventory;
 using Ecommerce.Domain.Store;
+using Ecommerce.Domain.Vehicles;
+using Ecommerce.Infrastructure.Platform;
 using Ecommerce.Domain.Vault;
 using Ecommerce.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +20,12 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<Part> Parts => Set<Part>();
     public DbSet<PartOemCode> PartOemCodes => Set<PartOemCode>();
     public DbSet<PartPhoto> PartPhotos => Set<PartPhoto>();
+    public DbSet<PartCompatibility> PartCompatibilities => Set<PartCompatibility>();
+
+    /// <summary>Réplica somente leitura (schema ref) da tabela de veículos da plataforma.</summary>
+    public DbSet<VehicleBrand> VehicleBrands => Set<VehicleBrand>();
+    public DbSet<VehicleModel> VehicleModels => Set<VehicleModel>();
+    public DbSet<VehicleVersion> VehicleVersions => Set<VehicleVersion>();
     public DbSet<Stock> Stocks => Set<Stock>();
     public DbSet<StockReservation> StockReservations => Set<StockReservation>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
@@ -43,6 +51,7 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TenantDbContext).Assembly);
+        VehicleMapping.Configure(modelBuilder, VehicleMapping.RefSchema);
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {

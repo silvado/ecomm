@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -24,6 +24,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Infrastructure\Ecommerce.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Api\Ecommerce.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\deploy\veiculos\amostra.csv" Link="veiculos-amostra.csv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

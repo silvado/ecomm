@@ -1,5 +1,6 @@
 using Ecommerce.Domain.Identity;
 using Ecommerce.Domain.Platform;
+using Ecommerce.Domain.Vehicles;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ecommerce.Infrastructure.Platform;
@@ -18,6 +19,9 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<VehicleBrand> VehicleBrands => Set<VehicleBrand>();
+    public DbSet<VehicleModel> VehicleModels => Set<VehicleModel>();
+    public DbSet<VehicleVersion> VehicleVersions => Set<VehicleVersion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -87,6 +91,9 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             b.HasOne<Tenant>().WithMany().HasForeignKey(m => m.TenantId).OnDelete(DeleteBehavior.Cascade);
             b.HasOne<UserAccount>().WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Cascade);
         });
+
+        // Fonte da tabela de veículos (RF09 CA2); replicada para ref.* em cada banco de lojas.
+        VehicleMapping.Configure(modelBuilder, schema: null);
 
         modelBuilder.Entity<RefreshToken>(b =>
         {

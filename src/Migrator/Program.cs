@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Wolverine;
 
 // Migrador (passo de deploy): conecta como app_migrator via ConnectionStrings__Platform/ConnectionStrings__Tenants.
-// Com "criar-loja ..." vira a ferramenta de criar lojas no servidor (sem migrar).
+// Com "criar-loja ..." ou "importar-veiculos ..." vira ferramenta de operação no servidor (sem migrar).
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.UseWolverine(opts => opts.ConfigureMessaging(builder.Configuration.GetConnectionString("Tenants")!, buildStorage: true));
@@ -17,6 +17,8 @@ using var host = builder.Build();
 
 if (args.Length > 0 && args[0] == CreateStoreCommand.Name)
     return await CreateStoreCommand.RunAsync(host, args[1..], Console.Out);
+if (args.Length > 0 && args[0] == ImportVehiclesCommand.Name)
+    return await ImportVehiclesCommand.RunAsync(host, args[1..], Console.Out);
 
 await DatabaseMigrator.RunAsync(host);
 await DevSeed.RunAsync(host);
