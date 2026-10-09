@@ -18,6 +18,8 @@ export interface PublicStore {
   name: string;
   theme: StoreTheme;
   texts: StoreTexts;
+  /** Relativo ao domínio da loja; muda a cada troca de logo. */
+  logoUrl: string | null;
 }
 
 /** Resultado de resolver a loja pelo Host (RF04): aberta, inexistente, suspensa ou API fora do ar. */

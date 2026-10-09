@@ -10,6 +10,7 @@ const store: PublicStore = {
   name: 'Peças do João',
   theme: { primaryColor: '#B42318', onPrimaryColor: '#FFFFFF', backgroundColor: '#FFFFFF', textColor: '#101828' },
   texts: { about: 'Desde 1998.', returnPolicy: '7 dias.', footer: 'Rua A, 1' },
+  logoUrl: null,
 };
 
 function render(state: StoreState, response: ResponseInit = {}) {
@@ -35,6 +36,14 @@ describe('App (loja)', () => {
     expect(root.style.getPropertyValue('--color-on-primary')).toBe('#FFFFFF');
     expect(page.querySelector('header')?.textContent).toContain('Peças do João');
     expect(page.querySelector('footer')?.textContent).toContain('Rua A, 1');
+  });
+
+  it('com logo, o cabeçalho mostra a imagem com o nome como texto alternativo', () => {
+    const page = render({ kind: 'open', store: { ...store, logoUrl: '/api/loja/logo/abc' } });
+
+    const img = page.querySelector<HTMLImageElement>('header img')!;
+    expect(img.getAttribute('src')).toBe('/api/loja/logo/abc');
+    expect(img.alt).toBe('Peças do João');
   });
 
   it('loja suspensa responde 503 com aviso', () => {

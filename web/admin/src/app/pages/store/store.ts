@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { problemTitle } from '../../core/auth';
@@ -6,6 +6,9 @@ import { contrastRatio, isHexColor, MIN_COMPONENT_CONTRAST, MIN_TEXT_CONTRAST, r
 import { StoreApi, StoreProfile } from './store.api';
 
 const hex = Validators.pattern(/^#[0-9a-fA-F]{6}$/);
+
+/** Mesmo limite da API (LogoImage.MaxBytes): evita enviar à toa um arquivo que será recusado. */
+const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 
 @Component({
   selector: 'app-store',
@@ -19,6 +22,28 @@ const hex = Validators.pattern(/^#[0-9a-fA-F]{6}$/);
           Razão social e CNPJ não mudam por aqui.
         </p>
       }
+
+      <section class="logo">
+        <h2>Logo</h2>
+        <div class="logo-row">
+          @if (logoUrl(); as url) {
+            <img [src]="url" alt="Logo atual" class="logo-preview" />
+          } @else {
+            <span class="muted">Sem logo: a loja mostra o nome no cabeçalho.</span>
+          }
+          <label class="button-like">
+            {{ logoUrl() ? 'Trocar logo' : 'Enviar logo' }}
+            <input type="file" accept="image/png,image/jpeg,image/webp" (change)="uploadLogo($event)" [disabled]="busy()" hidden />
+          </label>
+          @if (logoUrl()) {
+            <button type="button" class="link danger" (click)="removeLogo()" [disabled]="busy()">Remover</button>
+          }
+        </div>
+        <small>PNG, JPG ou WebP, até 2 MB.</small>
+        @if (logoError()) {
+          <p class="error" role="alert">{{ logoError() }}</p>
+        }
+      </section>
 
       <form [formGroup]="form" (ngSubmit)="save()">
         <label>
@@ -75,7 +100,7 @@ const hex = Validators.pattern(/^#[0-9a-fA-F]{6}$/);
     </main>
   `,
 })
-export class StorePage implements OnInit {
+export class StorePage implements OnInit, OnDestroy {
   private readonly api = inject(StoreApi);
 
   protected readonly colorFields = [
@@ -125,12 +150,69 @@ export class StorePage implements OnInit {
     return warnings;
   });
 
+  protected readonly logoUrl = signal<string | null>(null);
+  protected readonly logoError = signal<string | null>(null);
+
   async ngOnInit(): Promise<void> {
     try {
       this.fill(await this.api.get());
     } catch (error) {
       this.error.set(problemTitle(error));
     }
+  }
+
+  ngOnDestroy(): void {
+    this.setLogoUrl(null);
+  }
+
+  async uploadLogo(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    this.logoError.set(null);
+    if (file.size > LOGO_MAX_BYTES) {
+      this.logoError.set('O logo pode ter no máximo 2 MB.');
+      return;
+    }
+    await this.runLogo(() => this.api.uploadLogo(file));
+  }
+
+  async removeLogo(): Promise<void> {
+    if (!confirm('Remover o logo? A loja volta a mostrar o nome no cabeçalho.')) return;
+    await this.runLogo(() => this.api.removeLogo());
+  }
+
+  private async runLogo(action: () => Promise<StoreProfile>): Promise<void> {
+    this.busy.set(true);
+    this.logoError.set(null);
+    try {
+      const profile = await action();
+      this.profile.set(profile);
+      await this.loadLogo(profile);
+    } catch (error) {
+      this.logoError.set(problemTitle(error));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  private async loadLogo(profile: StoreProfile): Promise<void> {
+    if (!profile.logoId) {
+      this.setLogoUrl(null);
+      return;
+    }
+    try {
+      this.setLogoUrl(URL.createObjectURL(await this.api.logo()));
+    } catch {
+      this.setLogoUrl(null);
+    }
+  }
+
+  private setLogoUrl(url: string | null): void {
+    const previous = this.logoUrl();
+    if (previous) URL.revokeObjectURL(previous);
+    this.logoUrl.set(url);
   }
 
   async save(): Promise<void> {
@@ -151,6 +233,7 @@ export class StorePage implements OnInit {
 
   private fill(profile: StoreProfile): void {
     this.profile.set(profile);
+    void this.loadLogo(profile);
     this.form.reset({ tradeName: profile.tradeName, ...profile.theme, ...profile.texts });
   }
 }

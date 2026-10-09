@@ -12,6 +12,7 @@ export interface StoreProfile {
   theme: { primaryColor: string; onPrimaryColor: string; backgroundColor: string; textColor: string };
   texts: { about: string; returnPolicy: string; footer: string };
   warnings: ContrastWarning[];
+  logoId: string | null;
 }
 
 export interface StoreProfileUpdate {
@@ -35,5 +36,19 @@ export class StoreApi {
 
   update(update: StoreProfileUpdate): Promise<StoreProfile> {
     return firstValueFrom(this.http.put<StoreProfile>('/api/painel/loja', update));
+  }
+
+  /** Envia os bytes da imagem como corpo (a API detecta o formato pelo conteúdo). */
+  uploadLogo(file: Blob): Promise<StoreProfile> {
+    return firstValueFrom(this.http.put<StoreProfile>('/api/painel/loja/logo', file));
+  }
+
+  removeLogo(): Promise<StoreProfile> {
+    return firstValueFrom(this.http.delete<StoreProfile>('/api/painel/loja/logo'));
+  }
+
+  /** Prévia do logo atual (a URL pública só responde no domínio da loja). */
+  logo(): Promise<Blob> {
+    return firstValueFrom(this.http.get('/api/painel/loja/logo', { responseType: 'blob' }));
   }
 }

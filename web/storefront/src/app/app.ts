@@ -21,7 +21,13 @@ import { StoreContext } from './store';
           [style.--color-text]="ctx.store!.theme.textColor"
         >
           <header>
-            <a routerLink="/" class="brand">{{ ctx.store!.name }}</a>
+            <a routerLink="/" class="brand">
+              @if (ctx.store!.logoUrl) {
+                <img [src]="ctx.store!.logoUrl" [alt]="ctx.store!.name" height="48" />
+              } @else {
+                {{ ctx.store!.name }}
+              }
+            </a>
           </header>
           <main><router-outlet /></main>
           <footer>

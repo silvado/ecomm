@@ -258,3 +258,35 @@ fieldset.colors {
     margin: 0.75rem 1rem;
   }
 }
+.logo {
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin-top: 0.5rem;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .logo-preview {
+    max-height: 64px;
+    max-width: 240px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.25rem;
+    background: #fff;
+  }
+}
+
+.button-like {
+  display: inline-block;
+  cursor: pointer;
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+}
