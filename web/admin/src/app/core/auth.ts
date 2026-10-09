@@ -9,7 +9,8 @@ export type Permission =
   | 'vaultManage'
   | 'planManage'
   | 'usersManage'
-  | 'dataExport';
+  | 'dataExport'
+  | 'storeManage';
 
 export type Role = 'owner' | 'operator';
 
