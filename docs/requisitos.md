@@ -66,6 +66,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA2: a tabela de veículos é **da plataforma** (compartilhada, sem `tenant_id`), mantida pelo superadmin e/ou importada da árvore do ML.
 - CA3: busca da loja por veículo retorna só peças compatíveis com o veículo escolhido.
 - CA4: na publicação no ML, as compatibilidades criadas pelo vendedor são enviadas pela API de compatibilidades (ver [Fontes](#fontes)).
+- **HIPÓTESE (Q23, Q24):** tabela de veículos por planilha (fonte completa a definir); compatibilidade com anos opcionais dentro da versão; até 300 por peça; versão que sai da planilha é descontinuada (compatibilidades existentes continuam valendo).
 
 ### RF10 — Rastreabilidade de peça usada · E1
 - CA1: peça usada tem: origem (veículo doador: placa/chassi parcial, Renavam, certidão de baixa), NF de entrada, e campos extras configuráveis por tenant.
@@ -276,6 +277,8 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q20 | Quem cria lojas antes do painel de superadmin (E4)? A loja nasce ativa? Quem pode mudar CNPJ/razão social? | Comando no servidor (`migrator criar-loja`), sem superadmin web (evita MFA antes do E4); loja nasce ativa; CNPJ e razão social só mudam por suporte. | RF01, RF02, RF07 |
 | Q21 | Logo em SVG no E1? | Não: só PNG/JPG/WebP até 2 MB. SVG exige sanitização dedicada e entra depois. | RF01 |
 | Q22 | Regras do cadastro de peça: código interno editável? Exclusão de peça? Tamanho do título? | Código em maiúsculas, fixo após o cadastro; sem exclusão (só inativar, preservando histórico); título até 120 caracteres; quantidade do formulário = ajuste de estoque, nunca abaixo do reservado. | RF08 |
+| Q23 | Fonte da tabela completa de veículos (marcas, modelos, motorizações, anos)? | Planilha CSV importada pelo comando `migrator importar-veiculos`; hoje só a amostra de dev (`deploy/veiculos/amostra.csv`, anos aproximados). Fonte definitiva a decidir: compra/licença de base ou árvore do ML (E2). | RF09 |
+| Q24 | Limite de veículos compatíveis por peça? | 300 por peça (evita "peça universal" que polui a busca). | RF09 |
 
 ## Fontes
 

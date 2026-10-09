@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import type { CompatibilityView } from './vehicles.api';
 
 export type PartCondition = 'new' | 'used' | 'refurbished';
 export type PartStatus = 'draft' | 'active' | 'inactive';
@@ -38,6 +39,7 @@ export interface PartView extends PartSummary {
   oemCodes: string[];
   createdAt: string;
   photos: PhotoView[];
+  compatibilities: CompatibilityView[];
 }
 
 export interface PartPage {
@@ -77,8 +79,11 @@ export class PartsApi {
   private readonly http = inject(HttpClient);
   private readonly base = '/api/painel/pecas';
 
-  search(search: string, status: PartStatus | '', page: number, pageSize = 25): Promise<PartPage> {
+  /** Veículo opcional: modelo (e ano) filtram pelas compatibilidades. */
+  search(search: string, status: PartStatus | '', page: number, pageSize = 25, vehicle?: { modelId: string; year: number | null }): Promise<PartPage> {
     let params = new HttpParams().set('pagina', page).set('tamanho', pageSize);
+    if (vehicle?.modelId) params = params.set('modelo', vehicle.modelId);
+    if (vehicle?.modelId && vehicle.year) params = params.set('ano', vehicle.year);
     if (search.trim()) params = params.set('busca', search.trim());
     if (status) params = params.set('situacao', status);
     return firstValueFrom(this.http.get<PartPage>(this.base, { params }));

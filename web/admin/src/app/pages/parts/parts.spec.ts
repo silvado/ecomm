@@ -44,11 +44,13 @@ describe('PartsListPage', () => {
     const fixture = TestBed.createComponent(PartsListPage);
     fixture.detectChanges();
 
-    const request = TestBed.inject(HttpTestingController).expectOne((r) => r.url === '/api/painel/pecas');
+    const backend = TestBed.inject(HttpTestingController);
+    const request = backend.expectOne((r) => r.url === '/api/painel/pecas');
     expect(request.request.params.get('pagina')).toBe('1');
     expect(request.request.params.has('busca')).toBe(false);
     request.flush(page);
     await fixture.whenStable();
+    await vi.waitFor(() => backend.expectOne('/api/painel/veiculos/marcas').flush([]));
     fixture.detectChanges();
 
     const row = (fixture.nativeElement as HTMLElement).querySelector('tbody tr')!.textContent!;

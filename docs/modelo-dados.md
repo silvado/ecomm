@@ -11,7 +11,7 @@ Base: [ADR-0001](adr/0001-isolamento-multi-tenant.md). Nomes físicos em `snake_
 
 Um tenant grande pode ter seu próprio banco `lojas_<slug>` (RNF08): `tenant.database_key` aponta para a conexão. Por isso **não há chave estrangeira entre os bancos**; referências cruzadas são ids validados pela aplicação.
 
-Tabelas de referência globais (veículos, categorias de referência) são **replicadas** do banco `plataforma` para o schema `ref` de cada banco `lojas` por job de sincronização — assim `part_compatibility` pode ter FK local para `ref.vehicle_version`.
+Tabelas de referência globais (veículos, categorias de referência) são **replicadas** do banco `plataforma` para o schema `ref` de cada banco `lojas` — hoje pela própria importação (`migrator importar-veiculos`, mesmos ids; `app_user` só tem SELECT em `ref`) — assim `part_compatibility` pode ter FK local para `ref.vehicle_version`.
 
 ## Banco `plataforma`
 
