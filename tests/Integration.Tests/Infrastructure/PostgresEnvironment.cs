@@ -26,7 +26,9 @@ public sealed class PostgresEnvironment : IAsyncDisposable
     private const string MigratorPassword = "migrator-test";
     private const string AppPassword = "app-test";
 
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17-alpine").Build();
+    // CI usa um espelho fora do Docker Hub (limite de pulls anônimos por IP do runner).
+    private readonly PostgreSqlContainer _container =
+        new PostgreSqlBuilder(Environment.GetEnvironmentVariable("TEST_POSTGRES_IMAGE") ?? "postgres:17-alpine").Build();
 
     private PostgresEnvironment() { }
 

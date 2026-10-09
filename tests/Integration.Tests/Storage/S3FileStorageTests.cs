@@ -21,7 +21,7 @@ public sealed class SeaweedFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _container = new ContainerBuilder("chrislusf/seaweedfs:4.47")
+        _container = new ContainerBuilder(Environment.GetEnvironmentVariable("TEST_SEAWEEDFS_IMAGE") ?? "chrislusf/seaweedfs:4.47")
             .WithEnvironment("AWS_ACCESS_KEY_ID", AccessKey)
             .WithEnvironment("AWS_SECRET_ACCESS_KEY", SecretKey)
             .WithEnvironment("S3_BUCKET", "fotos,documentos")

@@ -22,19 +22,39 @@ jobs:
 
   dotnet:
     runs-on: ubuntu-latest   # Docker disponível para Testcontainers
+    env:
+      # O Docker Hub limita pulls anônimos por IP, e o IP do runner é compartilhado: imagens vêm de fora dele ou do cache.
+      TEST_POSTGRES_IMAGE: public.ecr.aws/docker/library/postgres:17-alpine
+      TEST_SEAWEEDFS_IMAGE: chrislusf/seaweedfs:4.47
+      TESTCONTAINERS_RYUK_DISABLED: 'true'   # runner descartável: não precisa do container de limpeza
+      HAS_DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
         with: { dotnet-version: '10.0.x' }
       - run: dotnet restore
       - run: dotnet build --no-restore -c Release
-      # As classes de teste sobem containers em paralelo; sem a imagem local, cada uma dispara o próprio pull e o
-      # Docker Hub corta por limite de requisições anônimas. Baixa uma vez só, com nova tentativa.
+      # Opcional: com DOCKERHUB_USERNAME/DOCKERHUB_TOKEN nos secrets do repositório, os pulls do Docker Hub são autenticados.
+      - if: env.HAS_DOCKERHUB_TOKEN == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # O SeaweedFS só é publicado no Docker Hub: depois do primeiro pull, fica no cache do Actions.
+      - uses: actions/cache@v4
+        with:
+          path: ~/docker-images
+          key: docker-${{ env.TEST_SEAWEEDFS_IMAGE }}
+      # Baixa cada imagem uma vez só, antes dos testes (que sobem containers em paralelo).
       - name: Imagens dos testes de integração
         run: |
-          for image in postgres:17-alpine testcontainers/ryuk:0.14.0 chrislusf/seaweedfs:4.47; do
-            for attempt in 1 2 3; do docker pull -q "$image" && break; sleep $((attempt * 20)); done
-          done
+          mkdir -p ~/docker-images
+          if [ -f ~/docker-images/seaweedfs.tar ]; then docker load -q -i ~/docker-images/seaweedfs.tar
+          else
+            for attempt in 1 2 3; do docker pull -q "$TEST_SEAWEEDFS_IMAGE" && break; sleep $((attempt * 20)); done
+            docker save -o ~/docker-images/seaweedfs.tar "$TEST_SEAWEEDFS_IMAGE"
+          fi
+          for attempt in 1 2 3; do docker pull -q "$TEST_POSTGRES_IMAGE" && break; sleep $((attempt * 20)); done
       - run: dotnet test --no-build -c Release --logger trx --results-directory TestResults
       - uses: actions/upload-artifact@v5
         if: always()
