@@ -28,6 +28,13 @@ jobs:
         with: { dotnet-version: '10.0.x' }
       - run: dotnet restore
       - run: dotnet build --no-restore -c Release
+      # As classes de teste sobem containers em paralelo; sem a imagem local, cada uma dispara o próprio pull e o
+      # Docker Hub corta por limite de requisições anônimas. Baixa uma vez só, com nova tentativa.
+      - name: Imagens dos testes de integração
+        run: |
+          for image in postgres:17-alpine testcontainers/ryuk:0.14.0 chrislusf/seaweedfs:4.47; do
+            for attempt in 1 2 3; do docker pull -q "$image" && break; sleep $((attempt * 20)); done
+          done
       - run: dotnet test --no-build -c Release --logger trx --results-directory TestResults
       - uses: actions/upload-artifact@v5
         if: always()
