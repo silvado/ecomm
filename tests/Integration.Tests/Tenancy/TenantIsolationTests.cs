@@ -1,3 +1,4 @@
+using Ecommerce.Integration.Tests.Infrastructure;
 using Ecommerce.Domain.Catalog;
 using Ecommerce.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -84,7 +85,7 @@ public sealed class TenantIsolationTests(TenantDatabaseFixture db) : IClassFixtu
     public async Task SaveChanges_recusa_entidade_de_outro_tenant()
     {
         await using var context = db.CreateAppContext(db.TenantA);
-        context.Parts.Add(new Part(db.TenantB, "X-2", "intruso", 1m));
+        context.Parts.Add(TestParts.New(db.TenantB, "X-2", "intruso", 1m));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => context.SaveChangesAsync());
     }

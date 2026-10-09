@@ -16,6 +16,7 @@ namespace Ecommerce.Infrastructure.Persistence;
 public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, ITenantContext tenant) : DbContext(options)
 {
     public DbSet<Part> Parts => Set<Part>();
+    public DbSet<PartOemCode> PartOemCodes => Set<PartOemCode>();
     public DbSet<Stock> Stocks => Set<Stock>();
     public DbSet<StockReservation> StockReservations => Set<StockReservation>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();

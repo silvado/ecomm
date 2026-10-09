@@ -43,7 +43,7 @@ public sealed class InventoryFixture : IAsyncLifetime
         await using var scope = Host.Services.CreateAsyncScope();
         scope.ServiceProvider.GetRequiredService<TenantScope>().Set(tenantId);
         var db = scope.ServiceProvider.GetRequiredService<TenantDbContext>();
-        var part = new Part(tenantId, $"P-{Guid.CreateVersion7():N}", "Peça de teste", 100m);
+        var part = TestParts.New(tenantId, $"P-{Guid.CreateVersion7():N}", "Peça de teste");
         db.Parts.Add(part);
         db.Stocks.Add(new Stock(tenantId, part.Id, onHand));
         await db.SaveChangesAsync();

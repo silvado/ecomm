@@ -59,6 +59,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA2: código interno é único por tenant.
 - CA3: fotos são convertidas para WebP em 3 tamanhos e guardadas no storage com caminho prefixado pelo tenant.
 - CA4: peça sem dimensões/peso não pode ser publicada em canal que exija frete calculado.
+- **HIPÓTESE (Q22):** código interno em maiúsculas e fixo após o cadastro; título até 120 caracteres (o anúncio do ML terá limite próprio); OEM guardado só com letras e dígitos; quantidade editada no formulário vira ajuste de estoque (nunca abaixo do reservado); peça não é excluída, só inativada.
 
 ### RF09 — Compatibilidade por veículo · E1 (loja) / E2 (ML)
 - CA1: uma peça tem 0..n compatibilidades (marca, modelo, ano inicial–final, motorização).
@@ -274,6 +275,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q19 | Como o lojista recupera a senha esquecida? Não há provedor de e-mail ainda. | O Dono cadastra usuários com senha provisória (troca obrigatória no primeiro acesso) e pode removê-los e cadastrá-los de novo. Recuperação por e-mail entra quando houver provedor (RF33/E4). | RF07 |
 | Q20 | Quem cria lojas antes do painel de superadmin (E4)? A loja nasce ativa? Quem pode mudar CNPJ/razão social? | Comando no servidor (`migrator criar-loja`), sem superadmin web (evita MFA antes do E4); loja nasce ativa; CNPJ e razão social só mudam por suporte. | RF01, RF02, RF07 |
 | Q21 | Logo em SVG no E1? | Não: só PNG/JPG/WebP até 2 MB. SVG exige sanitização dedicada e entra depois. | RF01 |
+| Q22 | Regras do cadastro de peça: código interno editável? Exclusão de peça? Tamanho do título? | Código em maiúsculas, fixo após o cadastro; sem exclusão (só inativar, preservando histórico); título até 120 caracteres; quantidade do formulário = ajuste de estoque, nunca abaixo do reservado. | RF08 |
 
 ## Fontes
 

@@ -42,7 +42,7 @@ public sealed class TenantDatabaseFixture : IAsyncLifetime
     private async Task SeedAsync(Guid tenantId, string code, string title)
     {
         await using var context = CreateAppContext(tenantId);
-        context.Parts.Add(new Part(tenantId, code, title, 100m));
+        context.Parts.Add(TestParts.New(tenantId, code, title));
         await context.SaveChangesAsync();
     }
 }

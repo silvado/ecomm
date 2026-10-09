@@ -139,11 +139,11 @@ erDiagram
         text description
         string condition "new|used|refurbished"
         numeric price
-        int weight_g
+        int weight_g "embalagem; nulo = não informado"
         int length_cm
         int width_cm
         int height_cm
-        string status "draft|active|inactive"
+        string status "draft|active|inactive (sem exclusão)"
         jsonb fiscal "ncm, cfop, cst_csosn, origem"
         jsonb extra_attributes "atributos do ML etc."
         bool ai_generated_pending_review
@@ -186,7 +186,7 @@ erDiagram
     PART_OEM_CODE {
         uuid tenant_id "RLS"
         uuid part_id PK
-        string code PK
+        string code PK "só letras e dígitos, maiúsculo"
     }
     PART_COMPATIBILITY {
         uuid id PK

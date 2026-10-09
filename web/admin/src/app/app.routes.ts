@@ -5,6 +5,8 @@ import { ChangePasswordPage } from './pages/change-password/change-password';
 import { ChooseStorePage } from './pages/choose-store/choose-store';
 import { HomePage } from './pages/home/home';
 import { LoginPage } from './pages/login/login';
+import { PartFormPage } from './pages/parts/part-form';
+import { PartsListPage } from './pages/parts/parts-list';
 import { StorePage } from './pages/store/store';
 import { UsersPage } from './pages/users/users';
 
@@ -23,6 +25,9 @@ export const routes: Routes = [
     canActivate: [authGuard, passwordChangedGuard, tenantGuard],
     children: [
       { path: '', component: HomePage, title: 'Painel' },
+      { path: 'pecas', component: PartsListPage, canActivate: [permissionGuard('catalogManage')], title: 'Peças' },
+      { path: 'pecas/nova', component: PartFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Nova peça' },
+      { path: 'pecas/:id', component: PartFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Peça' },
       { path: 'loja', component: StorePage, canActivate: [permissionGuard('storeManage')], title: 'Dados da loja' },
       { path: 'usuarios', component: UsersPage, canActivate: [permissionGuard('usersManage')], title: 'Usuários' },
     ],
