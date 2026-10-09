@@ -47,7 +47,7 @@ public sealed class MessagingFixture : IAsyncLifetime
         await using var scope = Host.Services.CreateAsyncScope();
         scope.ServiceProvider.GetRequiredService<TenantScope>().Set(tenantId);
         var db = scope.ServiceProvider.GetRequiredService<TenantDbContext>();
-        var part = new Part(tenantId, code, "Peça " + code, 100m);
+        var part = TestParts.New(tenantId, code, "Peça " + code);
         db.Parts.Add(part);
         await db.SaveChangesAsync();
         return part.Id;

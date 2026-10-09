@@ -1,4 +1,6 @@
+using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Identity;
+using Ecommerce.Infrastructure.Catalog;
 using Ecommerce.Application.Storage;
 using Ecommerce.Application.Store;
 using Ecommerce.Infrastructure.Storage;
@@ -59,6 +61,7 @@ public static class DependencyInjection
         services.Configure<PlatformOptions>(configuration.GetSection(PlatformOptions.Section));
         services.AddScoped<ITenantProvisioning, TenantProvisioning>();
         services.AddScoped<IStoreProfileService, StoreProfileService>();
+        services.AddScoped<IPartQueries, PartQueries>();
 
         services.Configure<VaultOptions>(configuration.GetSection(VaultOptions.Section));
         services.AddScoped<SecretVault>();

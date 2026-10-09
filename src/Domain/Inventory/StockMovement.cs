@@ -10,6 +10,8 @@ public enum StockMovementReason
     SaleAfterExpiry,
     /// <summary>Venda sem reserva: balcão, Mercado Livre, OLX.</summary>
     DirectSale,
+    /// <summary>Saldo definido pelo lojista no cadastro ou na edição da peça (RF08).</summary>
+    Adjustment,
 }
 
 /// <summary>Histórico de alterações do saldo físico (<see cref="Stock.OnHand"/>).</summary>
@@ -17,8 +19,10 @@ public sealed class StockMovement : ITenantOwned
 {
     private StockMovement() { }
 
-    public StockMovement(Guid tenantId, Guid partId, int delta, StockMovementReason reason, string reference, Guid? reservationId, DateTimeOffset at)
+    public StockMovement(Guid tenantId, Guid partId, int delta, StockMovementReason reason, string reference, Guid? reservationId, DateTimeOffset at,
+        Guid? userId = null)
     {
+        UserId = userId;
         Id = Guid.CreateVersion7();
         TenantId = tenantId;
         PartId = partId;
@@ -36,5 +40,8 @@ public sealed class StockMovement : ITenantOwned
     public StockMovementReason Reason { get; private set; }
     public string Reference { get; private set; } = string.Empty;
     public Guid? ReservationId { get; private set; }
+
+    /// <summary>Quem fez o ajuste manual (nulo em movimentos automáticos: vendas, reservas).</summary>
+    public Guid? UserId { get; private set; }
     public DateTimeOffset At { get; private set; }
 }

@@ -25,6 +25,8 @@ public static class PanelEndpoints
             return TypedResults.Ok(new MeResponse(user.UserId, TenantAccessResponse.From(user.Access)));
         });
 
+        panel.MapPartEndpoints();
+
         var users = panel.MapGroup("/usuarios").RequirePermission(Permission.UsersManage);
 
         users.MapGet("/", async (HttpContext http, IUserAdministration admin, CancellationToken ct) =>
