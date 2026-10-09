@@ -1,4 +1,6 @@
 using Ecommerce.Application.Tenancy;
+using Ecommerce.Infrastructure.Platform;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,7 +29,19 @@ internal static partial class DevSeed
 
         if (result.Tenant is { } created) LogSeeded(logger, created.Host, created.OwnerId);
         else if (result.Error is not (CreateTenantError.SlugTaken or CreateTenantError.CnpjTaken)) LogSkipped(logger, result.Error!.Value);
+
+        // Tabela de veículos de amostra (RF09), só se ainda não houver nenhuma.
+        var platform = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
+        var sample = Path.Combine(AppContext.BaseDirectory, ImportVehiclesCommand.SampleFile);
+        if (!await platform.VehicleBrands.AnyAsync() && File.Exists(sample))
+        {
+            var report = await ImportVehiclesCommand.ImportAsync(host, sample);
+            LogVehicles(logger, report.VersionsCreated);
+        }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "DevSeed: {Versions} versões de veículo de amostra importadas.")]
+    private static partial void LogVehicles(ILogger logger, int versions);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "DevSeed: loja {Host} criada com o Dono {UserId}.")]
     private static partial void LogSeeded(ILogger logger, string host, Guid userId);

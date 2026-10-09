@@ -1,0 +1,38 @@
+marca;modelo;motorizacao;ano_inicial;ano_final
+# AMOSTRA PARA DESENVOLVIMENTO E TESTES — não usar em produção.
+# Modelos populares com faixas aproximadas; a base completa virá de fonte a definir (requisitos.md, Q23).
+Chevrolet;Celta;1.0 VHC-E Flex;2006;2015
+Chevrolet;Classic;1.0 VHC-E Flex;2010;2016
+Chevrolet;Onix;1.0 SPE/4 Flex;2013;2019
+Chevrolet;Onix;1.4 SPE/4 Flex;2013;2019
+Chevrolet;Onix;1.0 Turbo Flex;2020;
+Chevrolet;Prisma;1.4 SPE/4 Flex;2013;2019
+Chevrolet;S10;2.8 Turbo Diesel;2012;
+Fiat;Uno;1.0 Fire Flex (Mille);2004;2013
+Fiat;Uno;1.0 Evo Flex;2011;2021
+Fiat;Palio;1.0 Fire Flex;2004;2017
+Fiat;Siena;1.4 Fire Flex;2008;2016
+Fiat;Strada;1.4 Fire Flex;2008;2020
+Fiat;Strada;1.3 Firefly Flex;2021;
+Fiat;Argo;1.0 Firefly Flex;2018;
+Ford;Ka;1.0 Zetec Rocam Flex;2008;2013
+Ford;Ka;1.0 Ti-VCT Flex;2015;2021
+Ford;Fiesta;1.6 Zetec Rocam Flex;2008;2014
+Ford;Ranger;3.2 Duratorq Diesel;2013;2022
+Honda;Civic;1.8 i-VTEC Flex;2007;2011
+Honda;Fit;1.4 i-VTEC Flex;2009;2014
+Hyundai;HB20;1.0 Kappa Flex;2013;2019
+Hyundai;HB20;1.6 Gamma Flex;2013;2019
+Renault;Sandero;1.0 16V Hi-Flex;2008;2014
+Renault;Sandero;1.6 8V Hi-Flex;2008;2014
+Renault;Logan;1.6 8V Hi-Flex;2008;2013
+Toyota;Corolla;1.8 Dual VVT-i Flex;2009;2014
+Toyota;Corolla;2.0 Dual VVT-i Flex;2011;2014
+Toyota;Hilux;2.8 Turbo Diesel;2016;
+Volkswagen;Gol;1.0 8V Flex (G5);2009;2012
+Volkswagen;Gol;1.6 8V Flex (G5);2009;2012
+Volkswagen;Gol;1.0 8V Flex (G6);2013;2016
+Volkswagen;Fox;1.0 8V Flex;2004;2009
+Volkswagen;Fox;1.6 8V Flex;2004;2009
+Volkswagen;Voyage;1.6 8V Flex;2009;2012
+Volkswagen;Saveiro;1.6 8V Flex;2010;2016

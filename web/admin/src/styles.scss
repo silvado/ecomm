@@ -380,3 +380,26 @@ a.button-like {
 .thumb-cell {
   width: 48px;
 }
+.compatibilities {
+  margin-bottom: 1.5rem;
+
+  ul {
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+  }
+
+  .compat-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.6fr 0.6fr 0.6fr auto;
+    gap: 0.6rem;
+    align-items: end;
+  }
+}

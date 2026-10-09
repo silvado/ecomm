@@ -54,6 +54,7 @@ dotnet ef migrations add <Nome> --context PlatformDbContext --project src/Infras
 cp deploy/.env.example deploy/.env             # e troque as senhas
 docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
 docker compose -f deploy/docker-compose.yml --env-file deploy/.env run --rm migrator criar-loja --slug <slug> --cnpj <cnpj> --razao-social "<texto>" --nome "<nome>" --dono <e-mail>   # cria loja + Dono (senha provisória na saída)
+docker compose -f deploy/docker-compose.yml --env-file deploy/.env run --rm -v ./deploy/veiculos:/dados migrator importar-veiculos /dados/<planilha>.csv   # tabela de veículos (RF09); sem arquivo = amostra de dev
 node tools/backlog/generate.mjs                # regenera docs/backlog.md e .csv
 node tools/backlog/azure-sync.mjs --dry-run    # sincroniza com Azure Boards (requer AZURE_DEVOPS_EXT_PAT)
 ```

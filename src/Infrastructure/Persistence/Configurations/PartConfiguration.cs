@@ -1,4 +1,5 @@
 using Ecommerce.Domain.Catalog;
+using Ecommerce.Domain.Vehicles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,6 +24,8 @@ internal sealed class PartConfiguration : IEntityTypeConfiguration<Part>
         builder.Navigation(p => p.OemCodes).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.HasMany(p => p.Photos).WithOne().HasForeignKey(f => f.PartId).OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(p => p.Photos).HasField("_photos").UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.HasMany(p => p.Compatibilities).WithOne().HasForeignKey(c => c.PartId).OnDelete(DeleteBehavior.Cascade);
+        builder.Navigation(p => p.Compatibilities).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("ck_parts_price_positive", "price > 0");
@@ -42,6 +45,24 @@ internal sealed class PartPhotoConfiguration : IEntityTypeConfiguration<PartPhot
         builder.Property(p => p.OriginalContentType).HasMaxLength(20).IsRequired();
         builder.HasIndex(p => new { p.TenantId, p.PartId, p.Position });
         builder.ToTable(t => t.HasCheckConstraint("ck_part_photos_position", $"position >= 0 AND position < {Part.MaxPhotos}"));
+    }
+}
+
+internal sealed class PartCompatibilityConfiguration : IEntityTypeConfiguration<PartCompatibility>
+{
+    public void Configure(EntityTypeBuilder<PartCompatibility> builder)
+    {
+        builder.HasKey(c => c.Id);
+        builder.Property(c => c.Id).ValueGeneratedNever();
+        builder.Property(c => c.Source).HasConversion<string>().HasMaxLength(20);
+        // Chave estrangeira local para a réplica ref.vehicle_versions; versão em uso não pode sumir.
+        builder.HasOne<VehicleVersion>().WithMany().HasForeignKey(c => c.VehicleVersionId).OnDelete(DeleteBehavior.Restrict);
+        // A mesma versão com a mesma faixa não se repete na peça (anos nulos = faixa inteira contam como iguais).
+        builder.HasIndex(c => new { c.PartId, c.VehicleVersionId, c.YearFrom, c.YearTo }).IsUnique().AreNullsDistinct(false);
+        // Busca por veículo na loja: "peças desta loja para esta versão".
+        builder.HasIndex(c => new { c.TenantId, c.VehicleVersionId });
+        builder.ToTable(t => t.HasCheckConstraint("ck_part_compatibilities_years",
+            "(year_from IS NULL AND year_to IS NULL) OR (year_from IS NOT NULL AND year_to IS NOT NULL AND year_from <= year_to)"));
     }
 }
 

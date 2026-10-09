@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Infrastructure\Ecommerce.Infrastructure.csproj" />
@@ -10,5 +10,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Amostra de veículos só para desenvolvimento (importar-veiculos sem arquivo; semente de dev). -->
+    <None Include="..\..\deploy\veiculos\amostra.csv" Link="veiculos-amostra.csv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 
 </Project>

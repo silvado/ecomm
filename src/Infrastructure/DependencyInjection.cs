@@ -6,12 +6,14 @@ using Ecommerce.Application.Store;
 using Ecommerce.Infrastructure.Storage;
 using Ecommerce.Infrastructure.Store;
 using Ecommerce.Application.Tenancy;
+using Ecommerce.Application.Vehicles;
 using Ecommerce.Infrastructure.Identity;
 using Ecommerce.Application.Vault;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Infrastructure.Platform;
 using Ecommerce.Infrastructure.Tenancy;
 using Ecommerce.Infrastructure.Vault;
+using Ecommerce.Infrastructure.Vehicles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -63,6 +65,9 @@ public static class DependencyInjection
         services.AddScoped<IStoreProfileService, StoreProfileService>();
         services.AddScoped<IPartQueries, PartQueries>();
         services.AddScoped<IPartPhotos, PartPhotoService>();
+        services.AddScoped<VehicleImporter>();
+        services.AddScoped<IVehicleCatalog, VehicleCatalog>();
+        services.AddScoped<IPartCompatibilities, PartCompatibilityService>();
 
         services.Configure<VaultOptions>(configuration.GetSection(VaultOptions.Section));
         services.AddScoped<SecretVault>();

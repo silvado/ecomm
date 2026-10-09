@@ -126,6 +126,11 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public Task SqlAsync(FormattableString sql) => WithPlatformAsync(db => db.Database.ExecuteSqlAsync(sql));
 
+    /// <summary>Importa veículos como o comando do migrador (papel de migração) e replica para ref.*.</summary>
+    public Task<Ecommerce.Infrastructure.Vehicles.VehicleImportReport> ImportVehiclesAsync(string csv) => _env.ImportVehiclesAsync(csv);
+
+    public string TenantsConnectionString => _env.TenantsConnectionString;
+
     private sealed class FakeRemoteIpStartupFilter : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>

@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { problemTitle } from '../../core/auth';
 import { CONDITION_LABELS, PartPage, PartsApi, PartStatus, STATUS_LABELS } from './parts.api';
 import { PhotoThumb } from './photo-thumb';
+import { VehicleOption, VehiclesApi } from './vehicles.api';
 
 @Component({
   selector: 'app-parts-list',
@@ -30,6 +31,21 @@ import { PhotoThumb } from './photo-thumb';
             <option [value]="s">{{ statusLabels[s] }}</option>
           }
         </select>
+      </div>
+      <div class="filters">
+        <select [(ngModel)]="brandId" (ngModelChange)="brandChanged()" aria-label="Marca do veículo">
+          <option value="">Qualquer veículo</option>
+          @for (b of brands(); track b.id) {
+            <option [value]="b.id">{{ b.name }}</option>
+          }
+        </select>
+        <select [(ngModel)]="modelId" (ngModelChange)="load(1)" [disabled]="!brandId" aria-label="Modelo do veículo">
+          <option value="">Todos os modelos</option>
+          @for (m of models(); track m.id) {
+            <option [value]="m.id">{{ m.name }}</option>
+          }
+        </select>
+        <input type="number" [(ngModel)]="year" (ngModelChange)="searchChanged()" [disabled]="!modelId" placeholder="Ano-modelo" aria-label="Ano-modelo" />
       </div>
 
       @if (error()) {
@@ -90,6 +106,7 @@ import { PhotoThumb } from './photo-thumb';
 })
 export class PartsListPage implements OnInit, OnDestroy {
   private readonly api = inject(PartsApi);
+  private readonly vehicles = inject(VehiclesApi);
   private debounce?: ReturnType<typeof setTimeout>;
 
   protected readonly statuses: PartStatus[] = ['draft', 'active', 'inactive'];
@@ -97,12 +114,29 @@ export class PartsListPage implements OnInit, OnDestroy {
   protected readonly conditionLabels = CONDITION_LABELS;
   protected search = '';
   protected status: PartStatus | '' = '';
+  protected brandId = '';
+  protected modelId = '';
+  protected year: number | null = null;
+  protected readonly brands = signal<VehicleOption[]>([]);
+  protected readonly models = signal<VehicleOption[]>([]);
   protected readonly page = signal<PartPage | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  ngOnInit(): Promise<void> {
-    return this.load(1);
+  async ngOnInit(): Promise<void> {
+    await this.load(1);
+    try {
+      this.brands.set(await this.vehicles.brands());
+    } catch {
+      // Sem tabela de veículos o filtro só fica vazio.
+    }
+  }
+
+  protected async brandChanged(): Promise<void> {
+    this.modelId = '';
+    this.year = null;
+    this.models.set(this.brandId ? await this.vehicles.models(this.brandId) : []);
+    await this.load(1);
   }
 
   ngOnDestroy(): void {
@@ -122,7 +156,7 @@ export class PartsListPage implements OnInit, OnDestroy {
     this.loading.set(true);
     this.error.set(null);
     try {
-      this.page.set(await this.api.search(this.search, this.status, pageNumber));
+      this.page.set(await this.api.search(this.search, this.status, pageNumber, 25, { modelId: this.modelId, year: this.year }));
     } catch (error) {
       this.error.set(problemTitle(error));
     } finally {

@@ -5,6 +5,7 @@ using Ecommerce.Api.Auth;
 using Ecommerce.Api.Internal;
 using Ecommerce.Api.Panel;
 using Ecommerce.Api.Tenancy;
+using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Store;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure;
@@ -73,6 +74,17 @@ var store = app.MapGroup("/api/loja").AddEndpointFilter<StoreTenantFilter>();
 // Nome, tema e textos: o storefront SSR desenha a loja com isto a cada página (RF01 CA3, ADR-0006).
 store.MapGet("/identidade", async (IStoreProfileService profiles, CancellationToken ct) => TypedResults.Ok(await profiles.GetPublicAsync(ct)));
 
+// Busca por veículo (RF09 CA3): só peças ativas da loja do Host compatíveis com o modelo/versão/ano.
+store.MapVehicleCatalog();
+store.MapGet("/pecas", async Task<Results<Ok<StorePartsPage>, ProblemHttpResult>> (
+    Guid? modelo, Guid? versao, int? ano, int? pagina, int? tamanho, IPartQueries queries, CancellationToken ct) =>
+{
+    if (VehicleEndpoints.VehicleFilterFrom(modelo, versao, ano) is not { } vehicle)
+        return TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: "Escolha o modelo do veículo.");
+    var (items, total) = await queries.SearchStoreAsync(vehicle, pagina ?? 1, tamanho ?? 24, ct);
+    return TypedResults.Ok(new StorePartsPage(items, total));
+});
+
 // Logo da loja (RF01 CA2): o id muda a cada troca, então a URL pode ficar em cache por um ano.
 store.MapGet("/logo/{logoId:guid}", async Task<Results<FileStreamHttpResult, NotFound>> (
     Guid logoId, HttpResponse response, IStoreProfileService profiles, CancellationToken ct) =>
@@ -94,6 +106,8 @@ internalApi.MapGet("/tls/ask", async (string domain, ITenantCatalog catalog, Can
 });
 
 app.Run();
+
+internal sealed record StorePartsPage(IReadOnlyList<StorePartSummary> Items, int Total);
 
 /// <summary>Exposto para os testes de integração (WebApplicationFactory).</summary>
 public partial class Program;

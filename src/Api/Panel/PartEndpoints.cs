@@ -31,7 +31,7 @@ public static class PartEndpoints
 
         // "situacao" no mesmo formato do JSON (draft, active, inactive), sem diferenciar maiúsculas.
         parts.MapGet("/", async Task<Results<Ok<PartPage>, ProblemHttpResult>> (
-            string? busca, string? situacao, int? pagina, int? tamanho, IPartQueries queries, CancellationToken ct) =>
+            string? busca, string? situacao, int? pagina, int? tamanho, Guid? modelo, Guid? versao, int? ano, IPartQueries queries, CancellationToken ct) =>
         {
             PartStatus? status = null;
             if (!string.IsNullOrWhiteSpace(situacao))
@@ -40,7 +40,8 @@ public static class PartEndpoints
                     return AuthEndpoints.Problem(StatusCodes.Status400BadRequest, "Situação inválida: use draft, active ou inactive.");
                 status = parsed;
             }
-            return TypedResults.Ok(await queries.SearchAsync(new PartSearch(busca, status, pagina ?? 1, tamanho ?? 25), ct));
+            var vehicle = VehicleEndpoints.VehicleFilterFrom(modelo, versao, ano);
+            return TypedResults.Ok(await queries.SearchAsync(new PartSearch(busca, status, pagina ?? 1, tamanho ?? 25, vehicle), ct));
         });
 
         parts.MapGet("/{id:guid}", async Task<Results<Ok<PartView>, NotFound>> (Guid id, IPartQueries queries, CancellationToken ct) =>

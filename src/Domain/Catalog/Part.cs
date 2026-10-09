@@ -49,8 +49,12 @@ public sealed class Part : ITenantOwned
     /// <summary>RF08 CA1: de 1 a 20 fotos para estar à venda.</summary>
     public const int MaxPhotos = 20;
 
+    /// <summary>Peça "universal" demais vira busca inútil; HIPÓTESE: 300 veículos por peça.</summary>
+    public const int MaxCompatibilities = 300;
+
     private readonly List<PartOemCode> _oemCodes = [];
     private readonly List<PartPhoto> _photos = [];
+    private readonly List<PartCompatibility> _compatibilities = [];
 
     private Part() { }
 
@@ -90,6 +94,43 @@ public sealed class Part : ITenantOwned
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
     public IReadOnlyCollection<PartOemCode> OemCodes => _oemCodes;
+
+    public IReadOnlyCollection<PartCompatibility> Compatibilities => _compatibilities;
+
+    /// <summary>
+    /// RF09 CA1. Anos opcionais restringem dentro da faixa da versão; a mesma versão com a mesma faixa não se repete.
+    /// Versão descontinuada não recebe compatibilidades novas.
+    /// </summary>
+    public PartCompatibility AddCompatibility(VehicleVersionRange version, int? yearFrom, int? yearTo, CompatibilitySource source, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+        if (version.Discontinued) throw new ArgumentException("Versão de veículo descontinuada.", nameof(version));
+        if ((yearFrom is null) != (yearTo is null)) throw new ArgumentException("Informe os dois anos ou nenhum.", nameof(yearFrom));
+        if (yearFrom is not null)
+        {
+            var versionEnd = version.YearTo ?? int.MaxValue;
+            if (yearFrom > yearTo || yearFrom < version.YearFrom || yearTo > versionEnd)
+                throw new ArgumentException(
+                    $"Os anos precisam estar dentro da versão ({version.YearFrom}–{(version.YearTo is { } end ? end.ToString(System.Globalization.CultureInfo.InvariantCulture) : "atual")}).", nameof(yearFrom));
+            if (yearFrom == version.YearFrom && yearTo == version.YearTo) (yearFrom, yearTo) = (null, null); // faixa inteira
+        }
+        if (_compatibilities.Any(c => c.VehicleVersionId == version.Id && c.YearFrom == yearFrom && c.YearTo == yearTo))
+            throw new InvalidOperationException("Esta compatibilidade já está cadastrada.");
+        if (_compatibilities.Count >= MaxCompatibilities)
+            throw new InvalidOperationException($"No máximo {MaxCompatibilities} compatibilidades por peça.");
+
+        var compatibility = new PartCompatibility(TenantId, Id, version.Id, yearFrom, yearTo, source, now);
+        _compatibilities.Add(compatibility);
+        UpdatedAt = now;
+        return compatibility;
+    }
+
+    public void RemoveCompatibility(Guid compatibilityId, DateTimeOffset now)
+    {
+        var compatibility = _compatibilities.SingleOrDefault(c => c.Id == compatibilityId) ?? throw new KeyNotFoundException("Compatibilidade não encontrada.");
+        _compatibilities.Remove(compatibility);
+        UpdatedAt = now;
+    }
 
     /// <summary>Em ordem de exibição (a primeira é a capa).</summary>
     public IReadOnlyList<PartPhoto> Photos => _photos.OrderBy(p => p.Position).ToList();
