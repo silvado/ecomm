@@ -1,4 +1,5 @@
 using Ecommerce.Infrastructure;
+using Ecommerce.Migrator;
 using Ecommerce.Infrastructure.Messaging;
 using Ecommerce.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
@@ -13,3 +14,4 @@ builder.UseWolverine(opts => opts.ConfigureMessaging(builder.Configuration.GetCo
 
 using var host = builder.Build();
 await DatabaseMigrator.RunAsync(host);
+await DevSeed.RunAsync(host);

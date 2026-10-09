@@ -1,5 +1,11 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using Ecommerce.Api.Auth;
 using Ecommerce.Api.Internal;
+using Ecommerce.Api.Panel;
 using Ecommerce.Api.Tenancy;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure;
 using Ecommerce.Infrastructure.Messaging;
@@ -14,6 +20,27 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks();
 builder.UseWolverine(opts => opts.ConfigureMessaging(builder.Configuration.GetConnectionString("Tenants")!));
 
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
+
+// Painel (RF07): JWT curto no corpo + renovação por cookie HttpOnly. Chave só por variável de ambiente.
+var authOptions = builder.Configuration.GetSection(AuthOptions.Section).Get<AuthOptions>() ?? new AuthOptions();
+builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.Section));
+builder.Services.AddSingleton<AccessTokens>();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
+{
+    o.MapInboundClaims = false;
+    o.TokenValidationParameters = AccessTokens.ValidationParameters(authOptions);
+});
+builder.Services.AddAuthorization();
+builder.Services.AddRateLimiter(o =>
+{
+    // HIPÓTESE: 10 tentativas de login por minuto por IP, além do bloqueio por conta (RF07 CA4).
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.AddPolicy(AuthEndpoints.LoginRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+});
+
 builder.Services.Configure<InternalNetworkOptions>(builder.Configuration.GetSection(InternalNetworkOptions.Section));
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -27,6 +54,9 @@ var app = builder.Build();
 
 app.UseInternalEndpointGuard();
 app.UseForwardedHeaders();
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -43,6 +73,9 @@ store.MapGet("/identidade", (HttpContext http) =>
     var tenant = http.GetStoreTenant();
     return TypedResults.Ok(new StoreIdentity(tenant.Slug, tenant.TradeName));
 });
+
+app.MapAuthEndpoints();
+app.MapPanelEndpoints();
 
 // Consultado pelo Caddy antes de emitir certificado on-demand (ADR-0004): só domínios verificados de lojas disponíveis.
 var internalApi = app.MapGroup(InternalEndpointGuard.PathPrefix).AddEndpointFilter<InternalNetworkFilter>().ExcludeFromDescription();

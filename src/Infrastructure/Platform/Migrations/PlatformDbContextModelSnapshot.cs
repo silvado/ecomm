@@ -22,6 +22,225 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Ecommerce.Domain.Identity.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_refresh_tokens");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_refresh_tokens_family_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_refresh_tokens_token_hash");
+
+                    b.HasIndex("UserId", "TenantId")
+                        .HasDatabaseName("ix_refresh_tokens_user_id_tenant_id");
+
+                    b.ToTable("refresh_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Identity.TenantMembership", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("role");
+
+                    b.HasKey("TenantId", "UserId")
+                        .HasName("pk_tenant_memberships");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_tenant_memberships_user_id");
+
+                    b.ToTable("tenant_memberships", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Identity.UserAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
+                    b.Property<int>("FailedLoginCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("failed_login_count");
+
+                    b.Property<DateTimeOffset?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until");
+
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("boolean")
+                        .HasColumnName("must_change_password");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("password_hash");
+
+                    b.HasKey("Id")
+                        .HasName("pk_user_accounts");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_accounts_email");
+
+                    b.ToTable("user_accounts", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Platform.Plan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_plans");
+
+                    b.HasAlternateKey("Code")
+                        .HasName("ak_plans_code");
+
+                    b.ToTable("plans", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0199c4a0-0000-7000-8000-000000000001"),
+                            Code = "essencial",
+                            Name = "Essencial"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199c4a0-0000-7000-8000-000000000002"),
+                            Code = "profissional",
+                            Name = "Profissional"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199c4a0-0000-7000-8000-000000000003"),
+                            Code = "completo",
+                            Name = "Completo"
+                        });
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Platform.PlanLimit", b =>
+                {
+                    b.Property<string>("PlanCode")
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("plan_code");
+
+                    b.Property<string>("Key")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("key");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("integer")
+                        .HasColumnName("value");
+
+                    b.HasKey("PlanCode", "Key")
+                        .HasName("pk_plan_limits");
+
+                    b.ToTable("plan_limits", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            PlanCode = "essencial",
+                            Key = "users",
+                            Value = 2
+                        },
+                        new
+                        {
+                            PlanCode = "profissional",
+                            Key = "users",
+                            Value = 5
+                        },
+                        new
+                        {
+                            PlanCode = "completo",
+                            Key = "users",
+                            Value = 10
+                        });
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Platform.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -51,6 +270,14 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("legal_name");
 
+                    b.Property<string>("PlanCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("essencial")
+                        .HasColumnName("plan_code");
+
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -75,6 +302,9 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                     b.HasIndex("Cnpj")
                         .IsUnique()
                         .HasDatabaseName("ix_tenants_cnpj");
+
+                    b.HasIndex("PlanCode")
+                        .HasDatabaseName("ix_tenants_plan_code");
 
                     b.HasIndex("Slug")
                         .IsUnique()
@@ -133,6 +363,55 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                     b.ToTable("tenant_domains", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Identity.RefreshToken", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_refresh_tokens_user_accounts_user_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Identity.TenantMembership", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Platform.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tenant_memberships_tenants_tenant_id");
+
+                    b.HasOne("Ecommerce.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tenant_memberships_user_accounts_user_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Platform.PlanLimit", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Platform.Plan", null)
+                        .WithMany("Limits")
+                        .HasForeignKey("PlanCode")
+                        .HasPrincipalKey("Code")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_plan_limits_plans_plan_code");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Platform.Tenant", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Platform.Plan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanCode")
+                        .HasPrincipalKey("Code")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_tenants_plans_plan_code");
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Platform.TenantDomain", b =>
                 {
                     b.HasOne("Ecommerce.Domain.Platform.Tenant", null)
@@ -141,6 +420,11 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_tenant_domains_tenants_tenant_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Platform.Plan", b =>
+                {
+                    b.Navigation("Limits");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Platform.Tenant", b =>

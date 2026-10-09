@@ -11,7 +11,7 @@ indent_size = 2
 indent_size = 4
 
 # Migrações são geradas pelo EF Core.
-[src/Infrastructure/Persistence/Migrations/*.cs]
+[src/Infrastructure/{Persistence,Platform}/Migrations/*.cs]
 generated_code = true
 
 # Testes usam nomes descritivos em português com sublinhados.

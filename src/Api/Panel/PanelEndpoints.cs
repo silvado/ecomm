@@ -1,0 +1,71 @@
+using Ecommerce.Api.Auth;
+using Ecommerce.Application.Identity;
+using Ecommerce.Application.Vault;
+using Ecommerce.Domain.Identity;
+using Microsoft.AspNetCore.Http.HttpResults;
+
+namespace Ecommerce.Api.Panel;
+
+public sealed record AddUserRequest(string Email, TenantRole Role, string? TemporaryPassword);
+public sealed record ChangeRoleRequest(TenantRole Role);
+public sealed record MeResponse(Guid UserId, TenantAccessResponse Tenant);
+
+/// <summary>Painel do lojista: rotas com tenant vindo do token e conferido no banco (<see cref="PanelTenantFilter"/>).</summary>
+public static class PanelEndpoints
+{
+    public static void MapPanelEndpoints(this IEndpointRouteBuilder app)
+    {
+        var panel = app.MapGroup("/api/painel").RequireAuthorization().AddEndpointFilter<PanelTenantFilter>();
+
+        panel.MapGet("/eu", (HttpContext http) =>
+        {
+            var user = http.GetPanelUser();
+            return TypedResults.Ok(new MeResponse(user.UserId, TenantAccessResponse.From(user.Access)));
+        });
+
+        var users = panel.MapGroup("/usuarios").RequirePermission(Permission.UsersManage);
+
+        users.MapGet("/", async (HttpContext http, IUserAdministration admin, CancellationToken ct) =>
+            TypedResults.Ok(await admin.ListAsync(http.GetPanelUser().Access.TenantId, ct)));
+
+        users.MapPost("/", async Task<Results<Created<StoreUser>, Ok<StoreUser>, ProblemHttpResult>> (
+            AddUserRequest request, HttpContext http, IUserAdministration admin, CancellationToken ct) =>
+        {
+            var tenantId = http.GetPanelUser().Access.TenantId;
+            var (outcome, user) = await admin.AddAsync(tenantId, request.Email ?? string.Empty, request.Role, request.TemporaryPassword ?? string.Empty, ct);
+            return outcome switch
+            {
+                AddUserOutcome.Created => TypedResults.Created($"/api/painel/usuarios/{user!.UserId}", user),
+                AddUserOutcome.LinkedExisting => TypedResults.Ok(user!),
+                AddUserOutcome.AlreadyMember => AuthEndpoints.Problem(StatusCodes.Status409Conflict, "Este e-mail já tem acesso à loja."),
+                AddUserOutcome.PlanLimitReached => AuthEndpoints.Problem(StatusCodes.Status409Conflict,
+                    "Limite de usuários do plano atingido. Remova um usuário ou mude de plano."),
+                AddUserOutcome.InvalidEmail => AuthEndpoints.Problem(StatusCodes.Status400BadRequest, "E-mail inválido."),
+                AddUserOutcome.InvalidPassword => AuthEndpoints.Problem(StatusCodes.Status400BadRequest,
+                    $"A senha provisória precisa ter de {PasswordPolicy.MinLength} a {PasswordPolicy.MaxLength} caracteres."),
+                _ => throw new InvalidOperationException(outcome.ToString()),
+            };
+        });
+
+        users.MapPut("/{userId:guid}", async (Guid userId, ChangeRoleRequest request, HttpContext http, IUserAdministration admin, CancellationToken ct) =>
+            Respond(await admin.ChangeRoleAsync(http.GetPanelUser().Access.TenantId, userId, request.Role, ct)));
+
+        users.MapDelete("/{userId:guid}", async (Guid userId, HttpContext http, IUserAdministration admin, CancellationToken ct) =>
+            Respond(await admin.RemoveAsync(http.GetPanelUser().Access.TenantId, userId, ct)));
+
+        users.MapPost("/{userId:guid}/desbloquear", async (Guid userId, HttpContext http, IUserAdministration admin, CancellationToken ct) =>
+            Respond(await admin.UnlockAsync(http.GetPanelUser().Access.TenantId, userId, ct)));
+
+        // RF06 CA3: só metadados (tipo, últimos 4 caracteres, validade).
+        panel.MapGet("/cofre", async (ISecretVault vault, CancellationToken ct) => TypedResults.Ok(await vault.ListAsync(ct)))
+            .RequirePermission(Permission.VaultManage);
+    }
+
+    private static Results<NoContent, ProblemHttpResult> Respond(UserChangeOutcome outcome) => outcome switch
+    {
+        UserChangeOutcome.Done => TypedResults.NoContent(),
+        UserChangeOutcome.NotFound => AuthEndpoints.Problem(StatusCodes.Status404NotFound, "Usuário não encontrado nesta loja."),
+        UserChangeOutcome.LastOwner => AuthEndpoints.Problem(StatusCodes.Status409Conflict, "A loja precisa de pelo menos um Dono."),
+        _ => throw new InvalidOperationException(outcome.ToString()),
+    };
+}
