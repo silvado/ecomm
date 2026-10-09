@@ -20,6 +20,9 @@ public sealed class Tenant
     /// <summary>Banco de dados de tenant compartilhado. Outros valores apontam para bancos dedicados (RNF08).</summary>
     public const string SharedDatabase = "default";
 
+    public const int LegalNameMaxLength = 200;
+    public const int TradeNameMaxLength = 120;
+
     private readonly List<TenantDomain> _domains = [];
 
     private Tenant() { }
@@ -46,8 +49,9 @@ public sealed class Tenant
         if (!TenantSlug.IsValid(slug)) throw new ArgumentException("Identificador da loja inválido.", nameof(slug));
         ArgumentNullException.ThrowIfNull(cnpj);
         ArgumentException.ThrowIfNullOrWhiteSpace(legalName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(tradeName);
         ArgumentException.ThrowIfNullOrWhiteSpace(platformDomain);
+        if (legalName.Trim().Length > LegalNameMaxLength)
+            throw new ArgumentException($"Razão social acima de {LegalNameMaxLength} caracteres.", nameof(legalName));
 
         var tenant = new Tenant
         {
@@ -55,10 +59,10 @@ public sealed class Tenant
             Slug = slug,
             Cnpj = cnpj,
             LegalName = legalName.Trim(),
-            TradeName = tradeName.Trim(),
             Status = TenantStatus.Onboarding,
             CreatedAt = now,
         };
+        tenant.Rename(tradeName);
         tenant._domains.Add(TenantDomain.PlatformSubdomain(tenant.Id, $"{slug}.{platformDomain}", now));
         return tenant;
     }
@@ -66,6 +70,15 @@ public sealed class Tenant
     public void Activate() => Status = TenantStatus.Active;
 
     public void Suspend() => Status = TenantStatus.Suspended;
+
+    /// <summary>Nome fantasia exibido na loja. CNPJ e razão social não mudam por aqui (dados fiscais).</summary>
+    public void Rename(string tradeName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tradeName);
+        var value = tradeName.Trim();
+        if (value.Length > TradeNameMaxLength) throw new ArgumentException($"Nome acima de {TradeNameMaxLength} caracteres.", nameof(tradeName));
+        TradeName = value;
+    }
 
     public void ChangePlan(string planCode)
     {

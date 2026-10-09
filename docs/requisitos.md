@@ -9,9 +9,9 @@ Legenda de etapa (roadmap §6): **E1** Núcleo e loja · **E2** Canais · **E3**
 ## 1. Multi-tenant e onboarding
 
 ### RF01 — Cadastro de tenant · E1 (mínimo) / E4 (completo)
-CNPJ, razão social, nome fantasia, logo, cores, textos institucionais.
+CNPJ, razão social, nome fantasia, logo, cores, textos institucionais. **HIPÓTESE (Q20):** no E1 a loja é criada por comando no servidor (`migrator criar-loja`) e já nasce ativa; CNPJ e razão social não são editáveis pelo painel; o Dono edita nome fantasia, cores e textos.
 - CA1: CNPJ é validado (dígitos verificadores) e único na plataforma.
-- CA2: logo aceita PNG/JPG/SVG/WebP até 2 MB; SVG é sanitizado antes de servir.
+- CA2: logo aceita PNG/JPG/SVG/WebP até 2 MB; SVG é sanitizado antes de servir. **HIPÓTESE (Q21):** no E1 só PNG/JPG/WebP; SVG sanitizado entra depois.
 - CA3: alterar cores/logo/textos reflete na loja em até 1 min (invalidação de cache), sem novo deploy.
 - CA4: as cores são validadas quanto a contraste mínimo WCAG AA para texto sobre fundo; o painel avisa (não bloqueia).
 
@@ -272,6 +272,8 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q17 | Quantos usuários cada plano permite? | Essencial 2, Profissional 5, Completo 10 (tabela `plan_limits`, muda sem deploy). Loja nova começa no Essencial até existir assinatura (E4). | RF07, RF37 |
 | Q18 | Regras de bloqueio e senha do painel. | Bloqueio de 15 min após 5 senhas erradas seguidas (o Dono pode desbloquear); 10 tentativas de login por minuto por IP; senha de 10 a 128 caracteres, sem regras de composição; sessão expira após 7 dias sem uso. | RF07 |
 | Q19 | Como o lojista recupera a senha esquecida? Não há provedor de e-mail ainda. | O Dono cadastra usuários com senha provisória (troca obrigatória no primeiro acesso) e pode removê-los e cadastrá-los de novo. Recuperação por e-mail entra quando houver provedor (RF33/E4). | RF07 |
+| Q20 | Quem cria lojas antes do painel de superadmin (E4)? A loja nasce ativa? Quem pode mudar CNPJ/razão social? | Comando no servidor (`migrator criar-loja`), sem superadmin web (evita MFA antes do E4); loja nasce ativa; CNPJ e razão social só mudam por suporte. | RF01, RF02, RF07 |
+| Q21 | Logo em SVG no E1? | Não: só PNG/JPG/WebP até 2 MB. SVG exige sanitização dedicada e entra depois. | RF01 |
 
 ## Fontes
 

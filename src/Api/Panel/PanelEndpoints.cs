@@ -1,5 +1,6 @@
 using Ecommerce.Api.Auth;
 using Ecommerce.Application.Identity;
+using Ecommerce.Application.Store;
 using Ecommerce.Application.Vault;
 using Ecommerce.Domain.Identity;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -55,6 +56,18 @@ public static class PanelEndpoints
 
         users.MapPost("/{userId:guid}/desbloquear", async (Guid userId, HttpContext http, IUserAdministration admin, CancellationToken ct) =>
             Respond(await admin.UnlockAsync(http.GetPanelUser().Access.TenantId, userId, ct)));
+
+        // RF01: dados, aparência e textos da loja.
+        var store = panel.MapGroup("/loja").RequirePermission(Permission.StoreManage);
+
+        store.MapGet("/", async (IStoreProfileService profiles, CancellationToken ct) => TypedResults.Ok(await profiles.GetAsync(ct)));
+
+        store.MapPut("/", async Task<Results<Ok<StoreProfile>, ProblemHttpResult>> (
+            UpdateStoreProfile request, IStoreProfileService profiles, CancellationToken ct) =>
+        {
+            var (profile, error) = await profiles.UpdateAsync(request, ct);
+            return profile is not null ? TypedResults.Ok(profile) : AuthEndpoints.Problem(StatusCodes.Status400BadRequest, error!);
+        });
 
         // RF06 CA3: só metadados (tipo, últimos 4 caracteres, validade).
         panel.MapGet("/cofre", async (ISecretVault vault, CancellationToken ct) => TypedResults.Ok(await vault.ListAsync(ct)))

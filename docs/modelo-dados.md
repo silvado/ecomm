@@ -376,10 +376,18 @@ erDiagram
         date period PK "primeiro dia do mês"
         int used
     }
+    STORE_BRANDING {
+        uuid tenant_id PK
+        string primary_color "#RRGGBB"
+        string background_color
+        string text_color
+        string about "texto institucional"
+        string return_policy "trocas e devoluções"
+        string footer
+        timestamptz updated_at
+    }
     STORE_SETTINGS {
         uuid tenant_id PK
-        jsonb theme "cores, logo, fontes"
-        jsonb texts "sobre, políticas, rodapé"
         int reservation_minutes "padrão 30"
         jsonb shipping "CEP origem, retirada"
         jsonb payment "gateway escolhido"

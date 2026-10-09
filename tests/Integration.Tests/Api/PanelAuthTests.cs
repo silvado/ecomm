@@ -9,21 +9,13 @@ using Ecommerce.Domain.Platform;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using static Ecommerce.Integration.Tests.Api.PanelHttp;
 
 namespace Ecommerce.Integration.Tests.Api;
 
 /// <summary>RF07 — login, sessão, perfis Dono/Operador e gestão de usuários do painel.</summary>
 public sealed class PanelAuthTests(ApiFactory api) : IClassFixture<ApiFactory>
 {
-    private const string Password = "senha-do-dono-123";
-
-    private sealed record TenantDto(Guid Id, string Slug, string Name, string Role, List<string> Permissions);
-    private sealed record SessionDto(string AccessToken, Guid UserId, string Email, bool MustChangePassword, TenantDto? Tenant, List<TenantDto> Tenants);
-    private sealed record MeDto(Guid UserId, TenantDto Tenant);
-    private sealed record StoreUserDto(Guid UserId, string Email, string Role, bool LockedOut, bool MustChangePassword);
-
-    private sealed record Login(HttpResponseMessage Response, SessionDto? Session, string? Cookie);
-
     // ---------- Login ----------
 
     [Fact]
@@ -452,53 +444,9 @@ public sealed class PanelAuthTests(ApiFactory api) : IClassFixture<ApiFactory>
 
     // ---------- Apoio ----------
 
-    private async Task<string> OwnerSessionAsync(Tenant tenant)
-    {
-        var owner = await api.CreateUserAsync(tenant.Id, TenantRole.Owner, Password);
-        return (await LoginAsync(api.PanelClient(), owner.Email, Password)).Session!.AccessToken;
-    }
+    private Task<string> OwnerSessionAsync(Tenant tenant) => api.SessionForAsync(tenant);
 
     private static Task<HttpResponseMessage> AddUserAsync(HttpClient client, string token, string prefix) =>
         SendAsync(client, token, HttpMethod.Post, "/api/painel/usuarios",
             new { email = $"{prefix}{Guid.NewGuid():N}@pecas.test", role = "operator", temporaryPassword = "provisoria-123" });
-
-    private static async Task<Login> LoginAsync(HttpClient client, string email, string password) =>
-        await ReadSessionAsync(await client.PostAsJsonAsync("/api/auth/login", new { email, password }));
-
-    private static async Task<Login> RefreshAsync(HttpClient client, string cookie)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
-        request.Headers.Add("Cookie", $"{AuthEndpoints.RefreshCookie}={cookie}");
-        return await ReadSessionAsync(await client.SendAsync(request));
-    }
-
-    private static async Task<Login> SelectTenantAsync(HttpClient client, string cookie, Guid tenantId)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/loja") { Content = JsonContent.Create(new { tenantId }) };
-        request.Headers.Add("Cookie", $"{AuthEndpoints.RefreshCookie}={cookie}");
-        return await ReadSessionAsync(await client.SendAsync(request));
-    }
-
-    private static async Task<Login> ReadSessionAsync(HttpResponseMessage response)
-    {
-        if (!response.IsSuccessStatusCode) return new Login(response, null, null);
-        var cookie = response.Headers.GetValues("Set-Cookie")
-            .Single(c => c.StartsWith(AuthEndpoints.RefreshCookie + "=", StringComparison.Ordinal))
-            .Split(';')[0][(AuthEndpoints.RefreshCookie.Length + 1)..];
-        return new Login(response, await response.Content.ReadFromJsonAsync<SessionDto>(), cookie);
-    }
-
-    private static Task<HttpResponseMessage> GetAsync(HttpClient client, string token, string path) =>
-        SendAsync(client, token, HttpMethod.Get, path);
-
-    private static async Task<HttpResponseMessage> SendAsync(HttpClient client, string token, HttpMethod method, string path, object? body = null)
-    {
-        using var request = new HttpRequestMessage(method, path);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        if (body is not null) request.Content = JsonContent.Create(body);
-        return await client.SendAsync(request);
-    }
-
-    private static async Task<string> TitleAsync(HttpResponseMessage response) =>
-        (await response.Content.ReadFromJsonAsync<ProblemDetails>())!.Title!;
 }
