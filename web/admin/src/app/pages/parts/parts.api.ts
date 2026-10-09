@@ -21,6 +21,12 @@ export interface PartSummary {
   stock: StockView;
   hasShippingDimensions: boolean;
   updatedAt: string;
+  coverPhotoId: string | null;
+}
+
+export interface PhotoView {
+  id: string;
+  position: number;
 }
 
 export interface PartView extends PartSummary {
@@ -31,6 +37,7 @@ export interface PartView extends PartSummary {
   weightG: number | null;
   oemCodes: string[];
   createdAt: string;
+  photos: PhotoView[];
 }
 
 export interface PartPage {
@@ -87,6 +94,19 @@ export class PartsApi {
 
   update(id: string, request: PartRequest): Promise<PartView> {
     return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}`, request));
+  }
+
+  /** Bytes da imagem no corpo; a API reconhece o formato pelo conteúdo e gera os WebP. */
+  addPhoto(id: string, file: Blob): Promise<PartView> {
+    return firstValueFrom(this.http.post<PartView>(`//fotos`, file));
+  }
+
+  removePhoto(id: string, photoId: string): Promise<PartView> {
+    return firstValueFrom(this.http.delete<PartView>(`//fotos/`));
+  }
+
+  reorderPhotos(id: string, photoIds: string[]): Promise<PartView> {
+    return firstValueFrom(this.http.put<PartView>(`//fotos/ordem`, { photoIds }));
   }
 
   setStatus(id: string, status: PartStatus): Promise<PartView> {

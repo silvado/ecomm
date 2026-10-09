@@ -354,3 +354,29 @@ fieldset {
 a.button-like {
   text-decoration: none;
 }
+.photos {
+  margin-bottom: 1.5rem;
+
+  .gallery {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    li {
+      display: grid;
+      gap: 0.3rem;
+      justify-items: center;
+    }
+  }
+
+  .photo-actions {
+    display: flex;
+    gap: 0.6rem;
+  }
+}
+
+.thumb-cell {
+  width: 48px;
+}

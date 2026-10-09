@@ -4,13 +4,18 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { problemTitle } from '../../core/auth';
 import { CONDITION_LABELS, parseOemCodes, PartCondition, PartRequest, PartsApi, PartView, STATUS_LABELS } from './parts.api';
+import { PhotoThumb } from './photo-thumb';
 
 /** Mesmos limites do domínio (Part). */
+/** Mesmos limites da API (Part.MaxPhotos, PartPhoto.MaxUploadBytes). */
+const MAX_PHOTOS = 20;
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
 const LIMITS = { code: 60, title: 120, description: 5000, dimensionCm: 1000, weightG: 1_000_000, quantity: 1_000_000 };
 
 @Component({
   selector: 'app-part-form',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PhotoThumb],
   template: `
     <main class="card">
       <p><a routerLink="/pecas">← Peças</a></p>
@@ -29,6 +34,40 @@ const LIMITS = { code: 60, title: 120, description: 5000, dimensionCm: 1000, wei
             Estoque: {{ p.stock.available }} disponível · {{ p.stock.onHand }} físico · {{ p.stock.reserved }} reservado
           </span>
         </div>
+      }
+
+      @if (part(); as p) {
+        <section class="photos">
+          <h2>Fotos ({{ p.photos.length }}/{{ maxPhotos }})</h2>
+          @if (p.photos.length === 0) {
+            <p class="muted">A peça precisa de ao menos uma foto para ser ativada.</p>
+          }
+          <ol class="gallery">
+            @for (photo of sortedPhotos(); track photo.id; let first = $first; let last = $last) {
+              <li>
+                <app-photo-thumb [partId]="p.id" [photoId]="photo.id" [size]="120" [alt]="'Foto ' + (photo.position + 1)" />
+                @if (first) {
+                  <span class="badge">Capa</span>
+                }
+                <div class="photo-actions">
+                  <button type="button" class="link" (click)="move(photo.id, -1)" [disabled]="first || busy()" aria-label="Mover para a esquerda">←</button>
+                  <button type="button" class="link danger" (click)="removePhoto(photo.id)" [disabled]="busy()">Remover</button>
+                  <button type="button" class="link" (click)="move(photo.id, 1)" [disabled]="last || busy()" aria-label="Mover para a direita">→</button>
+                </div>
+              </li>
+            }
+          </ol>
+          @if (p.photos.length < maxPhotos) {
+            <label class="button-like">
+              {{ uploading() ? 'Enviando ' + uploading() + '…' : 'Adicionar fotos' }}
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="addPhotos($event)" [disabled]="busy()" hidden />
+            </label>
+            <small>JPG, PNG ou WebP, até 10 MB cada. A primeira foto é a capa.</small>
+          }
+          @if (photoError()) {
+            <p class="error" role="alert">{{ photoError() }}</p>
+          }
+        </section>
       }
 
       <form [formGroup]="form" (ngSubmit)="save()">
@@ -167,6 +206,61 @@ export class PartFormPage implements OnInit {
       }
     } catch (error) {
       this.error.set(problemTitle(error));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected readonly maxPhotos = MAX_PHOTOS;
+  protected readonly uploading = signal<string | null>(null);
+  protected readonly photoError = signal<string | null>(null);
+  protected readonly sortedPhotos = computed(() => [...(this.part()?.photos ?? [])].sort((a, b) => a.position - b.position));
+
+  /** Envia uma por vez (a API converte cada foto na hora); para no primeiro erro e mostra a mensagem. */
+  async addPhotos(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    const current = this.part();
+    if (!current || files.length === 0) return;
+    this.busy.set(true);
+    this.photoError.set(null);
+    try {
+      for (const [index, file] of files.entries()) {
+        if (file.size > MAX_PHOTO_BYTES) throw new Error(`${file.name}: a foto pode ter no máximo 10 MB.`);
+        this.uploading.set(`${index + 1} de ${files.length}`);
+        this.part.set(await this.api.addPhoto(current.id, file));
+      }
+    } catch (error) {
+      this.photoError.set(error instanceof Error && !(error as { status?: number }).status ? error.message : problemTitle(error));
+    } finally {
+      this.uploading.set(null);
+      this.busy.set(false);
+    }
+  }
+
+  async removePhoto(photoId: string): Promise<void> {
+    const current = this.part();
+    if (!current || !confirm('Remover esta foto?')) return;
+    await this.runPhoto(() => this.api.removePhoto(current.id, photoId));
+  }
+
+  async move(photoId: string, offset: -1 | 1): Promise<void> {
+    const current = this.part();
+    if (!current) return;
+    const ids = this.sortedPhotos().map((p) => p.id);
+    const from = ids.indexOf(photoId);
+    [ids[from], ids[from + offset]] = [ids[from + offset], ids[from]];
+    await this.runPhoto(() => this.api.reorderPhotos(current.id, ids));
+  }
+
+  private async runPhoto(action: () => Promise<PartView>): Promise<void> {
+    this.busy.set(true);
+    this.photoError.set(null);
+    try {
+      this.part.set(await action());
+    } catch (error) {
+      this.photoError.set(problemTitle(error));
     } finally {
       this.busy.set(false);
     }

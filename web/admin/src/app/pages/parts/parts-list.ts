@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { problemTitle } from '../../core/auth';
 import { CONDITION_LABELS, PartPage, PartsApi, PartStatus, STATUS_LABELS } from './parts.api';
+import { PhotoThumb } from './photo-thumb';
 
 @Component({
   selector: 'app-parts-list',
-  imports: [FormsModule, RouterLink, CurrencyPipe],
+  imports: [FormsModule, RouterLink, CurrencyPipe, PhotoThumb],
   template: `
     <main class="card wide">
       <div class="header-row">
@@ -38,6 +39,7 @@ import { CONDITION_LABELS, PartPage, PartsApi, PartStatus, STATUS_LABELS } from 
       <table>
         <thead>
           <tr>
+            <th><span class="sr-only">Foto</span></th>
             <th>Código</th>
             <th>Título</th>
             <th>Estado</th>
@@ -49,6 +51,11 @@ import { CONDITION_LABELS, PartPage, PartsApi, PartStatus, STATUS_LABELS } from 
         <tbody>
           @for (part of page()?.items ?? []; track part.id) {
             <tr>
+              <td class="thumb-cell">
+                @if (part.coverPhotoId) {
+                  <app-photo-thumb [partId]="part.id" [photoId]="part.coverPhotoId" [size]="48" alt="" />
+                }
+              </td>
               <td><a [routerLink]="['/pecas', part.id]">{{ part.internalCode }}</a></td>
               <td>
                 {{ part.title }}
@@ -63,7 +70,7 @@ import { CONDITION_LABELS, PartPage, PartsApi, PartStatus, STATUS_LABELS } from 
             </tr>
           } @empty {
             <tr>
-              <td colspan="6" class="muted">{{ loading() ? 'Carregando…' : 'Nenhuma peça encontrada.' }}</td>
+              <td colspan="7" class="muted">{{ loading() ? 'Carregando…' : 'Nenhuma peça encontrada.' }}</td>
             </tr>
           }
         </tbody>
