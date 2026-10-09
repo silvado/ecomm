@@ -27,6 +27,12 @@ body {
       font-size: 1.3rem;
       font-weight: 600;
       text-decoration: none;
+
+      img {
+        display: block;
+        max-height: 48px;
+        width: auto;
+      }
     }
   }
 

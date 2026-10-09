@@ -1,5 +1,6 @@
 using Ecommerce.Api.Auth;
 using Ecommerce.Application.Identity;
+using Ecommerce.Application.Storage;
 using Ecommerce.Application.Store;
 using Ecommerce.Application.Vault;
 using Ecommerce.Domain.Identity;
@@ -69,9 +70,39 @@ public static class PanelEndpoints
             return profile is not null ? TypedResults.Ok(profile) : AuthEndpoints.Problem(StatusCodes.Status400BadRequest, error!);
         });
 
+        // RF01 CA2: corpo da requisição = bytes da imagem (sem multipart). O tipo é detectado pelo conteúdo.
+        store.MapPut("/logo", async Task<Results<Ok<StoreProfile>, ProblemHttpResult>> (
+            HttpRequest request, IStoreProfileService profiles, CancellationToken ct) =>
+        {
+            var (profile, error) = await profiles.ReplaceLogoAsync(request.Body, ct);
+            return profile is not null ? TypedResults.Ok(profile) : AuthEndpoints.Problem(StatusCodes.Status400BadRequest, error!);
+        });
+
+        store.MapDelete("/logo", async (IStoreProfileService profiles, CancellationToken ct) => TypedResults.Ok(await profiles.RemoveLogoAsync(ct)));
+
+        // Prévia no painel (a URL pública só responde no domínio da loja).
+        store.MapGet("/logo", async Task<Results<FileStreamHttpResult, NotFound>> (
+            HttpResponse response, IStoreProfileService profiles, CancellationToken ct) =>
+        {
+            if (await profiles.GetLogoAsync(null, ct) is not { } logo) return TypedResults.NotFound();
+            response.Headers.CacheControl = "no-store";
+            return LogoFile(response, logo);
+        });
+
         // RF06 CA3: só metadados (tipo, últimos 4 caracteres, validade).
         panel.MapGet("/cofre", async (ISecretVault vault, CancellationToken ct) => TypedResults.Ok(await vault.ListAsync(ct)))
             .RequirePermission(Permission.VaultManage);
+    }
+
+    /// <summary>
+    /// Serve uma imagem enviada por usuário: o navegador não pode reinterpretar o tipo (nosniff) nem executar nada
+    /// mesmo que o arquivo seja aberto direto (CSP sem permissões).
+    /// </summary>
+    internal static FileStreamHttpResult LogoFile(HttpResponse response, StoredFile logo)
+    {
+        response.Headers.XContentTypeOptions = "nosniff";
+        response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
+        return TypedResults.Stream(logo.Content, logo.ContentType);
     }
 
     private static Results<NoContent, ProblemHttpResult> Respond(UserChangeOutcome outcome) => outcome switch

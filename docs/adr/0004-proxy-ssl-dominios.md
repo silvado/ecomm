@@ -34,7 +34,7 @@ Cada loja tem subdomínio da plataforma (`slug.plataforma.com.br`) e pode ter do
   3. registro `A` para o IP da plataforma (exige IP estável — usar IP flutuante/reservado da VPS para poder trocar de servidor sem que clientes alterem DNS).
 - Verificação: resolver o `www` (e o raiz, se configurado) e confirmar que aponta para a plataforma; nunca consultar ou alterar MX/TXT.
 
-**Roteamento:** Caddy encaminha todo tráfego da loja para o `storefront` (SSR), que repassa o `Host` à API; `admin.plataforma.com.br` → app admin; `api.plataforma.com.br` → API (webhooks).
+**Roteamento:** Caddy encaminha o tráfego da loja para o `storefront` (SSR), que repassa o `Host` à API; exceção: `/api/loja/*` no domínio da loja vai direto para a API (ex.: logo), que resolve o tenant pelo mesmo `Host`. `admin.plataforma.com.br` → app admin; `api.plataforma.com.br` → API (webhooks).
 
 ## Consequências
 

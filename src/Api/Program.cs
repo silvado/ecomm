@@ -10,6 +10,7 @@ using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure;
 using Ecommerce.Infrastructure.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.HttpOverrides;
 using Wolverine;
 
@@ -71,6 +72,15 @@ app.MapHealthChecks("/health/ready");
 var store = app.MapGroup("/api/loja").AddEndpointFilter<StoreTenantFilter>();
 // Nome, tema e textos: o storefront SSR desenha a loja com isto a cada página (RF01 CA3, ADR-0006).
 store.MapGet("/identidade", async (IStoreProfileService profiles, CancellationToken ct) => TypedResults.Ok(await profiles.GetPublicAsync(ct)));
+
+// Logo da loja (RF01 CA2): o id muda a cada troca, então a URL pode ficar em cache por um ano.
+store.MapGet("/logo/{logoId:guid}", async Task<Results<FileStreamHttpResult, NotFound>> (
+    Guid logoId, HttpResponse response, IStoreProfileService profiles, CancellationToken ct) =>
+{
+    if (await profiles.GetLogoAsync(logoId, ct) is not { } logo) return TypedResults.NotFound();
+    response.Headers.CacheControl = "public, max-age=31536000, immutable";
+    return PanelEndpoints.LogoFile(response, logo);
+});
 
 app.MapAuthEndpoints();
 app.MapPanelEndpoints();

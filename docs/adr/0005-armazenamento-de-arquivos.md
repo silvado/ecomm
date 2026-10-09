@@ -25,6 +25,12 @@ Peças usadas têm muitas fotos (até 20 por peça, 3 tamanhos cada). O BRIEF n�
 - SeaweedFS no `docker-compose` de dev (buckets `fotos` e `documentos`) — ver atualização abaixo.
 - RNF07: o backup das fotos é responsabilidade do provedor + replicação para segundo bucket.
 
+## Atualização (2026-10-09): implementação
+
+- `IFileStorage` (Application) com `StorageArea.Public`/`Private` → buckets `fotos`/`documentos`. Adaptadores: `S3FileStorage` (AWS SDK for .NET v4, `ForcePathStyle`, credenciais em `Storage__AccessKey`/`Storage__SecretKey`) e `InMemoryFileStorage` (testes; `Storage__Provider=memory`). Contrato verificado contra o SeaweedFS real em `S3FileStorageTests`.
+- Os checksums CRC que o SDK v4 envia por padrão funcionam com o SeaweedFS 4.47; ao escolher o provedor de produção, rodar `S3FileStorageTests` contra ele antes de trocar.
+- Logo da loja (RF01 CA2): `{tenantId}/marca/logo-{id}` no bucket público, **servido pela API** em `/api/loja/logo/{id}` no domínio da loja (cache de 1 ano, id novo a cada troca, `nosniff` + CSP `sandbox`). CDN/URL direta do bucket fica para quando houver volume.
+
 ## Atualização (2026-10-08): MinIO substituído por SeaweedFS em dev
 
 A MinIO deixou de publicar as imagens Docker da edição comunitária (Docker Hub em out/2025, depois quay.io); o pull de `minio/minio` falha. Como só usamos a API S3, o servidor de dev é intercambiável.
