@@ -14,6 +14,9 @@ import { RoleLabelPipe } from '../shared/role-label';
       </div>
       <nav>
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Início</a>
+        @if (auth.can('storeManage')) {
+          <a routerLink="/loja" routerLinkActive="active">Dados da loja</a>
+        }
         @if (auth.can('usersManage')) {
           <a routerLink="/usuarios" routerLinkActive="active">Usuários</a>
         }

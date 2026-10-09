@@ -197,3 +197,64 @@ table {
   overflow: hidden;
   clip: rect(0 0 0 0);
 }
+
+.warn {
+  background: var(--warn-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin: 0;
+}
+
+.ok {
+  color: #067647;
+  margin: 0;
+}
+
+textarea {
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  resize: vertical;
+}
+
+fieldset.colors {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+
+  .color-input {
+    display: flex;
+    gap: 0.4rem;
+
+    input[type='color'] {
+      width: 3rem;
+      padding: 0.1rem;
+    }
+
+    input[type='text'] {
+      flex: 1;
+      min-width: 0;
+      text-transform: uppercase;
+    }
+  }
+}
+
+.preview {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+
+  .preview-bar {
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+  }
+
+  p,
+  a {
+    display: block;
+    margin: 0.75rem 1rem;
+  }
+}

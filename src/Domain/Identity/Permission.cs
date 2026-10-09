@@ -15,6 +15,8 @@ public enum Permission
     PlanManage,
     UsersManage,
     DataExport,
+    /// <summary>Dados da loja, identidade visual e textos institucionais (RF01).</summary>
+    StoreManage,
 }
 
 public static class Permissions

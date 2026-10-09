@@ -5,10 +5,11 @@ using Ecommerce.Api.Auth;
 using Ecommerce.Api.Internal;
 using Ecommerce.Api.Panel;
 using Ecommerce.Api.Tenancy;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Ecommerce.Application.Store;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure;
 using Ecommerce.Infrastructure.Messaging;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Wolverine;
 
@@ -68,11 +69,8 @@ app.MapHealthChecks("/health/ready");
 
 // Rotas públicas da loja: tenant resolvido pelo Host (RF04).
 var store = app.MapGroup("/api/loja").AddEndpointFilter<StoreTenantFilter>();
-store.MapGet("/identidade", (HttpContext http) =>
-{
-    var tenant = http.GetStoreTenant();
-    return TypedResults.Ok(new StoreIdentity(tenant.Slug, tenant.TradeName));
-});
+// Nome, tema e textos: o storefront SSR desenha a loja com isto a cada página (RF01 CA3, ADR-0006).
+store.MapGet("/identidade", async (IStoreProfileService profiles, CancellationToken ct) => TypedResults.Ok(await profiles.GetPublicAsync(ct)));
 
 app.MapAuthEndpoints();
 app.MapPanelEndpoints();
@@ -86,8 +84,6 @@ internalApi.MapGet("/tls/ask", async (string domain, ITenantCatalog catalog, Can
 });
 
 app.Run();
-
-internal sealed record StoreIdentity(string Slug, string Name);
 
 /// <summary>Exposto para os testes de integração (WebApplicationFactory).</summary>
 public partial class Program;

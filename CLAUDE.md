@@ -53,6 +53,7 @@ dotnet ef migrations add <Nome> --context TenantDbContext --project src/Infrastr
 dotnet ef migrations add <Nome> --context PlatformDbContext --project src/Infrastructure --startup-project src/Infrastructure --output-dir Platform/Migrations    # banco plataforma
 cp deploy/.env.example deploy/.env             # e troque as senhas
 docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
+docker compose -f deploy/docker-compose.yml --env-file deploy/.env run --rm migrator criar-loja --slug <slug> --cnpj <cnpj> --razao-social "<texto>" --nome "<nome>" --dono <e-mail>   # cria loja + Dono (senha provisória na saída)
 node tools/backlog/generate.mjs                # regenera docs/backlog.md e .csv
 node tools/backlog/azure-sync.mjs --dry-run    # sincroniza com Azure Boards (requer AZURE_DEVOPS_EXT_PAT)
 ```

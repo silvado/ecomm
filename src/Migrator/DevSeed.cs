@@ -1,8 +1,4 @@
-using Ecommerce.Domain.Identity;
-using Ecommerce.Domain.Platform;
-using Ecommerce.Infrastructure.Identity;
-using Ecommerce.Infrastructure.Platform;
-using Microsoft.EntityFrameworkCore;
+using Ecommerce.Application.Tenancy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,14 +7,12 @@ using Microsoft.Extensions.Logging;
 namespace Ecommerce.Migrator;
 
 /// <summary>
-/// Só desenvolvimento: cria a loja <c>demo</c> (demo.localhost) com um Dono, para entrar no painel antes de existir
-/// o cadastro de lojas (RF01). Ligado apenas se <c>DevSeed__OwnerEmail</c> e <c>DevSeed__OwnerPassword</c> existirem.
-/// Idempotente: não faz nada se a loja já existir.
+/// Só desenvolvimento: cria a loja <c>demo</c> com um Dono de senha conhecida, pelo mesmo caso de uso do comando
+/// <c>criar-loja</c>. Ligado apenas se <c>DevSeed__OwnerEmail</c> e <c>DevSeed__OwnerPassword</c> existirem.
+/// Idempotente: se a loja já existe, não faz nada.
 /// </summary>
 internal static partial class DevSeed
 {
-    private const string Slug = "demo";
-
     public static async Task RunAsync(IHost host)
     {
         var config = host.Services.GetRequiredService<IConfiguration>();
@@ -27,31 +21,17 @@ internal static partial class DevSeed
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return;
 
         var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(DevSeed));
-        if (!PasswordPolicy.IsValid(password))
-        {
-            LogWeakPassword(logger, PasswordPolicy.MinLength, PasswordPolicy.MaxLength);
-            return;
-        }
-
         await using var scope = host.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
-        if (await db.Tenants.AnyAsync(t => t.Slug == Slug)) return;
+        var result = await scope.ServiceProvider.GetRequiredService<ITenantProvisioning>().CreateAsync(
+            new CreateTenantRequest("demo", "11222333000181", "Loja Demo Ltda", "Loja Demo", email, password));
 
-        var now = DateTimeOffset.UtcNow;
-        var tenant = Tenant.Create(Slug, Cnpj.Parse("11222333000181"), "Loja Demo Ltda", "Loja Demo", "localhost", now);
-        tenant.Activate();
-        var user = await db.UserAccounts.SingleOrDefaultAsync(u => u.Email == UserAccount.NormalizeEmail(email))
-            ?? UserAccount.Create(email, scope.ServiceProvider.GetRequiredService<PasswordHashing>().Hash(password), mustChangePassword: false, now);
-        if (db.Entry(user).State == EntityState.Detached) db.UserAccounts.Add(user);
-        db.Tenants.Add(tenant);
-        db.TenantMemberships.Add(new TenantMembership(tenant.Id, user.Id, TenantRole.Owner, now));
-        await db.SaveChangesAsync();
-        LogSeeded(logger, Slug, user.Id);
+        if (result.Tenant is { } created) LogSeeded(logger, created.Host, created.OwnerId);
+        else if (result.Error is not (CreateTenantError.SlugTaken or CreateTenantError.CnpjTaken)) LogSkipped(logger, result.Error!.Value);
     }
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "DevSeed: senha fora da política ({Min} a {Max} caracteres); semente ignorada.")]
-    private static partial void LogWeakPassword(ILogger logger, int min, int max);
+    [LoggerMessage(Level = LogLevel.Information, Message = "DevSeed: loja {Host} criada com o Dono {UserId}.")]
+    private static partial void LogSeeded(ILogger logger, string host, Guid userId);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "DevSeed: loja {Slug} criada com o Dono {UserId}.")]
-    private static partial void LogSeeded(ILogger logger, string slug, Guid userId);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "DevSeed: semente ignorada ({Error}).")]
+    private static partial void LogSkipped(ILogger logger, CreateTenantError error);
 }

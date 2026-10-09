@@ -15,4 +15,7 @@ public interface ITenantCatalog
 
     /// <summary>Somente domínios verificados. O host é normalizado pela implementação.</summary>
     ValueTask<TenantDescriptor?> FindByHostAsync(string host, CancellationToken ct = default);
+
+    /// <summary>Descarta o que esta instância tem em cache do tenant (ex.: nome fantasia alterado).</summary>
+    void Invalidate(Guid tenantId);
 }
