@@ -52,6 +52,8 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TenantDbContext).Assembly);
         VehicleMapping.Configure(modelBuilder, VehicleMapping.RefSchema);
+        // Busca da vitrine sem diferenciar acentos (RF13 CA3). Extensão confiável: o dono do banco pode criá-la.
+        modelBuilder.HasPostgresExtension("unaccent");
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {

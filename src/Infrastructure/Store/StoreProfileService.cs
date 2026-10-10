@@ -43,6 +43,15 @@ public sealed class StoreProfileService(
             return (null, e.Message.Split(" (Parameter", 2)[0]);
         }
 
+        if (update.HideOutOfStock is { } hide)
+        {
+            await db.Database.ExecuteSqlAsync($"""
+                INSERT INTO store_settings (tenant_id, reservation_minutes, hide_out_of_stock)
+                VALUES ({tenantId}, {Domain.Inventory.StoreSettings.DefaultReservationMinutes}, {hide})
+                ON CONFLICT (tenant_id) DO UPDATE SET hide_out_of_stock = EXCLUDED.hide_out_of_stock
+                """, ct);
+        }
+
         await db.SaveChangesAsync(ct);
         await platform.SaveChangesAsync(ct);
         Invalidate(tenantId);
@@ -136,8 +145,9 @@ public sealed class StoreProfileService(
     private async Task<StoreProfile> ProfileAsync(Guid tenantId, StoreBranding branding, CancellationToken ct)
     {
         var tenant = await platform.Tenants.AsNoTracking().SingleAsync(t => t.Id == tenantId, ct);
+        var hideOutOfStock = await db.StoreSettings.Select(s => (bool?)s.HideOutOfStock).SingleOrDefaultAsync(ct) ?? false;
         return new StoreProfile(tenant.Slug, tenant.Cnpj.Value, tenant.LegalName, tenant.TradeName,
-            Theme(branding), Texts(branding), branding.ContrastWarnings(), branding.LogoId);
+            Theme(branding), Texts(branding), branding.ContrastWarnings(), branding.LogoId, hideOutOfStock);
     }
 
     private void Invalidate(Guid tenantId)

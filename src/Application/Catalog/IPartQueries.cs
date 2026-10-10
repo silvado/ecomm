@@ -13,9 +13,6 @@ public sealed record CompatibilityView(
 /// <summary>Filtro por veículo (RF09 CA3): modelo obrigatório; versão e ano-modelo opcionais.</summary>
 public sealed record VehicleFilter(Guid ModelId, Guid? VersionId, int? Year);
 
-/// <summary>O que a loja pública mostra de uma peça ativa.</summary>
-public sealed record StorePartSummary(Guid Id, string Title, PartCondition Condition, decimal Price, int Available, Guid? CoverPhotoId);
-
 /// <summary><see cref="CoverPhotoId"/>: primeira foto (miniatura da listagem), nula se a peça não tem fotos.</summary>
 public sealed record PartSummary(
     Guid Id, string InternalCode, string Title, PartCondition Condition, decimal Price, PartStatus Status,
@@ -41,7 +38,4 @@ public interface IPartQueries
     Task<PartPage> SearchAsync(PartSearch search, CancellationToken ct = default);
 
     Task<PartView?> GetAsync(Guid partId, CancellationToken ct = default);
-
-    /// <summary>Loja pública: só peças ativas compatíveis com o veículo (RF09 CA3).</summary>
-    Task<(IReadOnlyList<StorePartSummary> Items, int Total)> SearchStoreAsync(VehicleFilter vehicle, int page, int pageSize, CancellationToken ct = default);
 }

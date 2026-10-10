@@ -64,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantProvisioning, TenantProvisioning>();
         services.AddScoped<IStoreProfileService, StoreProfileService>();
         services.AddScoped<IPartQueries, PartQueries>();
+        services.AddScoped<IStoreCatalog, StoreCatalog>();
         services.AddScoped<IPartPhotos, PartPhotoService>();
         services.AddScoped<VehicleImporter>();
         services.AddScoped<IVehicleCatalog, VehicleCatalog>();

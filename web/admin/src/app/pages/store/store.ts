@@ -89,6 +89,11 @@ const LOGO_MAX_BYTES = 2 * 1024 * 1024;
           <textarea formControlName="footer" rows="2" maxlength="500"></textarea>
         </label>
 
+        <label class="checkbox">
+          <input type="checkbox" formControlName="hideOutOfStock" />
+          Ocultar da loja as peças sem estoque (sem marcar, elas aparecem como indisponíveis)
+        </label>
+
         @if (error()) {
           <p class="error" role="alert">{{ error() }}</p>
         }
@@ -121,6 +126,7 @@ export class StorePage implements OnInit, OnDestroy {
     about: [''],
     returnPolicy: [''],
     footer: [''],
+    hideOutOfStock: [false],
   });
 
   private readonly values = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
@@ -234,6 +240,6 @@ export class StorePage implements OnInit, OnDestroy {
   private fill(profile: StoreProfile): void {
     this.profile.set(profile);
     void this.loadLogo(profile);
-    this.form.reset({ tradeName: profile.tradeName, ...profile.theme, ...profile.texts });
+    this.form.reset({ tradeName: profile.tradeName, ...profile.theme, ...profile.texts, hideOutOfStock: profile.hideOutOfStock });
   }
 }

@@ -403,3 +403,8 @@ a.button-like {
     align-items: end;
   }
 }
+label.checkbox {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}

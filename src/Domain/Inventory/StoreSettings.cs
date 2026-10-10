@@ -2,7 +2,7 @@ using Ecommerce.Domain.Common;
 
 namespace Ecommerce.Domain.Inventory;
 
-/// <summary>Configurações operacionais da loja. Por enquanto só o prazo de reserva (RF12 CA2).</summary>
+/// <summary>Configurações operacionais da loja: prazo de reserva (RF12 CA2) e peças sem estoque na vitrine (RF13 CA4).</summary>
 public sealed class StoreSettings : ITenantOwned
 {
     public const int DefaultReservationMinutes = 30;
@@ -17,6 +17,11 @@ public sealed class StoreSettings : ITenantOwned
 
     public Guid TenantId { get; private set; }
     public int ReservationMinutes { get; private set; }
+
+    /// <summary>RF13 CA4: peça sem estoque some da vitrine (verdadeiro) ou aparece como indisponível (padrão).</summary>
+    public bool HideOutOfStock { get; private set; }
+
+    public void SetHideOutOfStock(bool hide) => HideOutOfStock = hide;
 
     public void SetReservationMinutes(int minutes)
     {

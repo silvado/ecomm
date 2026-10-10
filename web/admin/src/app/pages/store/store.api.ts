@@ -13,6 +13,7 @@ export interface StoreProfile {
   texts: { about: string; returnPolicy: string; footer: string };
   warnings: ContrastWarning[];
   logoId: string | null;
+  hideOutOfStock: boolean;
 }
 
 export interface StoreProfileUpdate {
@@ -23,6 +24,7 @@ export interface StoreProfileUpdate {
   about: string;
   returnPolicy: string;
   footer: string;
+  hideOutOfStock: boolean;
 }
 
 /** Dados da loja atual (a loja vem do token; a API só aceita quem tem a permissão storeManage). */

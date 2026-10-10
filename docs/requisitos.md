@@ -90,7 +90,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA1: responsiva (360 px a 1920 px), Lighthouse ≥ 85 em performance e SEO no mobile.
 - CA2: renderizada no servidor (SSR) com título, descrição, Open Graph e JSON-LD `Product` por peça.
 - CA3: busca por texto (com tolerância a acentos), por código interno/OEM e por veículo (marca → modelo → ano).
-- CA4: peças sem estoque aparecem como indisponíveis ou ocultas, conforme configuração.
+- CA4: peças sem estoque aparecem como indisponíveis ou ocultas, conforme configuração. Padrão de loja nova: indisponíveis (decisão de 2026-10-09); a loja muda em Dados da loja.
 
 ### RF14 — Carrinho, checkout e frete · E1
 - CA1: frete calculado por `IShippingProvider` (implementação inicial Melhor Envio) com CEP de origem do tenant e dimensões/peso das peças.
