@@ -97,6 +97,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA2: opção de retirada no balcão configurável.
 - CA3: checkout como convidado ou com conta; coleta só os dados necessários (RNF04).
 - **HIPÓTESE (Q25, Q26):** no E1 só checkout como convidado (conta de cliente entra com o RF16); carrinho guardado no navegador, com preço, estoque e frete sempre recalculados no servidor; cotação limitada a 30 por minuto por IP; peça sem medidas de embalagem só sai por retirada; enquanto não houver app do Melhor Envio registrado, frete *fake* em dev.
+- **HIPÓTESE (Q27):** checkout coleta nome, e-mail, telefone, CPF e — só na entrega — endereço digitado pelo comprador (sem consulta automática de CEP); dados ficam só no pedido. Pedido nasce "aguardando pagamento" com as peças reservadas pelo prazo da loja (padrão 30 min) e, sem pagamento, é cancelado e as peças voltam; até o RF15 não há forma de pagar. Comprador acompanha por link secreto (sem e-mail de confirmação até haver provedor). 10 pedidos por minuto por IP.
 
 ### RF15 — Pagamento · E1
 - CA1: gateway escolhido por tenant via `IPaymentGateway`; implementações iniciais Mercado Pago e Cielo E-commerce.
@@ -282,6 +283,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q24 | Limite de veículos compatíveis por peça? | 300 por peça (evita "peça universal" que polui a busca). | RF09 |
 | Q25 | Checkout com conta de cliente no E1? Onde fica o carrinho? | Só convidado no E1 (conta com o RF16); carrinho no `localStorage` do navegador, até 50 peças diferentes, conferido no servidor a cada visita. | RF14, RF16 |
 | Q26 | Quando registrar o app da plataforma no Melhor Envio (nome, e-mail técnico, URL de retorno)? | Até lá, provedor de frete *fake* em dev e testes; adaptador do ME testado contra servidor simulado; conexão OAuth da loja no painel entra quando o app existir. | RF14 |
+| Q27 | Que dados o checkout coleta, onde ficam e o que acontece com pedido sem pagamento antes do gateway (RF15)? | Nome, e-mail, telefone, CPF (NF-e e etiqueta) e endereço só na entrega, gravados no pedido (cadastro de cliente com o RF16); sem pagamento no prazo da reserva, o pedido é cancelado sozinho — sem confirmação manual. Link secreto de acompanhamento; e-mail de confirmação quando houver provedor (RF33/E4). | RF14, RF15, RF16 |
 
 ## Fontes
 

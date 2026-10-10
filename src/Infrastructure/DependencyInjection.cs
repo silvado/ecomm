@@ -1,9 +1,11 @@
 using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Identity;
 using Ecommerce.Infrastructure.Catalog;
+using Ecommerce.Application.Orders;
 using Ecommerce.Application.Shipping;
 using Ecommerce.Application.Storage;
 using Ecommerce.Application.Store;
+using Ecommerce.Infrastructure.Orders;
 using Ecommerce.Infrastructure.Shipping;
 using Ecommerce.Infrastructure.Storage;
 using Ecommerce.Infrastructure.Store;
@@ -73,6 +75,8 @@ public static class DependencyInjection
         services.AddHttpClient(ShippingProviderResolver.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(10));
         services.AddScoped<IShippingProviderResolver, ShippingProviderResolver>();
         services.AddScoped<IStorefrontCart, StorefrontCart>();
+        services.AddScoped<IStorefrontCheckout, StorefrontCheckout>();
+        services.AddScoped<IOrderQueries, OrderQueries>();
         services.AddScoped<IPartPhotos, PartPhotoService>();
         services.AddScoped<VehicleImporter>();
         services.AddScoped<IVehicleCatalog, VehicleCatalog>();

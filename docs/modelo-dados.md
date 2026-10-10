@@ -262,24 +262,38 @@ erDiagram
     CUSTOMER_ORDER {
         uuid id PK
         uuid tenant_id "RLS"
-        bigint number "sequencial por tenant"
+        bigint number "UK (tenant_id, number) — sequencial por tenant (order_counters)"
         string origin "site|mercado_livre|olx|counter"
-        string external_id "UK (tenant_id, origin, external_id)"
-        uuid customer_id FK
+        string external_id "UK (tenant_id, origin, external_id) — canais (E2)"
+        uuid customer_id FK "conta de cliente (RF16); convidado não tem"
+        bytea access_token_hash "UK (tenant_id, hash) — link do comprador e idempotência do checkout"
+        string buyer_name_email_phone_cpf "cópia no pedido (convidado)"
+        string delivery_method "shipping|pickup"
+        string delivery_address "colunas delivery_* — só na entrega"
+        string shipping_service "id, transportadora, serviço, prazo cotados"
+        string pickup_address "cópia do endereço de retirada"
         string status "pending_payment|paid|invoiced|shipped|delivered|canceled|returned|stock_conflict"
         numeric items_total
         numeric shipping_total
-        numeric total
+        numeric total "CHECK = items_total + shipping_total"
         timestamptz placed_at
+        timestamptz payment_deadline "fim da reserva; sem pagamento, cancela"
+        timestamptz canceled_at
     }
     ORDER_ITEM {
         uuid id PK
         uuid tenant_id "RLS"
         uuid order_id FK
         uuid part_id FK
+        uuid reservation_id FK "UK — reserva que segura a peça"
         int quantity
-        numeric unit_price
-        string title_snapshot
+        numeric unit_price "preço do momento da compra"
+        string title "cópia do título"
+        string internal_code "cópia do código"
+    }
+    ORDER_COUNTER {
+        uuid tenant_id PK "RLS"
+        bigint last_number "UPSERT na transação do pedido"
     }
     PAYMENT {
         uuid id PK
