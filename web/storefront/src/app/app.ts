@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
+import { CartStore } from './cart';
 import { StoreContext } from './store';
 
 /**
@@ -27,7 +28,10 @@ import { StoreContext } from './store';
                 {{ ctx.store!.name }}
               }
             </a>
-            <nav><a routerLink="/busca">Buscar peças</a></nav>
+            <nav>
+              <a routerLink="/busca">Buscar peças</a>
+              <a routerLink="/carrinho" class="cart-link">Carrinho @if (cart.count()) { <span class="badge">{{ cart.count() }}</span> }</a>
+            </nav>
           </header>
           <main><router-outlet /></main>
           <footer>
@@ -63,4 +67,5 @@ import { StoreContext } from './store';
 })
 export class App {
   protected readonly ctx = inject(StoreContext);
+  protected readonly cart = inject(CartStore);
 }

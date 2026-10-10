@@ -2,6 +2,12 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+export interface StoreShipping {
+  originPostalCode: string | null;
+  pickupEnabled: boolean;
+  pickupAddress: string | null;
+}
+
 export type ContrastWarning = 'textOnBackground' | 'primaryOnBackground';
 
 export interface StoreProfile {
@@ -14,6 +20,7 @@ export interface StoreProfile {
   warnings: ContrastWarning[];
   logoId: string | null;
   hideOutOfStock: boolean;
+  shipping: StoreShipping;
 }
 
 export interface StoreProfileUpdate {
@@ -25,6 +32,7 @@ export interface StoreProfileUpdate {
   returnPolicy: string;
   footer: string;
   hideOutOfStock: boolean;
+  shipping: StoreShipping;
 }
 
 /** Dados da loja atual (a loja vem do token; a API só aceita quem tem a permissão storeManage). */
