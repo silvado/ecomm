@@ -6,6 +6,7 @@ using Ecommerce.Api.Internal;
 using Ecommerce.Api.Panel;
 using Ecommerce.Api.Tenancy;
 using Ecommerce.Application.Catalog;
+using Ecommerce.Application.Shipping;
 using Ecommerce.Application.Store;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure;
@@ -39,6 +40,10 @@ builder.Services.AddRateLimiter(o =>
 {
     // HIPÓTESE: 10 tentativas de login por minuto por IP, além do bloqueio por conta (RF07 CA4).
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Cotação chama o Melhor Envio: limite por IP contra abuso (HIPÓTESE: 30 por minuto).
+    o.AddPolicy("frete", http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1) }));
     o.AddPolicy(AuthEndpoints.LoginRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
@@ -99,6 +104,15 @@ store.MapGet("/fotos/{photoId:guid}/{size:int}", async Task<Results<FileStreamHt
     response.Headers.CacheControl = "public, max-age=31536000, immutable";
     return PanelEndpoints.UploadedImage(response, photo);
 });
+// Carrinho (RF14): o navegador manda só peça e quantidade; preço, estoque e frete vêm sempre daqui.
+store.MapPost("/carrinho", async (CartRequest request, IStorefrontCart cart, CancellationToken ct) =>
+    TypedResults.Ok(await cart.CheckAsync(request.Items ?? [], ct)));
+store.MapPost("/frete", async Task<Results<Ok<ShippingQuote>, ProblemHttpResult>> (ShippingRequest request, IStorefrontCart cart, CancellationToken ct) =>
+{
+    var (quote, error) = await cart.QuoteAsync(request.Cep ?? string.Empty, request.Items ?? [], ct);
+    return quote is not null ? TypedResults.Ok(quote) : TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: error);
+}).RequireRateLimiting("frete");
+
 // Logo da loja (RF01 CA2): o id muda a cada troca, então a URL pode ficar em cache por um ano.
 store.MapGet("/logo/{logoId:guid}", async Task<Results<FileStreamHttpResult, NotFound>> (
     Guid logoId, HttpResponse response, IStoreProfileService profiles, CancellationToken ct) =>
@@ -120,6 +134,9 @@ internalApi.MapGet("/tls/ask", async (string domain, ITenantCatalog catalog, Can
 });
 
 app.Run();
+
+internal sealed record CartRequest(IReadOnlyList<CartItem>? Items);
+internal sealed record ShippingRequest(string? Cep, IReadOnlyList<CartItem>? Items);
 
 /// <summary>Exposto para os testes de integração (WebApplicationFactory).</summary>
 public partial class Program;

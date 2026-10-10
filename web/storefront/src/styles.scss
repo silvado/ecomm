@@ -302,3 +302,181 @@ h2 {
 .notice {
   color: #1d2330;
 }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.store header nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.badge {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 0.35em;
+  border-radius: 999px;
+  background: var(--color-on-primary);
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+button.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.buy {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0.5rem 0;
+
+  select,
+  button {
+    font: inherit;
+    min-height: 44px;
+    border-radius: 6px;
+    padding: 0 0.8rem;
+  }
+
+  button {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border: 0;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    max-width: 320px;
+  }
+}
+
+.problem {
+  font-weight: 600;
+}
+
+.cart-lines {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+
+  li {
+    display: grid;
+    grid-template-columns: 72px 1fr auto;
+    gap: 0.4rem 0.8rem;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-text) 15%, transparent);
+
+    &.gone {
+      font-style: italic;
+    }
+
+    img {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 6px;
+      grid-row: span 2;
+    }
+
+    .line-info {
+      display: grid;
+      gap: 0.15rem;
+    }
+
+    select {
+      min-height: 40px;
+      font: inherit;
+    }
+  }
+}
+
+.shipping {
+  .cep {
+    display: flex;
+    gap: 0.6rem;
+    align-items: end;
+
+    label {
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    input,
+    button {
+      font: inherit;
+      min-height: 44px;
+      border-radius: 6px;
+      padding: 0 0.7rem;
+    }
+
+    button {
+      background: var(--color-primary);
+      color: var(--color-on-primary);
+      border: 0;
+      cursor: pointer;
+    }
+  }
+
+  .options {
+    border: 0;
+    padding: 0;
+    margin: 1rem 0;
+    display: grid;
+    gap: 0.5rem;
+
+    label {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.6rem;
+      align-items: center;
+      padding: 0.6rem;
+      border: 1px solid color-mix(in srgb, var(--color-text) 20%, transparent);
+      border-radius: 6px;
+    }
+  }
+}
+
+.totals {
+  max-width: 360px;
+  margin-left: auto;
+
+  p {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.3rem 0;
+  }
+
+  .total {
+    font-size: 1.2rem;
+  }
+
+  button {
+    width: 100%;
+    margin-top: 0.75rem;
+    min-height: 48px;
+    font: inherit;
+    font-weight: 600;
+    border: 0;
+    border-radius: 6px;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+
+    &:disabled {
+      opacity: 0.6;
+    }
+  }
+}

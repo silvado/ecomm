@@ -50,5 +50,12 @@ internal sealed class StockMovementConfiguration : IEntityTypeConfiguration<Stoc
 
 internal sealed class StoreSettingsConfiguration : IEntityTypeConfiguration<StoreSettings>
 {
-    public void Configure(EntityTypeBuilder<StoreSettings> builder) => builder.HasKey(s => s.TenantId);
+    public void Configure(EntityTypeBuilder<StoreSettings> builder)
+    {
+        builder.HasKey(s => s.TenantId);
+        builder.Property(s => s.HideOutOfStock).HasDefaultValue(false);
+        builder.Property(s => s.OriginPostalCode).HasMaxLength(8);
+        builder.Property(s => s.PickupEnabled).HasDefaultValue(false);
+        builder.Property(s => s.PickupAddress).HasMaxLength(StoreSettings.PickupAddressMaxLength);
+    }
 }

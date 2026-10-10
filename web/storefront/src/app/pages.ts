@@ -1,6 +1,8 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { CartStore } from './cart';
 import {
   CONDITION_LABELS,
   CONDITION_SCHEMA,
@@ -113,7 +115,7 @@ export class SearchPage {
 
 @Component({
   selector: 'app-part',
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe, RouterLink, FormsModule],
   template: `
     @if (part(); as p) {
       <article class="part">
@@ -148,6 +150,22 @@ export class SearchPage {
           @if (p.available > 0) {
             <p class="price">{{ p.price | currency: 'BRL' : 'symbol' : '1.2-2' }}</p>
             <p class="stock">{{ p.available === 1 ? 'Última unidade' : p.available + ' disponíveis' }}</p>
+            <div class="buy">
+              @if (p.available > 1) {
+                <label>
+                  <span class="sr-only">Quantidade</span>
+                  <select [(ngModel)]="quantity">
+                    @for (n of quantities(p.available); track n) {
+                      <option [ngValue]="n">{{ n }}</option>
+                    }
+                  </select>
+                </label>
+              }
+              <button type="button" (click)="addToCart(p.id)">Adicionar ao carrinho</button>
+            </div>
+            @if (added()) {
+              <p class="added" role="status">Adicionada. <a routerLink="/carrinho">Ver carrinho</a></p>
+            }
           } @else {
             <p class="unavailable">Indisponível no momento</p>
           }
@@ -194,12 +212,26 @@ export class PartPage {
   protected readonly large = (id: string) => photoUrl(id, 800);
   protected readonly small = (id: string) => photoUrl(id, 300);
   protected readonly srcset = photoSrcset;
+  protected readonly added = signal(false);
+  protected quantity = 1;
+  private readonly cart = inject(CartStore);
+
+  protected quantities(available: number): number[] {
+    return Array.from({ length: Math.min(available, 20) }, (_, i) => i + 1);
+  }
+
+  protected addToCart(partId: string): void {
+    this.cart.add(partId, this.quantity);
+    this.added.set(true);
+  }
 
   constructor() {
     const seo = inject(Seo);
     const ctx = inject(StoreContext);
     effect(() => {
       this.selected.set(0);
+      this.added.set(false);
+      this.quantity = 1;
       const part = this.part();
       const storeName = ctx.store?.name ?? 'Loja';
       if (!part) {

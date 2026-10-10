@@ -12,6 +12,8 @@ export interface PageSeo {
   type?: 'website' | 'product';
   /** Dados estruturados (schema.org) — ex.: Product na página da peça. */
   jsonLd?: object;
+  /** Páginas pessoais (carrinho, checkout) não entram no Google. */
+  noindex?: boolean;
 }
 
 const JSON_LD_ID = 'jsonld';
@@ -37,6 +39,8 @@ export class Seo {
     this.meta.updateTag({ property: 'og:locale', content: 'pt_BR' });
     if (page.image) this.meta.updateTag({ property: 'og:image', content: page.image });
     else this.meta.removeTag("property='og:image'");
+    if (page.noindex) this.meta.updateTag({ name: 'robots', content: 'noindex' });
+    else this.meta.removeTag("name='robots'");
     this.setCanonical(url);
     this.setJsonLd(page.jsonLd);
   }

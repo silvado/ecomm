@@ -89,6 +89,25 @@ const LOGO_MAX_BYTES = 2 * 1024 * 1024;
           <textarea formControlName="footer" rows="2" maxlength="500"></textarea>
         </label>
 
+        <fieldset>
+          <legend>Entrega e retirada</legend>
+          <label>
+            CEP de onde saem as entregas
+            <input type="text" formControlName="originPostalCode" inputmode="numeric" maxlength="9" placeholder="00000-000" />
+            <small>Sem CEP, a loja não oferece entrega (só retirada, se habilitada).</small>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" formControlName="pickupEnabled" />
+            Oferecer retirada no balcão
+          </label>
+          @if (form.controls.pickupEnabled.value) {
+            <label>
+              Endereço e horário da retirada
+              <textarea formControlName="pickupAddress" rows="2" maxlength="300" placeholder="Rua, número, bairro — seg a sex, 8h às 18h"></textarea>
+            </label>
+          }
+        </fieldset>
+
         <label class="checkbox">
           <input type="checkbox" formControlName="hideOutOfStock" />
           Ocultar da loja as peças sem estoque (sem marcar, elas aparecem como indisponíveis)
@@ -127,6 +146,9 @@ export class StorePage implements OnInit, OnDestroy {
     returnPolicy: [''],
     footer: [''],
     hideOutOfStock: [false],
+    originPostalCode: ['', Validators.pattern(/^\s*\d{5}-?\d{3}\s*$/)],
+    pickupEnabled: [false],
+    pickupAddress: [''],
   });
 
   private readonly values = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
@@ -227,8 +249,16 @@ export class StorePage implements OnInit, OnDestroy {
     this.saved.set(false);
     this.error.set(null);
     try {
-      const v = this.form.getRawValue();
-      this.fill(await this.api.update({ ...v, primaryColor: v.primaryColor.toUpperCase(), backgroundColor: v.backgroundColor.toUpperCase(), textColor: v.textColor.toUpperCase() }));
+      const { originPostalCode, pickupEnabled, pickupAddress, ...v } = this.form.getRawValue();
+      this.fill(
+        await this.api.update({
+          ...v,
+          primaryColor: v.primaryColor.toUpperCase(),
+          backgroundColor: v.backgroundColor.toUpperCase(),
+          textColor: v.textColor.toUpperCase(),
+          shipping: { originPostalCode: originPostalCode.trim() || null, pickupEnabled, pickupAddress: pickupEnabled ? pickupAddress.trim() || null : null },
+        }),
+      );
       this.saved.set(true);
     } catch (error) {
       this.error.set(problemTitle(error));
@@ -240,6 +270,15 @@ export class StorePage implements OnInit, OnDestroy {
   private fill(profile: StoreProfile): void {
     this.profile.set(profile);
     void this.loadLogo(profile);
-    this.form.reset({ tradeName: profile.tradeName, ...profile.theme, ...profile.texts, hideOutOfStock: profile.hideOutOfStock });
+    const cep = profile.shipping.originPostalCode;
+    this.form.reset({
+      tradeName: profile.tradeName,
+      ...profile.theme,
+      ...profile.texts,
+      hideOutOfStock: profile.hideOutOfStock,
+      originPostalCode: cep ? `${cep.slice(0, 5)}-${cep.slice(5)}` : '',
+      pickupEnabled: profile.shipping.pickupEnabled,
+      pickupAddress: profile.shipping.pickupAddress ?? '',
+    });
   }
 }
