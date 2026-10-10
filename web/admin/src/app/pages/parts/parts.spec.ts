@@ -5,13 +5,28 @@ import localePt from '@angular/common/locales/pt';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { PartsListPage } from './parts-list';
-import { PartPage, parseOemCodes } from './parts.api';
+import { PartPage, PartsApi, parseOemCodes } from './parts.api';
 
 registerLocaleData(localePt, 'pt-BR');
 
 describe('parseOemCodes', () => {
   it('aceita um por linha, vírgula ou ponto e vírgula e ignora vazios', () => {
     expect(parseOemCodes('5U0 941 015\n\n 6R0.941.007 ; AAA1,BBB2 ')).toEqual(['5U0 941 015', '6R0.941.007', 'AAA1', 'BBB2']);
+  });
+});
+
+describe('PartsApi', () => {
+  it('fotos vão para as rotas da peça', async () => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    const api = TestBed.inject(PartsApi);
+    const backend = TestBed.inject(HttpTestingController);
+
+    const calls = [api.addPhoto('p1', new Blob(['x'])), api.removePhoto('p1', 'f1'), api.reorderPhotos('p1', ['f2', 'f1'])];
+    backend.expectOne({ method: 'POST', url: '/api/painel/pecas/p1/fotos' }).flush({});
+    backend.expectOne({ method: 'DELETE', url: '/api/painel/pecas/p1/fotos/f1' }).flush({});
+    backend.expectOne({ method: 'PUT', url: '/api/painel/pecas/p1/fotos/ordem' }).flush({});
+    await Promise.all(calls);
+    backend.verify();
   });
 });
 

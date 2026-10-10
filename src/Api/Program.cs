@@ -6,6 +6,7 @@ using Ecommerce.Api.Internal;
 using Ecommerce.Api.Panel;
 using Ecommerce.Api.Tenancy;
 using Ecommerce.Application.Catalog;
+using Ecommerce.Application.Orders;
 using Ecommerce.Application.Shipping;
 using Ecommerce.Application.Store;
 using Ecommerce.Application.Tenancy;
@@ -44,6 +45,10 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy("frete", http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1) }));
+    // Cada pedido reserva peças por 30 min: limite por IP contra quem tente esvaziar o estoque (HIPÓTESE: 10 por minuto).
+    o.AddPolicy("pedido", http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
     o.AddPolicy(AuthEndpoints.LoginRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
@@ -112,6 +117,24 @@ store.MapPost("/frete", async Task<Results<Ok<ShippingQuote>, ProblemHttpResult>
     var (quote, error) = await cart.QuoteAsync(request.Cep ?? string.Empty, request.Items ?? [], ct);
     return quote is not null ? TypedResults.Ok(quote) : TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: error);
 }).RequireRateLimiting("frete");
+// Checkout como convidado (RF14 CA3): cria o pedido aguardando pagamento com as peças reservadas (RF12).
+// 409: algo mudou desde o carrinho (preço, estoque, frete, total) e o comprador precisa rever antes de confirmar.
+store.MapPost("/pedidos", async Task<Results<Created<PlacedOrder>, ProblemHttpResult>> (CheckoutRequest request, IStorefrontCheckout checkout, CancellationToken ct) =>
+{
+    var result = await checkout.PlaceAsync(request, ct);
+    return result.Outcome switch
+    {
+        CheckoutOutcome.Placed => TypedResults.Created((string?)null, result.Order!),
+        CheckoutOutcome.Changed => TypedResults.Problem(statusCode: StatusCodes.Status409Conflict, title: result.Message),
+        _ => TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: result.Message),
+    };
+}).RequireRateLimiting("pedido");
+// Acompanhamento pelo link do comprador. Token no corpo (não na URL) para não ir parar em logs de acesso.
+store.MapPost("/pedidos/consulta", async Task<Results<Ok<StoreOrderView>, NotFound>> (OrderLookupRequest request, IStorefrontCheckout checkout, HttpResponse response, CancellationToken ct) =>
+{
+    response.Headers.CacheControl = "no-store";
+    return await checkout.FindAsync(request.Token, ct) is { } order ? TypedResults.Ok(order) : TypedResults.NotFound();
+}).RequireRateLimiting("frete");
 
 // Logo da loja (RF01 CA2): o id muda a cada troca, então a URL pode ficar em cache por um ano.
 store.MapGet("/logo/{logoId:guid}", async Task<Results<FileStreamHttpResult, NotFound>> (
@@ -137,6 +160,7 @@ app.Run();
 
 internal sealed record CartRequest(IReadOnlyList<CartItem>? Items);
 internal sealed record ShippingRequest(string? Cep, IReadOnlyList<CartItem>? Items);
+internal sealed record OrderLookupRequest(string? Token);
 
 /// <summary>Exposto para os testes de integração (WebApplicationFactory).</summary>
 public partial class Program;

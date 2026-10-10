@@ -103,15 +103,15 @@ export class PartsApi {
 
   /** Bytes da imagem no corpo; a API reconhece o formato pelo conteúdo e gera os WebP. */
   addPhoto(id: string, file: Blob): Promise<PartView> {
-    return firstValueFrom(this.http.post<PartView>(`//fotos`, file));
+    return firstValueFrom(this.http.post<PartView>(`${this.base}/${id}/fotos`, file));
   }
 
   removePhoto(id: string, photoId: string): Promise<PartView> {
-    return firstValueFrom(this.http.delete<PartView>(`//fotos/`));
+    return firstValueFrom(this.http.delete<PartView>(`${this.base}/${id}/fotos/${photoId}`));
   }
 
   reorderPhotos(id: string, photoIds: string[]): Promise<PartView> {
-    return firstValueFrom(this.http.put<PartView>(`//fotos/ordem`, { photoIds }));
+    return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}/fotos/ordem`, { photoIds }));
   }
 
   setStatus(id: string, status: PartStatus): Promise<PartView> {

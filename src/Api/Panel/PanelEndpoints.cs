@@ -28,6 +28,7 @@ public static class PanelEndpoints
         panel.MapPartEndpoints();
         panel.MapPartPhotoEndpoints();
         panel.MapCompatibilityEndpoints();
+        panel.MapOrderEndpoints();
         panel.MapGroup("").RequirePermission(Permission.CatalogManage).MapVehicleCatalog();
 
         var users = panel.MapGroup("/usuarios").RequirePermission(Permission.UsersManage);

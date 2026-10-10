@@ -13,6 +13,8 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **974** |
 
+Progresso: 226 h de 974 h em tarefas concluídas (23%).
+
 Referência: 6 h produtivas/dia ≈ 162 dias úteis ≈ 7,7 meses de uma pessoa.
 
 ## E1 — Núcleo e loja (meses 1–3) — 470 h
@@ -21,92 +23,92 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 
 ### Fundação da plataforma — 132 h
 
-#### Estrutura da solução, ambiente local e CI — 18 h  `RNF09`
+#### Estrutura da solução, ambiente local e CI — 18 h  `RNF09` · **concluído**
 
 **Critérios de aceite:** Solução .NET (Domain, Application, Infrastructure, Api, Worker) e apps Angular compilam; docker compose sobe API, PostgreSQL, storage S3 (SeaweedFS) e Caddy; CI no GitHub Actions roda build, testes e gitleaks a cada PR.
 
-- [ ] Criar projetos .NET e referências entre camadas — 4 h
-- [ ] Criar apps Angular storefront (SSR) e admin — 6 h
-- [ ] docker-compose de desenvolvimento — 4 h
-- [ ] Pipeline GitHub Actions (build, testes, gitleaks) — 4 h
+- [x] Criar projetos .NET e referências entre camadas — 4 h
+- [x] Criar apps Angular storefront (SSR) e admin — 6 h
+- [x] docker-compose de desenvolvimento — 4 h
+- [x] Pipeline GitHub Actions (build, testes, gitleaks) — 4 h
 
-#### Spike: Wolverine + EF Core + RLS — 8 h  `ADR-0002`
+#### Spike: Wolverine + EF Core + RLS — 8 h  `ADR-0002` · **concluído**
 
 **Critérios de aceite:** Protótipo publica evento pelo outbox na mesma transação do EF com RLS ativo; latência medida e registrada no ADR-0002.
 
-- [ ] Configurar Wolverine com persistência PostgreSQL — 4 h
-- [ ] Medir latência do outbox e documentar no ADR — 4 h
+- [x] Configurar Wolverine com persistência PostgreSQL — 4 h
+- [x] Medir latência do outbox e documentar no ADR — 4 h
 
-#### Isolamento multi-tenant (filtro EF + RLS) — 29 h  `RNF01`
+#### Isolamento multi-tenant (filtro EF + RLS) — 29 h  `RNF01` · **concluído**
 
 **Critérios de aceite:** Teste de integração prova que nenhuma linha de outro tenant é lida ou alterada com filtro EF, sem filtro EF (só RLS) e sem tenant definido; conexão reaproveitada do pool não carrega tenant anterior; build falha se tabela de negócio estiver sem RLS.
 
-- [ ] Catálogo de tenants com database_key — 6 h
-- [ ] Interceptor de conexão (app.tenant_id) — 4 h
-- [ ] Migrações: papéis app_user/app_migrator e policies RLS — 6 h
-- [ ] Filtro global EF e guarda de TenantId no SaveChanges — 4 h
-- [ ] Testes de isolamento (3 cenários + pool) — 6 h
-- [ ] Verificação automática de tabelas sem RLS — 3 h
+- [x] Catálogo de tenants com database_key — 6 h
+- [x] Interceptor de conexão (app.tenant_id) — 4 h
+- [x] Migrações: papéis app_user/app_migrator e policies RLS — 6 h
+- [x] Filtro global EF e guarda de TenantId no SaveChanges — 4 h
+- [x] Testes de isolamento (3 cenários + pool) — 6 h
+- [x] Verificação automática de tabelas sem RLS — 3 h
 
-#### Resolução de tenant pelo Host — 10 h  `RF04`
+#### Resolução de tenant pelo Host — 10 h  `RF04` · **concluído**
 
 **Critérios de aceite:** Host de subdomínio ou domínio verificado resolve o tenant com cache ≤ 60 s; Host desconhecido → 404; tenant suspenso → página de loja indisponível.
 
-- [ ] Middleware de resolução com cache — 5 h
-- [ ] Página de loja indisponível — 2 h
-- [ ] Testes de resolução — 3 h
+- [x] Middleware de resolução com cache — 5 h
+- [x] Página de loja indisponível — 2 h
+- [x] Testes de resolução — 3 h
 
-#### Observabilidade básica — 10 h  `RNF06`
+#### Observabilidade básica — 10 h  `RNF06` · **em andamento**
 
 **Critérios de aceite:** Logs JSON com tenant_id e correlation_id e redação de campos sensíveis; /health/live e /health/ready; métricas de fila expostas.
 
 - [ ] Serilog estruturado com redação — 4 h
-- [ ] Health checks — 2 h
+- [x] Health checks — 2 h
 - [ ] Métricas OpenTelemetry da fila — 4 h
 
-#### Cofre de segredos por tenant — 17 h  `RF06`
+#### Cofre de segredos por tenant — 17 h  `RF06` · **em andamento**
 
 **Critérios de aceite:** Segredos com criptografia envelope; painel mostra só metadados; teste automatizado não encontra segredos em logs; alerta de vencimento do certificado A1.
 
-- [ ] Serviço de criptografia envelope e rotação de chave mestra — 8 h
+- [x] Serviço de criptografia envelope e rotação de chave mestra — 8 h
 - [ ] API de cadastro e metadados — 3 h
-- [ ] Teste de vazamento em logs — 3 h
+- [x] Teste de vazamento em logs — 3 h
 - [ ] Alerta de vencimento do A1 — 3 h
 
-#### Autenticação, usuários e perfis do tenant — 24 h  `RF07`
+#### Autenticação, usuários e perfis do tenant — 24 h  `RF07` · **concluído**
 
 **Critérios de aceite:** Login com e-mail e senha (hash forte), bloqueio após 5 tentativas, perfis Dono e Operador com permissões distintas, limite de usuários do plano respeitado.
 
-- [ ] Identidade e login no catálogo — 8 h
-- [ ] JWT com tenant e papel validados por vínculo — 4 h
-- [ ] Políticas de autorização Dono/Operador — 4 h
-- [ ] Telas de login e gestão de usuários — 8 h
+- [x] Identidade e login no catálogo — 8 h
+- [x] JWT com tenant e papel validados por vínculo — 4 h
+- [x] Políticas de autorização Dono/Operador — 4 h
+- [x] Telas de login e gestão de usuários — 8 h
 
-#### Cadastro de tenant e subdomínio automático — 16 h  `RF01, RF02`
+#### Cadastro de tenant e subdomínio automático — 16 h  `RF01, RF02` · **em andamento**
 
 **Critérios de aceite:** Superadmin cria tenant com CNPJ validado e slug único; loja acessível em slug.plataforma.com.br com HTTPS em até 1 min; tema e textos editáveis refletem em até 1 min.
 
-- [ ] API de tenant e configurações da loja — 4 h
-- [ ] Tela de dados da empresa e identidade visual — 6 h
+- [x] API de tenant e configurações da loja — 4 h
+- [x] Tela de dados da empresa e identidade visual — 6 h
 - [ ] Caddy com certificado curinga (DNS-01) — 6 h
 
 ### Catálogo de peças — 80 h
 
-#### Cadastro de peça com fotos — 32 h  `RF08`
+#### Cadastro de peça com fotos — 32 h  `RF08` · **concluído**
 
 **Critérios de aceite:** Peça com todos os campos do RF08; código interno único por tenant; fotos convertidas para WebP em 3 tamanhos no storage com prefixo do tenant.
 
-- [ ] Domínio e API de peça — 8 h
-- [ ] Upload, conversão e storage S3 de fotos — 8 h
-- [ ] Telas de listagem e formulário de peça — 16 h
+- [x] Domínio e API de peça — 8 h
+- [x] Upload, conversão e storage S3 de fotos — 8 h
+- [x] Telas de listagem e formulário de peça — 16 h
 
-#### Compatibilidade por veículo — 20 h  `RF09`
+#### Compatibilidade por veículo — 20 h  `RF09` · **concluído**
 
 **Critérios de aceite:** Peça tem 0..n compatibilidades (marca, modelo, anos, motorização) apontando para a tabela global de veículos; busca por veículo retorna só peças compatíveis.
 
-- [ ] Tabela global de veículos e replicação para ref — 8 h
-- [ ] Seleção de compatibilidades no formulário — 8 h
-- [ ] Filtro de busca por veículo — 4 h
+- [x] Tabela global de veículos e replicação para ref — 8 h
+- [x] Seleção de compatibilidades no formulário — 8 h
+- [x] Filtro de busca por veículo — 4 h
 
 #### Rastreabilidade de peça usada — 10 h  `RF10`
 
@@ -125,19 +127,19 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 
 ### Estoque e sincronização interna — 48 h
 
-#### Reserva atômica de estoque — 16 h  `RF12, RNF02`
+#### Reserva atômica de estoque — 16 h  `RF12, RNF02` · **concluído**
 
 **Critérios de aceite:** Reserva e baixa por UPDATE condicional; reserva expira no tempo do tenant (padrão 30 min); 50 requisições simultâneas pela última unidade resultam em exatamente 1 reserva.
 
-- [ ] Agregado de estoque e comandos SQL atômicos — 6 h
-- [ ] Expiração de reserva por mensagem agendada — 4 h
-- [ ] Testes de concorrência — 6 h
+- [x] Agregado de estoque e comandos SQL atômicos — 6 h
+- [x] Expiração de reserva por mensagem agendada — 4 h
+- [x] Testes de concorrência — 6 h
 
-#### Outbox, idempotência e retentativas — 20 h  `RF25, RF26, RF28`
+#### Outbox, idempotência e retentativas — 20 h  `RF25, RF26, RF28` · **em andamento**
 
 **Critérios de aceite:** Toda alteração de estoque grava evento na mesma transação; webhook entregue 10 vezes altera o estoque uma vez; falhas retentadas com backoff e enviadas à fila de falhas com alerta após 5 tentativas; reprocessamento pelo painel.
 
-- [ ] Evento StockChanged pelo outbox — 4 h
+- [x] Evento StockChanged pelo outbox — 4 h
 - [ ] Inbox de eventos externos com chave única — 6 h
 - [ ] Política de retentativa, fila de falhas e alerta — 4 h
 - [ ] Tela de eventos em falha com reprocessamento — 6 h
@@ -152,22 +154,22 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 
 ### Loja virtual — 120 h
 
-#### Vitrine com SSR, tema por tenant e busca — 32 h  `RF13`
+#### Vitrine com SSR, tema por tenant e busca — 32 h  `RF13` · **concluído**
 
 **Critérios de aceite:** Páginas renderizadas no servidor com tema do tenant; busca por texto, código e veículo; JSON-LD e Open Graph por peça; Lighthouse mobile ≥ 85 em performance e SEO.
 
-- [ ] SSR com resolução de tenant e tema via CSS custom properties — 12 h
-- [ ] Listagem e busca (texto, código, veículo) — 12 h
-- [ ] Página de produto com SEO — 8 h
+- [x] SSR com resolução de tenant e tema via CSS custom properties — 12 h
+- [x] Listagem e busca (texto, código, veículo) — 12 h
+- [x] Página de produto com SEO — 8 h
 
-#### Carrinho, checkout e frete — 34 h  `RF14`
+#### Carrinho, checkout e frete — 34 h  `RF14` · **em andamento**
 
 **Critérios de aceite:** Carrinho e checkout como convidado ou com conta; frete calculado pelo Melhor Envio com CEP de origem do tenant; retirada no balcão configurável.
 
-- [ ] Carrinho — 8 h
-- [ ] Checkout — 12 h
-- [ ] IShippingProvider e adapter Melhor Envio — 12 h
-- [ ] Opção de retirada — 2 h
+- [x] Carrinho — 8 h
+- [ ] Checkout — 12 h *(em andamento)*
+- [ ] IShippingProvider e adapter Melhor Envio — 12 h *(em andamento)*
+- [x] Opção de retirada — 2 h
 
 #### Pagamento por gateway do tenant — 42 h  `RF15`
 

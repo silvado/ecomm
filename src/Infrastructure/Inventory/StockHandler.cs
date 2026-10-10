@@ -102,7 +102,8 @@ public static class StockHandler
         return (new SellStockResult(true), outgoing);
     }
 
-    private static async Task<OutgoingMessages> EndReservationAsync(
+    /// <summary>Encerra a reserva ativa e devolve o saldo; também usado ao cancelar um pedido (todas as reservas dele).</summary>
+    internal static async Task<OutgoingMessages> EndReservationAsync(
         TenantDbContext db, Guid reservationId, ReservationStatus newStatus, DateTimeOffset? expiredBefore, CancellationToken ct)
     {
         var outgoing = new OutgoingMessages();

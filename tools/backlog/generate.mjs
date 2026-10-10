@@ -4,6 +4,9 @@ import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { epics } from './backlog-data.mjs';
+import { pbiStatus, taskStatus } from './progress.mjs';
+
+const label = { todo: '', doing: ' · **em andamento**', done: ' · **concluído**' };
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -20,6 +23,9 @@ md.push('Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlo
 md.push('| Etapa | Horas |', '|---|---:|');
 for (const e of epics) md.push(`| ${e.title} | ${epicHours(e)} |`);
 md.push(`| **Total** | **${total}** |`, '');
+const doneHours = epics.flatMap((e) => e.features.flatMap((f) => f.pbis.flatMap((p) => p.t)))
+  .filter((task) => taskStatus(task) === 'done').reduce((s, [, h]) => s + h, 0);
+md.push(`Progresso: ${doneHours} h de ${total} h em tarefas concluídas (${Math.round((100 * doneHours) / total)}%).`, '');
 md.push(`Referência: 6 h produtivas/dia ≈ ${Math.round(total / 6)} dias úteis ≈ ${(total / 6 / 21).toFixed(1).replace(".", ",")} meses de uma pessoa.`, '');
 
 for (const e of epics) {
@@ -27,9 +33,13 @@ for (const e of epics) {
   for (const f of e.features) {
     md.push(`### ${f.title} — ${featureHours(f)} h`, '');
     for (const p of f.pbis) {
-      md.push(`#### ${p.title} — ${pbiHours(p)} h  \`${p.rf}\``, '');
+      md.push(`#### ${p.title} — ${pbiHours(p)} h  \`${p.rf}\`${label[pbiStatus(p)]}`, '');
       md.push(`**Critérios de aceite:** ${p.ac}`, '');
-      for (const [t, h] of p.t) md.push(`- [ ] ${t} — ${h} h`);
+      for (const task of p.t) {
+        const [t, h] = task;
+        const status = taskStatus(task);
+        md.push(`- [${status === 'done' ? 'x' : ' '}] ${t} — ${h} h${status === 'doing' ? ' *(em andamento)*' : ''}`);
+      }
       md.push('');
     }
   }

@@ -1,6 +1,7 @@
 // Fonte única do backlog. Gera docs/backlog.md, docs/backlog.csv e os itens no Azure Boards.
 // Hierarquia Scrum: Epic → Feature → Product Backlog Item → Task. Estimativas em horas.
-// PBI: ac = critérios de aceite; t = tarefas [título, horas].
+// PBI: ac = critérios de aceite; t = tarefas [título, horas, estado?] — estado 'doing' ou 'done' (omitido = a fazer).
+// O estado de PBI, Feature e Epic é derivado das tarefas (ver progress.mjs); atualize aqui ao avançar e rode azure-sync.
 
 export const epics = [
   {
@@ -15,49 +16,49 @@ export const epics = [
             title: 'Estrutura da solução, ambiente local e CI',
             rf: 'RNF09',
             ac: 'Solução .NET (Domain, Application, Infrastructure, Api, Worker) e apps Angular compilam; docker compose sobe API, PostgreSQL, storage S3 (SeaweedFS) e Caddy; CI no GitHub Actions roda build, testes e gitleaks a cada PR.',
-            t: [['Criar projetos .NET e referências entre camadas', 4], ['Criar apps Angular storefront (SSR) e admin', 6], ['docker-compose de desenvolvimento', 4], ['Pipeline GitHub Actions (build, testes, gitleaks)', 4]],
+            t: [['Criar projetos .NET e referências entre camadas', 4, 'done'], ['Criar apps Angular storefront (SSR) e admin', 6, 'done'], ['docker-compose de desenvolvimento', 4, 'done'], ['Pipeline GitHub Actions (build, testes, gitleaks)', 4, 'done']],
           },
           {
             title: 'Spike: Wolverine + EF Core + RLS',
             rf: 'ADR-0002',
             ac: 'Protótipo publica evento pelo outbox na mesma transação do EF com RLS ativo; latência medida e registrada no ADR-0002.',
-            t: [['Configurar Wolverine com persistência PostgreSQL', 4], ['Medir latência do outbox e documentar no ADR', 4]],
+            t: [['Configurar Wolverine com persistência PostgreSQL', 4, 'done'], ['Medir latência do outbox e documentar no ADR', 4, 'done']],
           },
           {
             title: 'Isolamento multi-tenant (filtro EF + RLS)',
             rf: 'RNF01',
             ac: 'Teste de integração prova que nenhuma linha de outro tenant é lida ou alterada com filtro EF, sem filtro EF (só RLS) e sem tenant definido; conexão reaproveitada do pool não carrega tenant anterior; build falha se tabela de negócio estiver sem RLS.',
-            t: [['Catálogo de tenants com database_key', 6], ['Interceptor de conexão (app.tenant_id)', 4], ['Migrações: papéis app_user/app_migrator e policies RLS', 6], ['Filtro global EF e guarda de TenantId no SaveChanges', 4], ['Testes de isolamento (3 cenários + pool)', 6], ['Verificação automática de tabelas sem RLS', 3]],
+            t: [['Catálogo de tenants com database_key', 6, 'done'], ['Interceptor de conexão (app.tenant_id)', 4, 'done'], ['Migrações: papéis app_user/app_migrator e policies RLS', 6, 'done'], ['Filtro global EF e guarda de TenantId no SaveChanges', 4, 'done'], ['Testes de isolamento (3 cenários + pool)', 6, 'done'], ['Verificação automática de tabelas sem RLS', 3, 'done']],
           },
           {
             title: 'Resolução de tenant pelo Host',
             rf: 'RF04',
             ac: 'Host de subdomínio ou domínio verificado resolve o tenant com cache ≤ 60 s; Host desconhecido → 404; tenant suspenso → página de loja indisponível.',
-            t: [['Middleware de resolução com cache', 5], ['Página de loja indisponível', 2], ['Testes de resolução', 3]],
+            t: [['Middleware de resolução com cache', 5, 'done'], ['Página de loja indisponível', 2, 'done'], ['Testes de resolução', 3, 'done']],
           },
           {
             title: 'Observabilidade básica',
             rf: 'RNF06',
             ac: 'Logs JSON com tenant_id e correlation_id e redação de campos sensíveis; /health/live e /health/ready; métricas de fila expostas.',
-            t: [['Serilog estruturado com redação', 4], ['Health checks', 2], ['Métricas OpenTelemetry da fila', 4]],
+            t: [['Serilog estruturado com redação', 4], ['Health checks', 2, 'done'], ['Métricas OpenTelemetry da fila', 4]],
           },
           {
             title: 'Cofre de segredos por tenant',
             rf: 'RF06',
             ac: 'Segredos com criptografia envelope; painel mostra só metadados; teste automatizado não encontra segredos em logs; alerta de vencimento do certificado A1.',
-            t: [['Serviço de criptografia envelope e rotação de chave mestra', 8], ['API de cadastro e metadados', 3], ['Teste de vazamento em logs', 3], ['Alerta de vencimento do A1', 3]],
+            t: [['Serviço de criptografia envelope e rotação de chave mestra', 8, 'done'], ['API de cadastro e metadados', 3], ['Teste de vazamento em logs', 3, 'done'], ['Alerta de vencimento do A1', 3]],
           },
           {
             title: 'Autenticação, usuários e perfis do tenant',
             rf: 'RF07',
             ac: 'Login com e-mail e senha (hash forte), bloqueio após 5 tentativas, perfis Dono e Operador com permissões distintas, limite de usuários do plano respeitado.',
-            t: [['Identidade e login no catálogo', 8], ['JWT com tenant e papel validados por vínculo', 4], ['Políticas de autorização Dono/Operador', 4], ['Telas de login e gestão de usuários', 8]],
+            t: [['Identidade e login no catálogo', 8, 'done'], ['JWT com tenant e papel validados por vínculo', 4, 'done'], ['Políticas de autorização Dono/Operador', 4, 'done'], ['Telas de login e gestão de usuários', 8, 'done']],
           },
           {
             title: 'Cadastro de tenant e subdomínio automático',
             rf: 'RF01, RF02',
             ac: 'Superadmin cria tenant com CNPJ validado e slug único; loja acessível em slug.plataforma.com.br com HTTPS em até 1 min; tema e textos editáveis refletem em até 1 min.',
-            t: [['API de tenant e configurações da loja', 4], ['Tela de dados da empresa e identidade visual', 6], ['Caddy com certificado curinga (DNS-01)', 6]],
+            t: [['API de tenant e configurações da loja', 4, 'done'], ['Tela de dados da empresa e identidade visual', 6, 'done'], ['Caddy com certificado curinga (DNS-01)', 6]],
           },
         ],
       },
@@ -68,13 +69,13 @@ export const epics = [
             title: 'Cadastro de peça com fotos',
             rf: 'RF08',
             ac: 'Peça com todos os campos do RF08; código interno único por tenant; fotos convertidas para WebP em 3 tamanhos no storage com prefixo do tenant.',
-            t: [['Domínio e API de peça', 8], ['Upload, conversão e storage S3 de fotos', 8], ['Telas de listagem e formulário de peça', 16]],
+            t: [['Domínio e API de peça', 8, 'done'], ['Upload, conversão e storage S3 de fotos', 8, 'done'], ['Telas de listagem e formulário de peça', 16, 'done']],
           },
           {
             title: 'Compatibilidade por veículo',
             rf: 'RF09',
             ac: 'Peça tem 0..n compatibilidades (marca, modelo, anos, motorização) apontando para a tabela global de veículos; busca por veículo retorna só peças compatíveis.',
-            t: [['Tabela global de veículos e replicação para ref', 8], ['Seleção de compatibilidades no formulário', 8], ['Filtro de busca por veículo', 4]],
+            t: [['Tabela global de veículos e replicação para ref', 8, 'done'], ['Seleção de compatibilidades no formulário', 8, 'done'], ['Filtro de busca por veículo', 4, 'done']],
           },
           {
             title: 'Rastreabilidade de peça usada',
@@ -97,13 +98,13 @@ export const epics = [
             title: 'Reserva atômica de estoque',
             rf: 'RF12, RNF02',
             ac: 'Reserva e baixa por UPDATE condicional; reserva expira no tempo do tenant (padrão 30 min); 50 requisições simultâneas pela última unidade resultam em exatamente 1 reserva.',
-            t: [['Agregado de estoque e comandos SQL atômicos', 6], ['Expiração de reserva por mensagem agendada', 4], ['Testes de concorrência', 6]],
+            t: [['Agregado de estoque e comandos SQL atômicos', 6, 'done'], ['Expiração de reserva por mensagem agendada', 4, 'done'], ['Testes de concorrência', 6, 'done']],
           },
           {
             title: 'Outbox, idempotência e retentativas',
             rf: 'RF25, RF26, RF28',
             ac: 'Toda alteração de estoque grava evento na mesma transação; webhook entregue 10 vezes altera o estoque uma vez; falhas retentadas com backoff e enviadas à fila de falhas com alerta após 5 tentativas; reprocessamento pelo painel.',
-            t: [['Evento StockChanged pelo outbox', 4], ['Inbox de eventos externos com chave única', 6], ['Política de retentativa, fila de falhas e alerta', 4], ['Tela de eventos em falha com reprocessamento', 6]],
+            t: [['Evento StockChanged pelo outbox', 4, 'done'], ['Inbox de eventos externos com chave única', 6], ['Política de retentativa, fila de falhas e alerta', 4], ['Tela de eventos em falha com reprocessamento', 6]],
           },
           {
             title: 'Log de integração consultável',
@@ -120,13 +121,13 @@ export const epics = [
             title: 'Vitrine com SSR, tema por tenant e busca',
             rf: 'RF13',
             ac: 'Páginas renderizadas no servidor com tema do tenant; busca por texto, código e veículo; JSON-LD e Open Graph por peça; Lighthouse mobile ≥ 85 em performance e SEO.',
-            t: [['SSR com resolução de tenant e tema via CSS custom properties', 12], ['Listagem e busca (texto, código, veículo)', 12], ['Página de produto com SEO', 8]],
+            t: [['SSR com resolução de tenant e tema via CSS custom properties', 12, 'done'], ['Listagem e busca (texto, código, veículo)', 12, 'done'], ['Página de produto com SEO', 8, 'done']],
           },
           {
             title: 'Carrinho, checkout e frete',
             rf: 'RF14',
             ac: 'Carrinho e checkout como convidado ou com conta; frete calculado pelo Melhor Envio com CEP de origem do tenant; retirada no balcão configurável.',
-            t: [['Carrinho', 8], ['Checkout', 12], ['IShippingProvider e adapter Melhor Envio', 12], ['Opção de retirada', 2]],
+            t: [['Carrinho', 8, 'done'], ['Checkout', 12, 'doing'], ['IShippingProvider e adapter Melhor Envio', 12, 'doing'], ['Opção de retirada', 2, 'done']],
           },
           {
             title: 'Pagamento por gateway do tenant',
