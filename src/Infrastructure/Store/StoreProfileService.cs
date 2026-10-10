@@ -31,25 +31,20 @@ public sealed class StoreProfileService(
         var tenantId = db.RequireTenantId();
         var tenant = await platform.Tenants.SingleAsync(t => t.Id == tenantId, ct);
         var branding = await TrackedBrandingAsync(tenantId, ct);
+        var settings = await TrackedSettingsAsync(tenantId, ct);
 
+        // Tudo validado antes de gravar: qualquer erro devolve a mensagem e nada muda.
         try
         {
             tenant.Rename(update.TradeName);
             branding.Update(update.PrimaryColor, update.BackgroundColor, update.TextColor,
                 update.About, update.ReturnPolicy, update.Footer, clock.GetUtcNow());
+            if (update.HideOutOfStock is { } hide) settings.SetHideOutOfStock(hide);
+            if (update.Shipping is { } shipping) settings.ConfigureShipping(shipping.OriginPostalCode, shipping.PickupEnabled, shipping.PickupAddress);
         }
         catch (ArgumentException e)
         {
             return (null, e.Message.Split(" (Parameter", 2)[0]);
-        }
-
-        if (update.HideOutOfStock is { } hide)
-        {
-            await db.Database.ExecuteSqlAsync($"""
-                INSERT INTO store_settings (tenant_id, reservation_minutes, hide_out_of_stock)
-                VALUES ({tenantId}, {Domain.Inventory.StoreSettings.DefaultReservationMinutes}, {hide})
-                ON CONFLICT (tenant_id) DO UPDATE SET hide_out_of_stock = EXCLUDED.hide_out_of_stock
-                """, ct);
         }
 
         await db.SaveChangesAsync(ct);
@@ -142,12 +137,23 @@ public sealed class StoreProfileService(
         return await db.StoreBrandings.SingleAsync(ct);
     }
 
+    /// <summary>Garante a linha de configurações (valores padrão) e devolve a versão rastreada.</summary>
+    private async Task<Domain.Inventory.StoreSettings> TrackedSettingsAsync(Guid tenantId, CancellationToken ct)
+    {
+        await db.Database.ExecuteSqlAsync($"""
+            INSERT INTO store_settings (tenant_id, reservation_minutes) VALUES ({tenantId}, {Domain.Inventory.StoreSettings.DefaultReservationMinutes})
+            ON CONFLICT (tenant_id) DO NOTHING
+            """, ct);
+        return await db.StoreSettings.SingleAsync(ct);
+    }
+
     private async Task<StoreProfile> ProfileAsync(Guid tenantId, StoreBranding branding, CancellationToken ct)
     {
         var tenant = await platform.Tenants.AsNoTracking().SingleAsync(t => t.Id == tenantId, ct);
-        var hideOutOfStock = await db.StoreSettings.Select(s => (bool?)s.HideOutOfStock).SingleOrDefaultAsync(ct) ?? false;
+        var settings = await db.StoreSettings.AsNoTracking().SingleOrDefaultAsync(ct);
         return new StoreProfile(tenant.Slug, tenant.Cnpj.Value, tenant.LegalName, tenant.TradeName,
-            Theme(branding), Texts(branding), branding.ContrastWarnings(), branding.LogoId, hideOutOfStock);
+            Theme(branding), Texts(branding), branding.ContrastWarnings(), branding.LogoId, settings?.HideOutOfStock ?? false,
+            new StoreShipping(settings?.OriginPostalCode, settings?.PickupEnabled ?? false, settings?.PickupAddress));
     }
 
     private void Invalidate(Guid tenantId)

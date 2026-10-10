@@ -1,8 +1,10 @@
 using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Identity;
 using Ecommerce.Infrastructure.Catalog;
+using Ecommerce.Application.Shipping;
 using Ecommerce.Application.Storage;
 using Ecommerce.Application.Store;
+using Ecommerce.Infrastructure.Shipping;
 using Ecommerce.Infrastructure.Storage;
 using Ecommerce.Infrastructure.Store;
 using Ecommerce.Application.Tenancy;
@@ -65,6 +67,12 @@ public static class DependencyInjection
         services.AddScoped<IStoreProfileService, StoreProfileService>();
         services.AddScoped<IPartQueries, PartQueries>();
         services.AddScoped<IStoreCatalog, StoreCatalog>();
+
+        // Frete (RF14): Melhor Envio da loja (token no cofre) ou fake em dev/testes.
+        services.Configure<ShippingOptions>(configuration.GetSection(ShippingOptions.Section));
+        services.AddHttpClient(ShippingProviderResolver.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(10));
+        services.AddScoped<IShippingProviderResolver, ShippingProviderResolver>();
+        services.AddScoped<IStorefrontCart, StorefrontCart>();
         services.AddScoped<IPartPhotos, PartPhotoService>();
         services.AddScoped<VehicleImporter>();
         services.AddScoped<IVehicleCatalog, VehicleCatalog>();

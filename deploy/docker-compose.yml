@@ -56,6 +56,10 @@ services:
       Storage__ServiceUrl: http://s3:8333
       Storage__AccessKey: ${S3_ACCESS_KEY}
       Storage__SecretKey: ${S3_SECRET_KEY}
+      # Frete (RF14): sem Melhor Envio conectado, dev usa o provedor fake.
+      Shipping__UseFakeProvider: "true"
+      Shipping__MelhorEnvio__BaseUrl: https://sandbox.melhorenvio.com.br
+      Shipping__MelhorEnvio__UserAgent: ${MELHOR_ENVIO_USER_AGENT:-}
       Network__Internal__0: 172.16.0.0/12   # rede padrão do Docker: Caddy e storefront são proxies confiáveis
     depends_on: { migrator: { condition: service_completed_successfully }, s3: { condition: service_started } }
     ports: ["8080:8080"]
