@@ -22,6 +22,8 @@ const apiUrl = process.env['API_URL'] ?? 'http://localhost:8080';
 const angularApp = new AngularNodeAppEngine({ allowedHosts: ['*'] });
 
 const app = express();
+// Atrás do Caddy (rede interna do Docker): esquema e IP do comprador vêm de X-Forwarded-*, só de proxies privados.
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
 /** Resolve a loja pelo Host (RF04): a API decide, com o Host repassado em X-Forwarded-Host. */
 async function loadStore(req: express.Request): Promise<StoreState> {
@@ -33,7 +35,7 @@ async function loadStore(req: express.Request): Promise<StoreState> {
         Accept: 'application/json',
         'X-Forwarded-Host': host,
         'X-Forwarded-Proto': req.protocol,
-        'X-Forwarded-For': req.socket.remoteAddress ?? '',
+        'X-Forwarded-For': req.ip ?? '',
       },
       signal: AbortSignal.timeout(3000),
     });
@@ -46,6 +48,15 @@ async function loadStore(req: express.Request): Promise<StoreState> {
   }
 }
 
+/**
+ * Robôs podem indexar a loja; a API fica de fora, exceto as fotos. A busca continua liberada enquanto não houver
+ * sitemap.xml: é por ela (e pela página inicial) que os robôs chegam às peças.
+ */
+app.get('/robots.txt', (_req, res) => {
+  res.type('text/plain').set('Cache-Control', 'public, max-age=3600');
+  res.send(['User-agent: *', 'Allow: /', 'Disallow: /api/', 'Allow: /api/loja/fotos/', ''].join('\n'));
+});
+
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',
@@ -56,13 +67,18 @@ app.use(
 
 app.use(async (req, res, next) => {
   try {
-    const context: StoreRequestContext = { store: await loadStore(req) };
-    // Curto: mudança de tema/textos aparece em até 1 min (RF01 CA3); erro nunca fica em cache.
-    res.setHeader('Cache-Control', context.store.kind === 'open' ? 'public, max-age=30' : 'no-store');
-    res.setHeader('Vary', 'Host');
+    const host = req.headers.host ?? '';
+    const context: StoreRequestContext = {
+      store: await loadStore(req),
+      origin: `${req.protocol}://${host}`,
+      api: { url: apiUrl, host, proto: req.protocol, clientIp: req.ip ?? '' },
+    };
     const response = await angularApp.handle(req, context);
-    if (response) await writeResponseToNodeResponse(response, res);
-    else next();
+    if (!response) return next();
+    // Curto: mudança de tema/textos aparece em até 1 min (RF01 CA3); erro e 404 nunca ficam em cache.
+    res.setHeader('Cache-Control', context.store.kind === 'open' && response.status < 400 ? 'public, max-age=30' : 'no-store');
+    res.setHeader('Vary', 'Host');
+    await writeResponseToNodeResponse(response, res);
   } catch (error) {
     next(error);
   }
