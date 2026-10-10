@@ -13,12 +13,16 @@ const store: PublicStore = {
   logoUrl: null,
 };
 
+
 function render(state: StoreState, response: ResponseInit = {}) {
   TestBed.configureTestingModule({
     imports: [App],
     providers: [
       provideRouter(routes),
-      { provide: REQUEST_CONTEXT, useValue: { store: state } satisfies StoreRequestContext },
+      {
+        provide: REQUEST_CONTEXT,
+        useValue: { store: state, origin: 'https://loja.test', api: { url: 'http://api:8080', host: 'loja.test', proto: 'https', clientIp: '203.0.113.1' } } satisfies StoreRequestContext,
+      },
       { provide: RESPONSE_INIT, useValue: response },
     ],
   });

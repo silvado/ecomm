@@ -1,5 +1,4 @@
 import { Component, inject } from '@angular/core';
-import { Title } from '@angular/platform-browser';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { StoreContext } from './store';
 
@@ -28,6 +27,7 @@ import { StoreContext } from './store';
                 {{ ctx.store!.name }}
               }
             </a>
+            <nav><a routerLink="/busca">Buscar peças</a></nav>
           </header>
           <main><router-outlet /></main>
           <footer>
@@ -63,9 +63,4 @@ import { StoreContext } from './store';
 })
 export class App {
   protected readonly ctx = inject(StoreContext);
-
-  constructor() {
-    const store = this.ctx.store;
-    inject(Title).setTitle(store ? store.name : 'Loja');
-  }
 }
