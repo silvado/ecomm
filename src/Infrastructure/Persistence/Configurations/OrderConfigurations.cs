@@ -34,8 +34,11 @@ internal sealed class CustomerOrderConfiguration : IEntityTypeConfiguration<Cust
         builder.Property(o => o.ItemsTotal).HasPrecision(12, 2);
         builder.Property(o => o.ShippingTotal).HasPrecision(12, 2);
         builder.Property(o => o.Total).HasPrecision(12, 2);
-        builder.Property(o => o.CancelReason).HasMaxLength(200);
+        builder.Property(o => o.CancelReason).HasMaxLength(CustomerOrder.CancelReasonMaxLength);
+        builder.Property(o => o.CanceledBy).HasConversion<string>().HasMaxLength(20);
         builder.Property(o => o.ReviewReason).HasMaxLength(300);
+        builder.Property(o => o.TrackingCode).HasMaxLength(CustomerOrder.TrackingCodeMaxLength);
+        builder.Property(o => o.ExternalId).HasMaxLength(CustomerOrder.ExternalIdMaxLength);
         builder.Ignore(o => o.Address);
         builder.HasMany(o => o.Items).WithOne().HasForeignKey(i => i.OrderId).OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(o => o.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -44,6 +47,8 @@ internal sealed class CustomerOrderConfiguration : IEntityTypeConfiguration<Cust
         // Idempotência do checkout: o mesmo token (envio repetido) não cria outro pedido.
         builder.HasIndex(o => new { o.TenantId, o.AccessTokenHash }).IsUnique();
         builder.HasIndex(o => new { o.TenantId, o.PlacedAt });
+        // RF17 CA2: pedido de canal externo é único por loja, canal e id no canal.
+        builder.HasIndex(o => new { o.TenantId, o.Origin, o.ExternalId }).IsUnique().HasFilter("external_id IS NOT NULL");
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("ck_customer_orders_totals", "items_total > 0 AND shipping_total >= 0 AND total = items_total + shipping_total");
@@ -67,6 +72,22 @@ internal sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderIte
         builder.Property(i => i.UnitPrice).HasPrecision(12, 2);
         builder.HasIndex(i => i.TenantId);
         builder.ToTable(t => t.HasCheckConstraint("ck_order_items_positive", "quantity > 0 AND unit_price > 0"));
+    }
+}
+
+internal sealed class OrderHistoryConfiguration : IEntityTypeConfiguration<OrderHistoryEntry>
+{
+    public void Configure(EntityTypeBuilder<OrderHistoryEntry> builder)
+    {
+        builder.ToTable("order_history");
+        builder.HasKey(h => h.Id);
+        builder.Property(h => h.Id).ValueGeneratedNever();
+        builder.HasOne<CustomerOrder>().WithMany().HasForeignKey(h => h.OrderId).OnDelete(DeleteBehavior.Cascade);
+        builder.Property(h => h.FromStatus).HasConversion<string>().HasMaxLength(20);
+        builder.Property(h => h.ToStatus).HasConversion<string>().HasMaxLength(20);
+        builder.Property(h => h.Actor).HasConversion<string>().HasMaxLength(20);
+        builder.Property(h => h.Note).HasMaxLength(OrderHistoryEntry.NoteMaxLength);
+        builder.HasIndex(h => new { h.TenantId, h.OrderId, h.At });
     }
 }
 

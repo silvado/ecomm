@@ -18,6 +18,18 @@ public enum OrderStatus
     Canceled,
     /// <summary>Pagamento que a loja precisa resolver à mão (pago depois de a peça ser vendida, valor diferente, estorno).</summary>
     NeedsReview,
+    /// <summary>Entregue à transportadora (RF17).</summary>
+    Shipped,
+    Delivered,
+    /// <summary>Retirado pelo comprador na loja.</summary>
+    PickedUp,
+}
+
+/// <summary>Quem cancelou: o prazo (sem pagamento) ou a loja. Pagamento que chega depois só reativa o cancelado pelo prazo.</summary>
+public enum CancellationSource
+{
+    PaymentExpired,
+    Store,
 }
 
 public enum DeliveryMethod
@@ -46,6 +58,9 @@ public sealed class CustomerOrder : ITenantOwned
     public const int MaxLines = 50;
     public const int NameMaxLength = 120;
     public const int EmailMaxLength = 254;
+    public const int CancelReasonMaxLength = 200;
+    public const int TrackingCodeMaxLength = 60;
+    public const int ExternalIdMaxLength = 100;
 
     private static readonly HashSet<string> States =
     [
@@ -64,6 +79,10 @@ public sealed class CustomerOrder : ITenantOwned
     public long Number { get; private set; }
 
     public OrderOrigin Origin { get; private set; }
+
+    /// <summary>Id do pedido no canal de origem (Mercado Livre, OLX); único por loja e origem (RF17 CA2). Nulo no site.</summary>
+    public string? ExternalId { get; private set; }
+
     public OrderStatus Status { get; private set; }
 
     /// <summary>
@@ -103,7 +122,13 @@ public sealed class CustomerOrder : ITenantOwned
 
     public DateTimeOffset? CanceledAt { get; private set; }
     public string? CancelReason { get; private set; }
+    public CancellationSource? CanceledBy { get; private set; }
     public DateTimeOffset? PaidAt { get; private set; }
+    public string? TrackingCode { get; private set; }
+    public DateTimeOffset? ShippedAt { get; private set; }
+
+    /// <summary>Entregue ao comprador (pela transportadora ou na retirada).</summary>
+    public DateTimeOffset? DeliveredAt { get; private set; }
 
     /// <summary>Por que o pedido precisa da loja (<see cref="OrderStatus.NeedsReview"/>).</summary>
     public string? ReviewReason { get; private set; }
@@ -208,17 +233,76 @@ public sealed class CustomerOrder : ITenantOwned
     /// </summary>
     public void MarkPaid(DateTimeOffset now)
     {
-        if (Status is not (OrderStatus.PendingPayment or OrderStatus.Canceled))
-            throw new InvalidOperationException($"Pedido {Number} não aguarda pagamento.");
+        if (!AcceptsPayment) throw new InvalidOperationException($"Pedido {Number} não aguarda pagamento.");
         Status = OrderStatus.Paid;
         PaidAt = now;
     }
+
+    /// <summary>Aguardando pagamento, ou cancelado só porque o prazo acabou (pagamento atrasado ainda vale — RF12 CA3).</summary>
+    public bool AcceptsPayment =>
+        Status == OrderStatus.PendingPayment || (Status == OrderStatus.Canceled && CanceledBy is null or CancellationSource.PaymentExpired);
 
     public void FlagForReview(string reason)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
         Status = OrderStatus.NeedsReview;
         ReviewReason = reason.Length > 300 ? reason[..300] : reason;
+    }
+
+    /// <summary>A loja confirma a venda em análise (peças já baixadas pelo chamador). Volta a "pago".</summary>
+    public void ApproveReview(DateTimeOffset now)
+    {
+        Require(Status == OrderStatus.NeedsReview, "não está em análise");
+        Status = OrderStatus.Paid;
+        PaidAt ??= now;
+        ReviewReason = null;
+    }
+
+    /// <summary>Situações em que a loja pode cancelar (RF17): antes da entrega ou retirada.</summary>
+    public bool CanBeCanceledByStore =>
+        Status is OrderStatus.PendingPayment or OrderStatus.NeedsReview or OrderStatus.Paid or OrderStatus.Shipped;
+
+    /// <summary>Cancelamento pela loja, com motivo. Peças: o chamador libera as reservas ou devolve ao estoque o que foi baixado.</summary>
+    public void CancelByStore(string reason, DateTimeOffset now)
+    {
+        Require(CanBeCanceledByStore, "não pode mais ser cancelado");
+        var text = Collapse(reason);
+        if (text.Length is 0 or > CancelReasonMaxLength)
+            throw new ArgumentException($"Informe o motivo do cancelamento (até {CancelReasonMaxLength} caracteres).", nameof(reason));
+        Status = OrderStatus.Canceled;
+        CanceledBy = CancellationSource.Store;
+        CancelReason = text;
+        CanceledAt = now;
+    }
+
+    public void MarkShipped(string? trackingCode, DateTimeOffset now)
+    {
+        Require(Status == OrderStatus.Paid && DeliveryMethod == DeliveryMethod.Shipping, "não está pago para entrega");
+        var code = Collapse(trackingCode);
+        if (code.Length > TrackingCodeMaxLength)
+            throw new ArgumentException($"Código de rastreio com no máximo {TrackingCodeMaxLength} caracteres.", nameof(trackingCode));
+        Status = OrderStatus.Shipped;
+        TrackingCode = code.Length == 0 ? null : code;
+        ShippedAt = now;
+    }
+
+    public void MarkDelivered(DateTimeOffset now)
+    {
+        Require(Status == OrderStatus.Shipped, "não foi enviado");
+        Status = OrderStatus.Delivered;
+        DeliveredAt = now;
+    }
+
+    public void MarkPickedUp(DateTimeOffset now)
+    {
+        Require(Status == OrderStatus.Paid && DeliveryMethod == DeliveryMethod.Pickup, "não está pago para retirada");
+        Status = OrderStatus.PickedUp;
+        DeliveredAt = now;
+    }
+
+    private void Require(bool condition, string state)
+    {
+        if (!condition) throw new InvalidOperationException($"O pedido {Number} {state}.");
     }
 
     private static string Required(string? value, int max, string message)

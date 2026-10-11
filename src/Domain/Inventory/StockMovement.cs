@@ -12,6 +12,8 @@ public enum StockMovementReason
     DirectSale,
     /// <summary>Saldo definido pelo lojista no cadastro ou na edição da peça (RF08).</summary>
     Adjustment,
+    /// <summary>Pedido pago cancelado pela loja: a peça baixada volta ao estoque (RF17).</summary>
+    OrderCanceled,
 }
 
 /// <summary>Histórico de alterações do saldo físico (<see cref="Stock.OnHand"/>).</summary>

@@ -11,6 +11,8 @@ public enum ReservationStatus
     Expired,
     /// <summary>Cancelada antes do prazo (ex.: comprador desistiu).</summary>
     Released,
+    /// <summary>Era baixa (pedido pago) e a loja cancelou o pedido: a peça voltou ao estoque (RF17).</summary>
+    Returned,
 }
 
 /// <summary>Reserva de estoque para um pedido não pago (RF12).</summary>

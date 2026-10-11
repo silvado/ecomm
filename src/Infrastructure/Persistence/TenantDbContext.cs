@@ -34,6 +34,7 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<CustomerOrder> CustomerOrders => Set<CustomerOrder>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderCounter> OrderCounters => Set<OrderCounter>();
+    public DbSet<OrderHistoryEntry> OrderHistory => Set<OrderHistoryEntry>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<ExternalEvent> ExternalEvents => Set<ExternalEvent>();
     public DbSet<StoreSettings> StoreSettings => Set<StoreSettings>();

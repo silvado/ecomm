@@ -29,3 +29,33 @@ public sealed record PlaceOrderResult(PlaceOrderOutcome Outcome, long? Number, d
 
 /// <summary>Agendada para o fim do prazo de pagamento; sem efeito se o pedido já foi pago ou cancelado.</summary>
 public sealed record ExpireOrder(Guid OrderId);
+
+/// <summary>Ações da loja sobre o pedido no painel (RF17).</summary>
+public enum OrderAction
+{
+    /// <summary>Confirma a venda em análise: baixa as peças que ainda não foram baixadas.</summary>
+    Approve,
+    /// <summary>Cancela (motivo obrigatório): libera reservas e devolve ao estoque o que já foi baixado.</summary>
+    Cancel,
+    Ship,
+    Deliver,
+    PickUp,
+}
+
+/// <param name="Note">Motivo do cancelamento.</param>
+/// <param name="TrackingCode">Rastreio, ao marcar como enviado (opcional).</param>
+public sealed record ChangeOrder(Guid OrderId, OrderAction Action, Guid UserId, string? Note = null, string? TrackingCode = null);
+
+public enum ChangeOrderOutcome
+{
+    Done,
+    NotFound,
+    /// <summary>A ação não vale para a situação atual (ex.: outra pessoa já mudou o pedido).</summary>
+    NotAllowed,
+    /// <summary>Dado inválido (motivo vazio, rastreio longo).</summary>
+    Invalid,
+    /// <summary>Aprovação recusada: alguma peça não tem mais saldo.</summary>
+    OutOfStock,
+}
+
+public sealed record ChangeOrderResult(ChangeOrderOutcome Outcome, string? Message = null);

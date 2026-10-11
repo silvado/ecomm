@@ -104,7 +104,7 @@ public sealed partial class StorefrontCheckout(TenantDbContext db, IStorefrontCa
         return order is null ? null : new StoreOrderView(order.Number, order.Status, order.PlacedAt, order.PaymentDeadline, order.BuyerName,
             order.DeliveryMethod, order.Address, order.ShippingCarrier, order.ShippingService, order.ShippingDays, order.PickupAddress,
             order.Items.Select(i => new StoreOrderItemView(i.PartId, i.Title, i.UnitPrice, i.Quantity)).ToList(),
-            order.ItemsTotal, order.ShippingTotal, order.Total, order.CancelReason);
+            order.ItemsTotal, order.ShippingTotal, order.Total, order.CancelReason, order.TrackingCode, order.ShippedAt, order.DeliveredAt);
     }
 
     private string TenantId => (tenant.TenantId ?? throw new InvalidOperationException("Checkout sem loja no escopo.")).ToString();
