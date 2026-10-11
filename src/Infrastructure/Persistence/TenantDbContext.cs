@@ -23,6 +23,7 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<PartOemCode> PartOemCodes => Set<PartOemCode>();
     public DbSet<PartPhoto> PartPhotos => Set<PartPhoto>();
     public DbSet<PartCompatibility> PartCompatibilities => Set<PartCompatibility>();
+    public DbSet<PartImport> PartImports => Set<PartImport>();
 
     /// <summary>Réplica somente leitura (schema ref) da tabela de veículos da plataforma.</summary>
     public DbSet<VehicleBrand> VehicleBrands => Set<VehicleBrand>();
