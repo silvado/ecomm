@@ -35,6 +35,7 @@ internal sealed class CustomerOrderConfiguration : IEntityTypeConfiguration<Cust
         builder.Property(o => o.ShippingTotal).HasPrecision(12, 2);
         builder.Property(o => o.Total).HasPrecision(12, 2);
         builder.Property(o => o.CancelReason).HasMaxLength(200);
+        builder.Property(o => o.ReviewReason).HasMaxLength(300);
         builder.Ignore(o => o.Address);
         builder.HasMany(o => o.Items).WithOne().HasForeignKey(i => i.OrderId).OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(o => o.Items).UsePropertyAccessMode(PropertyAccessMode.Field);

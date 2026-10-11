@@ -58,6 +58,8 @@ services:
       Storage__SecretKey: ${S3_SECRET_KEY}
       # Frete (RF14): sem Melhor Envio conectado, dev usa o provedor fake.
       Shipping__UseFakeProvider: "true"
+      # Gateway de pagamento simulado (página /api/dev/pagamento-simulado). Nunca em produção.
+      Payments__UseFakeGateway: "true"
       Shipping__MelhorEnvio__BaseUrl: https://sandbox.melhorenvio.com.br
       Shipping__MelhorEnvio__UserAgent: ${MELHOR_ENVIO_USER_AGENT:-}
       Network__Internal__0: 172.16.0.0/12   # rede padrão do Docker: Caddy e storefront são proxies confiáveis
@@ -68,6 +70,8 @@ services:
     build: { context: .., dockerfile: src/Worker/Dockerfile }
     environment:
       DOTNET_ENVIRONMENT: Development
+      # O worker também processa notificações de pagamento da fila: precisa ver o mesmo gateway fake da API.
+      Payments__UseFakeGateway: "true"
       ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD}
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
       Vault__CurrentMasterKeyVersion: v1

@@ -26,10 +26,13 @@ public sealed class OrderQueries(TenantDbContext db) : IOrderQueries
     public async Task<OrderView?> GetAsync(Guid orderId, CancellationToken ct = default)
     {
         var o = await db.CustomerOrders.AsNoTracking().Include(x => x.Items).SingleOrDefaultAsync(x => x.Id == orderId, ct);
-        return o is null ? null : new OrderView(o.Id, o.Number, o.Origin, o.Status, o.PlacedAt, o.PaymentDeadline,
+        if (o is null) return null;
+        var payments = await db.Payments.AsNoTracking().Where(p => p.OrderId == orderId).OrderBy(p => p.CreatedAt)
+            .Select(p => new OrderPaymentView(p.Gateway, p.ExternalId, p.Status, p.Amount, p.Method, p.UpdatedAt)).ToListAsync(ct);
+        return new OrderView(o.Id, o.Number, o.Origin, o.Status, o.PlacedAt, o.PaymentDeadline,
             new OrderBuyerView(o.BuyerName, o.BuyerEmail, o.BuyerPhone, o.BuyerCpf), o.DeliveryMethod, o.Address,
             o.ShippingCarrier, o.ShippingService, o.ShippingDays, o.PickupAddress,
             o.Items.OrderBy(i => i.Title).Select(i => new OrderItemView(i.PartId, i.InternalCode, i.Title, i.UnitPrice, i.Quantity)).ToList(),
-            o.ItemsTotal, o.ShippingTotal, o.Total, o.CanceledAt, o.CancelReason);
+            o.ItemsTotal, o.ShippingTotal, o.Total, o.CanceledAt, o.CancelReason, o.PaidAt, o.ReviewReason, payments);
     }
 }

@@ -105,6 +105,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA3: o pedido só vira "pago" por webhook validado (assinatura/consulta de confirmação ao gateway), nunca pelo retorno do navegador.
 - CA4: webhooks repetidos não duplicam efeito (RF26).
 - CA5: Pix suportado se o gateway oferecer. **HIPÓTESE:** Pix e cartão no escopo E1.
+- **HIPÓTESE (Q28):** Mercado Pago primeiro (Cielo depois), pelo Checkout Pro: o comprador paga na página do gateway e volta para a página do pedido. O Dono informa no painel as credenciais da própria conta (Access Token e chave secreta do webhook), guardadas no cofre — sem OAuth por enquanto. Pagamento aprovado depois do prazo da reserva: se as peças ainda estão disponíveis, o pedido vira pago; se alguma já foi vendida, ou se o valor pago difere do total, ou se houver estorno depois de pago, o pedido fica "em análise" para a loja resolver — sem estorno automático. Pedido em análise segura as peças até a loja agir (ações no RF17).
 
 ### RF16 — Área do cliente final · E1
 - CA1: lista de pedidos com status e rastreio; acesso por login ou link mágico enviado por e-mail.
@@ -284,6 +285,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q25 | Checkout com conta de cliente no E1? Onde fica o carrinho? | Só convidado no E1 (conta com o RF16); carrinho no `localStorage` do navegador, até 50 peças diferentes, conferido no servidor a cada visita. | RF14, RF16 |
 | Q26 | Quando registrar o app da plataforma no Melhor Envio (nome, e-mail técnico, URL de retorno)? | Até lá, provedor de frete *fake* em dev e testes; adaptador do ME testado contra servidor simulado; conexão OAuth da loja no painel entra quando o app existir. | RF14 |
 | Q27 | Que dados o checkout coleta, onde ficam e o que acontece com pedido sem pagamento antes do gateway (RF15)? | Nome, e-mail, telefone, CPF (NF-e e etiqueta) e endereço só na entrega, gravados no pedido (cadastro de cliente com o RF16); sem pagamento no prazo da reserva, o pedido é cancelado sozinho — sem confirmação manual. Link secreto de acompanhamento; e-mail de confirmação quando houver provedor (RF33/E4). | RF14, RF15, RF16 |
+| Q28 | Como tratar pagamento que chega depois do prazo, com valor diferente ou estornado? Qual gateway e fluxo primeiro? | Mercado Pago, Checkout Pro (redirecionamento), credenciais coladas pelo Dono. Pago tarde com peças disponíveis → pago; peça já vendida, valor diferente ou estorno → "em análise", sem estorno automático (mesma linha da Q01). | RF15, RF12 |
 
 ## Fontes
 

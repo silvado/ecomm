@@ -1,6 +1,7 @@
 using JasperFx;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
+using Ecommerce.Application.Payments;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Infrastructure.Tenancy;
@@ -27,6 +28,7 @@ public static class MessagingConfiguration
         opts.CodeGeneration.AlwaysUseServiceLocationFor<TenantScope>();
         opts.CodeGeneration.AlwaysUseServiceLocationFor<ITenantContext>();
         opts.CodeGeneration.AlwaysUseServiceLocationFor<TenantDbContext>();
+        opts.CodeGeneration.AlwaysUseServiceLocationFor<IPaymentGatewayResolver>(); // depende do tenant e do cofre
 
         opts.Policies.AddMiddleware(typeof(TenantMessageMiddleware));
         opts.Policies.UseDurableLocalQueues();

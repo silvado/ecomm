@@ -518,6 +518,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("origin");
 
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("paid_at");
+
                     b.Property<DateTimeOffset>("PaymentDeadline")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("payment_deadline");
@@ -530,6 +534,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("PlacedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("placed_at");
+
+                    b.Property<string>("ReviewReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("review_reason");
 
                     b.Property<string>("ShippingCarrier")
                         .HasMaxLength(100)
@@ -672,6 +681,124 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_order_items_positive", "quantity > 0 AND unit_price > 0");
                         });
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Payments.ExternalEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processed_at");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at");
+
+                    b.Property<string>("ResourceId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("resource_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_external_events");
+
+                    b.HasIndex("TenantId", "Source", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_external_events_tenant_id_source_idempotency_key");
+
+                    b.ToTable("external_events", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Payments.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("external_id");
+
+                    b.Property<string>("Gateway")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("gateway");
+
+                    b.Property<string>("Method")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("method");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_payments");
+
+                    b.HasIndex("OrderId")
+                        .HasDatabaseName("ix_payments_order_id");
+
+                    b.HasIndex("TenantId", "OrderId")
+                        .HasDatabaseName("ix_payments_tenant_id_order_id");
+
+                    b.HasIndex("TenantId", "Gateway", "ExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_payments_tenant_id_gateway_external_id");
+
+                    b.ToTable("payments", (string)null);
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Store.StoreBranding", b =>
@@ -1015,6 +1142,16 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_order_items_stock_reservations_reservation_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Payments.Payment", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Orders.CustomerOrder", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_payments_customer_orders_order_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Vehicles.VehicleModel", b =>

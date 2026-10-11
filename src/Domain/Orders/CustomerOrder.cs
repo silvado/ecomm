@@ -16,6 +16,8 @@ public enum OrderStatus
     PendingPayment,
     Paid,
     Canceled,
+    /// <summary>Pagamento que a loja precisa resolver à mão (pago depois de a peça ser vendida, valor diferente, estorno).</summary>
+    NeedsReview,
 }
 
 public enum DeliveryMethod
@@ -101,6 +103,10 @@ public sealed class CustomerOrder : ITenantOwned
 
     public DateTimeOffset? CanceledAt { get; private set; }
     public string? CancelReason { get; private set; }
+    public DateTimeOffset? PaidAt { get; private set; }
+
+    /// <summary>Por que o pedido precisa da loja (<see cref="OrderStatus.NeedsReview"/>).</summary>
+    public string? ReviewReason { get; private set; }
 
     public IReadOnlyList<OrderItem> Items => _items;
 
@@ -194,6 +200,25 @@ public sealed class CustomerOrder : ITenantOwned
         order.ItemsTotal = order._items.Sum(i => i.UnitPrice * i.Quantity);
         order.Total = order.ItemsTotal + order.ShippingTotal;
         return order;
+    }
+
+    /// <summary>
+    /// Pagamento aprovado e peças baixadas. Vale também para pedido cancelado por falta de pagamento: o pagamento chegou
+    /// depois do prazo, mas as peças ainda estavam disponíveis (RF12 CA3).
+    /// </summary>
+    public void MarkPaid(DateTimeOffset now)
+    {
+        if (Status is not (OrderStatus.PendingPayment or OrderStatus.Canceled))
+            throw new InvalidOperationException($"Pedido {Number} não aguarda pagamento.");
+        Status = OrderStatus.Paid;
+        PaidAt = now;
+    }
+
+    public void FlagForReview(string reason)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        Status = OrderStatus.NeedsReview;
+        ReviewReason = reason.Length > 300 ? reason[..300] : reason;
     }
 
     private static string Required(string? value, int max, string message)
