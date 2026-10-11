@@ -40,6 +40,16 @@ export interface PartView extends PartSummary {
   createdAt: string;
   photos: PhotoView[];
   compatibilities: CompatibilityView[];
+  traceability: PartTraceability;
+}
+
+/** Origem da peça (RF10), só no painel. `missingForSale`: o que o modo desmontadora ainda exige para pôr à venda. */
+export interface PartTraceability {
+  donorVehicleId: string | null;
+  donorVehicleLabel: string | null;
+  tag: string | null;
+  customFields: Record<string, string>;
+  missingForSale: string[];
 }
 
 export interface PartPage {
