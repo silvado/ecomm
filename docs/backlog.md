@@ -177,7 +177,7 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 
 - [x] IPaymentGateway e fake — 4 h
 - [ ] Adapter Mercado Pago (cartão e Pix) — 16 h *(em andamento)*
-- [ ] Adapter Cielo E-commerce — 16 h
+- [ ] Adapter Cielo E-commerce — 16 h *(em andamento)*
 - [x] Webhooks de pagamento com validação e idempotência — 6 h
 
 #### Área do cliente final — 12 h  `RF16`

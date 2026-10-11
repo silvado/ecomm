@@ -133,7 +133,7 @@ export const epics = [
             title: 'Pagamento por gateway do tenant',
             rf: 'RF15',
             ac: 'Gateway escolhido por tenant; cartão tokenizado no gateway; pedido pago só por webhook validado; webhook repetido sem efeito duplicado; Pix quando o gateway suportar.',
-            t: [['IPaymentGateway e fake', 4, 'done'], ['Adapter Mercado Pago (cartão e Pix)', 16, 'doing'], ['Adapter Cielo E-commerce', 16], ['Webhooks de pagamento com validação e idempotência', 6, 'done']],
+            t: [['IPaymentGateway e fake', 4, 'done'], ['Adapter Mercado Pago (cartão e Pix)', 16, 'doing'], ['Adapter Cielo E-commerce', 16, 'doing'], ['Webhooks de pagamento com validação e idempotência', 6, 'done']],
           },
           {
             title: 'Área do cliente final',
