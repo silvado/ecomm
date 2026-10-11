@@ -98,4 +98,5 @@ node tools/backlog/azure-sync.mjs --dry-run    # sincroniza com Azure Boards (re
 - Parar e perguntar em decisões difíceis de desfazer: modelo de dados, isolamento, fila, contrato de API pública.
 - Faltou informação de negócio: registrar em `docs/requisitos.md` → "Em aberto" e seguir com a hipótese mais conservadora, sinalizada com `HIPÓTESE`.
 - Ao fim de cada etapa: rodar testes, resumir o que mudou, propor a próxima.
+- **Manual do usuário** ([docs/manual-usuario.md](docs/manual-usuario.md)): todo PR que cria ou muda tela, fluxo, perfil ou regra visível ao usuário atualiza o manual no mesmo PR (seção do módulo, "Ainda não disponível" e histórico). Linguagem de usuário final, sem termos técnicos. No fim do projeto vira o manual oficial.
 - Backlog oficial no Azure Boards (`dev.azure.com/silvado/Ecomm`, processo Scrum; ids em `tools/backlog/azure-ids.Ecomm.json`); `docs/backlog.md` é o espelho legível.
