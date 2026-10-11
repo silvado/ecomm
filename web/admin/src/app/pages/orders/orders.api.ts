@@ -3,7 +3,8 @@ import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview' | 'shipped' | 'delivered' | 'pickedUp';
-export type OrderOrigin = 'site';
+export type OrderOrigin = 'site' | 'counter';
+export type CounterPaymentMethod = 'cash' | 'pix' | 'debitCard' | 'creditCard' | 'other';
 export type DeliveryMethod = 'shipping' | 'pickup';
 export type OrderActor = 'buyer' | 'user' | 'payment' | 'system';
 export type CancellationSource = 'paymentExpired' | 'store';
@@ -19,7 +20,15 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   canceled: 'Cancelado',
 };
 
-export const ORDER_ORIGIN_LABELS: Record<OrderOrigin, string> = { site: 'Loja virtual' };
+export const ORDER_ORIGIN_LABELS: Record<OrderOrigin, string> = { site: 'Loja virtual', counter: 'Balcão' };
+
+export const PAYMENT_METHOD_LABELS: Record<CounterPaymentMethod, string> = {
+  cash: 'Dinheiro',
+  pix: 'Pix',
+  debitCard: 'Cartão de débito',
+  creditCard: 'Cartão de crédito',
+  other: 'Outra',
+};
 
 export const ACTOR_LABELS: Record<OrderActor, string> = {
   buyer: 'Comprador',
@@ -44,7 +53,7 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
 export const DELIVERY_LABELS: Record<DeliveryMethod, string> = { shipping: 'Entrega', pickup: 'Retirada' };
 
 /** Ações que a loja pode fazer em cada situação (as mesmas regras do domínio; a API recusa o resto). */
-export function availableActions(status: OrderStatus, delivery: DeliveryMethod): OrderAction[] {
+export function availableActions(status: OrderStatus, delivery: DeliveryMethod, origin: OrderOrigin = 'site'): OrderAction[] {
   switch (status) {
     case 'needsReview':
       return ['aprovar', 'cancelar'];
@@ -54,6 +63,9 @@ export function availableActions(status: OrderStatus, delivery: DeliveryMethod):
       return delivery === 'shipping' ? ['enviar', 'cancelar'] : ['retirar', 'cancelar'];
     case 'shipped':
       return ['entregar', 'cancelar'];
+    case 'pickedUp':
+      // Venda de balcão nasce retirada: cancelar corrige um lançamento errado (RF18).
+      return origin === 'counter' ? ['cancelar'] : [];
     default:
       return [];
   }
@@ -103,7 +115,8 @@ export interface OrderView {
   status: OrderStatus;
   placedAt: string;
   paymentDeadline: string;
-  buyer: { name: string; email: string; phone: string; cpf: string };
+  /** Na venda de balcão, e-mail, telefone e CPF podem vir vazios e o documento pode ser CNPJ. */
+  buyer: { name: string; email: string; phone: string; cpf: string; cnpj: string | null };
   deliveryMethod: DeliveryMethod;
   address: { postalCode: string; street: string; number: string; complement: string | null; district: string; city: string; state: string } | null;
   carrier: string | null;
@@ -122,8 +135,16 @@ export interface OrderView {
   trackingCode: string | null;
   shippedAt: string | null;
   deliveredAt: string | null;
+  paymentMethod: CounterPaymentMethod | null;
   payments: { gateway: string; externalId: string; status: string; amount: number; method: string | null; updatedAt: string }[];
   history: OrderHistory[];
+}
+
+export interface CounterSaleRequest {
+  token: string;
+  items: { partId: string; quantity: number; unitPrice: number }[];
+  paymentMethod: CounterPaymentMethod;
+  customer: { name: string; document: string; phone: string };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -143,6 +164,11 @@ export class OrdersApi {
 
   get(id: string): Promise<OrderView> {
     return firstValueFrom(this.http.get<OrderView>(`${this.base}/${id}`));
+  }
+
+  /** Venda de balcão (RF18): devolve o pedido criado; o mesmo token enviado de novo devolve a mesma venda. */
+  sell(request: CounterSaleRequest): Promise<OrderView> {
+    return firstValueFrom(this.http.post<OrderView>('/api/painel/balcao', request));
   }
 
   /** Executa a ação e devolve o pedido já atualizado (400/404/409 com a mensagem em "title"). */

@@ -18,6 +18,7 @@ import {
   OrdersApi,
   OrderStatus,
   OrderView,
+  PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
 } from './orders.api';
 
@@ -43,7 +44,7 @@ const ACTION_LABELS: Record<OrderAction, string> = {
       <h1>Pedidos</h1>
 
       <div class="filters">
-        <input type="search" placeholder="Nº do pedido, nome, e-mail ou CPF" [(ngModel)]="filters.text" (ngModelChange)="textChanged()" aria-label="Buscar pedidos" />
+        <input type="search" placeholder="Nº do pedido, nome, e-mail, CPF ou CNPJ" [(ngModel)]="filters.text" (ngModelChange)="textChanged()" aria-label="Buscar pedidos" />
         <select [(ngModel)]="filters.origin" (ngModelChange)="load(1)" aria-label="Origem">
           <option value="">Todas as origens</option>
           @for (o of origins; track o) {
@@ -87,7 +88,7 @@ const ACTION_LABELS: Record<OrderAction, string> = {
               <td>{{ when(order.placedAt) }}</td>
               <td>{{ order.buyerName }}</td>
               <td>{{ originLabels[order.origin] ?? order.origin }}</td>
-              <td>{{ deliveryLabels[order.deliveryMethod] }}</td>
+              <td>{{ order.origin === 'counter' ? '—' : deliveryLabels[order.deliveryMethod] }}</td>
               <td class="num">{{ order.itemCount }}</td>
               <td class="num">{{ order.total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</td>
               <td><span class="badge" [class.ok]="done(order.status)" [class.warn]="order.status === 'needsReview'">{{ statusLabels[order.status] }}</span></td>
@@ -126,12 +127,12 @@ const ACTION_LABELS: Record<OrderAction, string> = {
             <p class="warn" role="status">{{ o.reviewReason }}</p>
           }
           @if (o.paidAt) {
-            <p class="muted">Pago em {{ when(o.paidAt) }}.</p>
+            <p class="muted">Pago em {{ when(o.paidAt) }}{{ o.paymentMethod ? ' · ' + paymentMethodLabels[o.paymentMethod] : '' }}.</p>
           }
           @if (o.shippedAt) {
             <p class="muted">Enviado em {{ when(o.shippedAt) }}{{ o.trackingCode ? ' · rastreio ' + o.trackingCode : ' · sem código de rastreio' }}.</p>
           }
-          @if (o.deliveredAt) {
+          @if (o.deliveredAt && o.origin !== 'counter') {
             <p class="muted">{{ o.status === 'pickedUp' ? 'Retirado' : 'Entregue' }} em {{ when(o.deliveredAt) }}.</p>
           }
 
@@ -176,17 +177,27 @@ const ACTION_LABELS: Record<OrderAction, string> = {
               }
             </ul>
           }
-          <h3>Comprador</h3>
-          <p>{{ o.buyer.name }} · CPF {{ cpf(o.buyer.cpf) }}<br />{{ o.buyer.email }} · {{ phone(o.buyer.phone) }}</p>
-          <h3>{{ deliveryLabels[o.deliveryMethod] }}</h3>
-          @if (o.address; as a) {
-            <p>
-              {{ a.street }}, {{ a.number }}{{ a.complement ? ' — ' + a.complement : '' }}<br />
-              {{ a.district }} · {{ a.city }}/{{ a.state }} · CEP {{ a.postalCode.slice(0, 5) }}-{{ a.postalCode.slice(5) }}<br />
-              <span class="muted">{{ o.carrier }} · {{ o.service }} ({{ o.deliveryDays }} dias úteis)</span>
-            </p>
+          <h3>{{ o.origin === 'counter' ? 'Cliente' : 'Comprador' }}</h3>
+          <p>
+            {{ o.buyer.name }}{{ document(o) }}
+            @if (contact(o); as c) {
+              <br />{{ c }}
+            }
+          </p>
+          @if (o.origin === 'counter') {
+            <h3>Venda no balcão</h3>
+            <p class="muted">As peças saíram na hora da venda.</p>
           } @else {
-            <p class="pre">{{ o.pickupAddress }}</p>
+            <h3>{{ deliveryLabels[o.deliveryMethod] }}</h3>
+            @if (o.address; as a) {
+              <p>
+                {{ a.street }}, {{ a.number }}{{ a.complement ? ' — ' + a.complement : '' }}<br />
+                {{ a.district }} · {{ a.city }}/{{ a.state }} · CEP {{ a.postalCode.slice(0, 5) }}-{{ a.postalCode.slice(5) }}<br />
+                <span class="muted">{{ o.carrier }} · {{ o.service }} ({{ o.deliveryDays }} dias úteis)</span>
+              </p>
+            } @else {
+              <p class="pre">{{ o.pickupAddress }}</p>
+            }
           }
           <h3>Peças</h3>
           <table>
@@ -228,13 +239,14 @@ export class OrdersPage implements OnInit {
   private debounce?: ReturnType<typeof setTimeout>;
 
   protected readonly statuses: OrderStatus[] = ['pendingPayment', 'needsReview', 'paid', 'shipped', 'delivered', 'pickedUp', 'canceled'];
-  protected readonly origins: OrderOrigin[] = ['site'];
+  protected readonly origins: OrderOrigin[] = ['site', 'counter'];
   protected readonly paymentLabels = PAYMENT_STATUS_LABELS;
   protected readonly statusLabels = ORDER_STATUS_LABELS;
   protected readonly originLabels: Record<string, string> = ORDER_ORIGIN_LABELS;
   protected readonly deliveryLabels = DELIVERY_LABELS;
   protected readonly canceledByLabels = CANCELED_BY_LABELS;
   protected readonly actionLabels = ACTION_LABELS;
+  protected readonly paymentMethodLabels = PAYMENT_METHOD_LABELS;
   protected filters: OrderFilters = { statuses: [], origin: '', from: '', to: '', text: '' };
   protected reason = '';
   protected tracking = '';
@@ -249,7 +261,10 @@ export class OrdersPage implements OnInit {
   protected readonly cpf = (v: string) => `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6, 9)}-${v.slice(9)}`;
   protected readonly phone = (v: string) => `(${v.slice(0, 2)}) ${v.slice(2, v.length - 4)}-${v.slice(-4)}`;
   protected readonly done = (s: OrderStatus) => s === 'paid' || s === 'delivered' || s === 'pickedUp';
-  protected readonly actions = (o: OrderView) => availableActions(o.status, o.deliveryMethod);
+  protected readonly actions = (o: OrderView) => availableActions(o.status, o.deliveryMethod, o.origin);
+  protected readonly cnpj = (v: string) => (v.length === 14 ? `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5, 8)}/${v.slice(8, 12)}-${v.slice(12)}` : v);
+  protected readonly contact = (o: OrderView) => [o.buyer.email, o.buyer.phone ? this.phone(o.buyer.phone) : ''].filter((v) => v).join(' · ');
+  protected readonly document = (o: OrderView) => (o.buyer.cnpj ? ' · CNPJ ' + this.cnpj(o.buyer.cnpj) : o.buyer.cpf ? ' · CPF ' + this.cpf(o.buyer.cpf) : '');
 
   async ngOnInit(): Promise<void> {
     const q = this.route.snapshot.queryParamMap;
@@ -314,6 +329,7 @@ export class OrdersPage implements OnInit {
       case 'aprovar':
         return 'As peças são baixadas do estoque agora; se alguma já foi vendida, a aprovação é recusada.';
       case 'cancelar':
+        if (o.origin === 'counter') return 'Para corrigir uma venda lançada errado: as peças voltam ao estoque. Devolva o dinheiro ao cliente, se for o caso.';
         return o.status === 'pendingPayment'
           ? 'As peças reservadas voltam a ficar disponíveis.'
           : 'As peças voltam ao estoque. O estorno do pagamento, se houver, é feito no gateway.';

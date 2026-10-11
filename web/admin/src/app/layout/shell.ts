@@ -19,6 +19,7 @@ import { RoleLabelPipe } from '../shared/role-label';
         }
         @if (auth.can('ordersManage')) {
           <a routerLink="/pedidos" routerLinkActive="active">Pedidos</a>
+          <a routerLink="/balcao" routerLinkActive="active">Balcão</a>
         }
         @if (auth.can('storeManage')) {
           <a routerLink="/loja" routerLinkActive="active">Dados da loja</a>
