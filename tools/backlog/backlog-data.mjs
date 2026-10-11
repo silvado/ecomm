@@ -81,7 +81,7 @@ export const epics = [
             title: 'Rastreabilidade de peça usada',
             rf: 'RF10',
             ac: 'Campos de origem e NF de entrada; campos extras configuráveis; modo desmontagem torna-os obrigatórios para publicar; dados do doador nunca expostos na loja ou canais.',
-            t: [['Modelo e regras de rastreabilidade', 6], ['Telas e configuração de campos extras', 4]],
+            t: [['Modelo e regras de rastreabilidade', 6, 'done'], ['Telas e configuração de campos extras', 4, 'done']],
           },
           {
             title: 'Importação de peças por planilha',
