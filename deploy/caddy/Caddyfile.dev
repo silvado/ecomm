@@ -28,6 +28,14 @@ https:// {
 	handle /api/loja/* {
 		reverse_proxy api:8080
 	}
+	# Webhooks de pagamento (RF15): o gateway avisa no domínio da própria loja.
+	handle /api/webhooks/* {
+		reverse_proxy api:8080
+	}
+	# Só em dev: página do gateway de pagamento simulado.
+	handle /api/dev/* {
+		reverse_proxy api:8080
+	}
 	handle {
 		reverse_proxy storefront:4000
 	}

@@ -1,4 +1,5 @@
 using Ecommerce.Domain.Orders;
+using Ecommerce.Domain.Payments;
 
 namespace Ecommerce.Application.Orders;
 
@@ -10,11 +11,13 @@ public sealed record OrderItemView(Guid PartId, string InternalCode, string Titl
 
 public sealed record OrderBuyerView(string Name, string Email, string Phone, string Cpf);
 
+public sealed record OrderPaymentView(string Gateway, string ExternalId, PaymentStatus Status, decimal Amount, string? Method, DateTimeOffset UpdatedAt);
+
 public sealed record OrderView(
     Guid Id, long Number, OrderOrigin Origin, OrderStatus Status, DateTimeOffset PlacedAt, DateTimeOffset PaymentDeadline,
     OrderBuyerView Buyer, DeliveryMethod DeliveryMethod, DeliveryAddress? Address, string? Carrier, string? Service, int? DeliveryDays,
     string? PickupAddress, IReadOnlyList<OrderItemView> Items, decimal ItemsTotal, decimal ShippingTotal, decimal Total,
-    DateTimeOffset? CanceledAt, string? CancelReason);
+    DateTimeOffset? CanceledAt, string? CancelReason, DateTimeOffset? PaidAt, string? ReviewReason, IReadOnlyList<OrderPaymentView> Payments);
 
 public sealed record OrderSearch(OrderStatus? Status, int Page = 1, int PageSize = 25)
 {

@@ -1,8 +1,9 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DOCUMENT } from '@angular/common';
 import { afterNextRender, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { CheckoutApi, StoreOrder } from './checkout';
+import { HttpErrorResponse } from '@angular/common/http';
+import { CheckoutApi, lastOrderToken, StoreOrder } from './checkout';
 import { Seo } from './seo';
 import { StoreContext } from './store';
 
@@ -30,9 +31,19 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
           @switch (o.status) {
             @case ('pendingPayment') {
               <p class="notice">Pedido recebido! As peças ficam reservadas para você até <strong>{{ when(o.paymentDeadline) }}</strong>, aguardando o pagamento.</p>
+              <div class="totals">
+                <button type="button" (click)="pay()" [disabled]="paying()">{{ paying() ? 'Abrindo o pagamento…' : 'Pagar agora' }}</button>
+              </div>
+              @if (payError()) {
+                <p class="problem" role="alert">{{ payError() }}</p>
+              }
+              <p class="muted">Já pagou? A confirmação pode levar alguns instantes. <button type="button" class="link" (click)="reload()">Atualizar</button></p>
             }
             @case ('paid') {
-              <p class="notice">Pagamento confirmado.</p>
+              <p class="notice">Pagamento confirmado. Obrigado pela compra!</p>
+            }
+            @case ('needsReview') {
+              <p class="notice">Pagamento recebido e em análise pela loja. Ela vai entrar em contato com você.</p>
             }
             @case ('canceled') {
               <p class="notice">Pedido cancelado. {{ o.cancelReason }}</p>
@@ -76,6 +87,11 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
 export class OrderPage {
   private readonly api = inject(CheckoutApi);
   private readonly route = inject(ActivatedRoute);
+  private readonly document = inject(DOCUMENT);
+  private token: string | null = null;
+
+  protected readonly paying = signal(false);
+  protected readonly payError = signal<string | null>(null);
 
   protected readonly state = signal<'loading' | 'notFound' | 'ok'>('loading');
   protected readonly order = signal<StoreOrder | null>(null);
@@ -87,8 +103,29 @@ export class OrderPage {
     afterNextRender(() => void this.load());
   }
 
+  protected async pay(): Promise<void> {
+    if (!this.token) return;
+    this.paying.set(true);
+    this.payError.set(null);
+    try {
+      const { redirectUrl } = await firstValueFrom(this.api.pay(this.token));
+      this.document.location.assign(redirectUrl);
+    } catch (error) {
+      this.payError.set(
+        error instanceof HttpErrorResponse && typeof error.error?.title === 'string' ? error.error.title : 'Não foi possível abrir o pagamento. Tente de novo.',
+      );
+      this.paying.set(false);
+    }
+  }
+
+  protected reload(): Promise<void> {
+    return this.load();
+  }
+
   private async load(): Promise<void> {
-    const token = this.route.snapshot.fragment;
+    // Volta do gateway chega sem o token: usa o último pedido feito neste navegador.
+    const token = this.route.snapshot.fragment || lastOrderToken();
+    this.token = token;
     if (!token) {
       this.state.set('notFound');
       return;

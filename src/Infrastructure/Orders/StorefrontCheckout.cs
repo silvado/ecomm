@@ -116,6 +116,7 @@ public sealed partial class StorefrontCheckout(TenantDbContext db, IStorefrontCa
         return order is null ? null : new CheckoutResult(CheckoutOutcome.Placed, null, order);
     }
 
-    private static byte[]? HashOrNull(string? token) =>
+    /// <summary>SHA-256 do token do link do pedido, se ele tem o formato esperado.</summary>
+    internal static byte[]? HashOrNull(string? token) =>
         token is not null && TokenFormat().IsMatch(token) ? SHA256.HashData(Encoding.ASCII.GetBytes(token)) : null;
 }

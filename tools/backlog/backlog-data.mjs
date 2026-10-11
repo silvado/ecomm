@@ -127,13 +127,13 @@ export const epics = [
             title: 'Carrinho, checkout e frete',
             rf: 'RF14',
             ac: 'Carrinho e checkout como convidado ou com conta; frete calculado pelo Melhor Envio com CEP de origem do tenant; retirada no balcão configurável.',
-            t: [['Carrinho', 8, 'done'], ['Checkout', 12, 'doing'], ['IShippingProvider e adapter Melhor Envio', 12, 'doing'], ['Opção de retirada', 2, 'done']],
+            t: [['Carrinho', 8, 'done'], ['Checkout', 12, 'done'], ['IShippingProvider e adapter Melhor Envio', 12, 'doing'], ['Opção de retirada', 2, 'done']],
           },
           {
             title: 'Pagamento por gateway do tenant',
             rf: 'RF15',
             ac: 'Gateway escolhido por tenant; cartão tokenizado no gateway; pedido pago só por webhook validado; webhook repetido sem efeito duplicado; Pix quando o gateway suportar.',
-            t: [['IPaymentGateway e fake', 4], ['Adapter Mercado Pago (cartão e Pix)', 16], ['Adapter Cielo E-commerce', 16], ['Webhooks de pagamento com validação e idempotência', 6]],
+            t: [['IPaymentGateway e fake', 4, 'doing'], ['Adapter Mercado Pago (cartão e Pix)', 16], ['Adapter Cielo E-commerce', 16], ['Webhooks de pagamento com validação e idempotência', 6, 'doing']],
           },
           {
             title: 'Área do cliente final',

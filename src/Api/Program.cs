@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using Ecommerce.Api.Auth;
 using Ecommerce.Api.Internal;
 using Ecommerce.Api.Panel;
+using Ecommerce.Api.Payments;
 using Ecommerce.Api.Tenancy;
 using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Orders;
@@ -129,6 +130,7 @@ store.MapPost("/pedidos", async Task<Results<Created<PlacedOrder>, ProblemHttpRe
         _ => TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: result.Message),
     };
 }).RequireRateLimiting("pedido");
+store.MapStorePayment();
 // Acompanhamento pelo link do comprador. Token no corpo (não na URL) para não ir parar em logs de acesso.
 store.MapPost("/pedidos/consulta", async Task<Results<Ok<StoreOrderView>, NotFound>> (OrderLookupRequest request, IStorefrontCheckout checkout, HttpResponse response, CancellationToken ct) =>
 {
@@ -144,6 +146,14 @@ store.MapGet("/logo/{logoId:guid}", async Task<Results<FileStreamHttpResult, Not
     response.Headers.CacheControl = "public, max-age=31536000, immutable";
     return PanelEndpoints.UploadedImage(response, logo);
 });
+
+app.MapPaymentWebhooks();
+if (app.Configuration.GetValue<bool>("Payments:UseFakeGateway"))
+{
+    // A simulação marca pedidos como pagos sem dinheiro algum: jamais em produção.
+    if (app.Environment.IsProduction()) throw new InvalidOperationException("Payments:UseFakeGateway não pode ser usado em produção.");
+    app.MapFakePaymentSimulation();
+}
 
 app.MapAuthEndpoints();
 app.MapPanelEndpoints();

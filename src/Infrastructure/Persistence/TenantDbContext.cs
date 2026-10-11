@@ -4,6 +4,7 @@ using Ecommerce.Domain.Catalog;
 using Ecommerce.Domain.Common;
 using Ecommerce.Domain.Inventory;
 using Ecommerce.Domain.Orders;
+using Ecommerce.Domain.Payments;
 using Ecommerce.Domain.Store;
 using Ecommerce.Domain.Vehicles;
 using Ecommerce.Infrastructure.Platform;
@@ -33,6 +34,8 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<CustomerOrder> CustomerOrders => Set<CustomerOrder>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderCounter> OrderCounters => Set<OrderCounter>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<ExternalEvent> ExternalEvents => Set<ExternalEvent>();
     public DbSet<StoreSettings> StoreSettings => Set<StoreSettings>();
     public DbSet<StoreBranding> StoreBrandings => Set<StoreBranding>();
     public DbSet<TenantSecret> TenantSecrets => Set<TenantSecret>();

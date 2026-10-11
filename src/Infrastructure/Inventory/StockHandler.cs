@@ -41,11 +41,16 @@ public static class StockHandler
         return (new ReserveStockResult(true, reservation.Id, reservation.ExpiresAt), outgoing);
     }
 
-    public static async Task<(ConfirmReservationOutcome, OutgoingMessages)> Handle(
-        ConfirmReservation command, TenantDbContext db, TimeProvider clock, CancellationToken ct)
+    public static Task<(ConfirmReservationOutcome, OutgoingMessages)> Handle(
+        ConfirmReservation command, TenantDbContext db, TimeProvider clock, CancellationToken ct) =>
+        ConfirmAsync(db, command.ReservationId, clock.GetUtcNow(), ct);
+
+    /// <summary>Converte a reserva paga em baixa; também usado ao confirmar o pagamento de um pedido (todas as reservas dele).</summary>
+    internal static async Task<(ConfirmReservationOutcome, OutgoingMessages)> ConfirmAsync(
+        TenantDbContext db, Guid reservationId, DateTimeOffset now, CancellationToken ct)
     {
         var outgoing = new OutgoingMessages();
-        var now = clock.GetUtcNow();
+        var command = new ConfirmReservation(reservationId);
 
         var converted = await SingleOrNullAsync(db.Database.SqlQuery<ReservationRow>($"""
             UPDATE stock_reservations SET status = {nameof(ReservationStatus.Converted)}

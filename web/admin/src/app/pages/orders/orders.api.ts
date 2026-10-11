@@ -2,12 +2,21 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled';
+export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview';
 export type DeliveryMethod = 'shipping' | 'pickup';
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pendingPayment: 'Aguardando pagamento',
   paid: 'Pago',
+  canceled: 'Cancelado',
+  needsReview: 'Em análise',
+};
+
+export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  pending: 'Pendente',
+  approved: 'Aprovado',
+  rejected: 'Recusado',
+  refunded: 'Estornado',
   canceled: 'Cancelado',
 };
 
@@ -51,6 +60,9 @@ export interface OrderView {
   total: number;
   canceledAt: string | null;
   cancelReason: string | null;
+  paidAt: string | null;
+  reviewReason: string | null;
+  payments: { gateway: string; externalId: string; status: string; amount: number; method: string | null; updatedAt: string }[];
 }
 
 @Injectable({ providedIn: 'root' })

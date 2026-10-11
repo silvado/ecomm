@@ -272,12 +272,14 @@ erDiagram
         string delivery_address "colunas delivery_* — só na entrega"
         string shipping_service "id, transportadora, serviço, prazo cotados"
         string pickup_address "cópia do endereço de retirada"
-        string status "pending_payment|paid|invoiced|shipped|delivered|canceled|returned|stock_conflict"
+        string status "pending_payment|paid|needs_review|invoiced|shipped|delivered|canceled|returned"
         numeric items_total
         numeric shipping_total
         numeric total "CHECK = items_total + shipping_total"
         timestamptz placed_at
         timestamptz payment_deadline "fim da reserva; sem pagamento, cancela"
+        timestamptz paid_at
+        string review_reason "por que está em análise (needs_review)"
         timestamptz canceled_at
     }
     ORDER_ITEM {
@@ -299,11 +301,12 @@ erDiagram
         uuid id PK
         uuid tenant_id "RLS"
         uuid order_id FK
-        string gateway "mercado_pago|cielo|channel|cash|pix_manual"
-        string external_id
-        string method "card|pix|boleto|cash"
-        string status "pending|authorized|paid|refunded|failed"
+        string gateway "fake|mercado-pago|cielo"
+        string external_id "UK (tenant_id, gateway, external_id)"
+        string method "como o gateway informa (pix, cartão…)"
+        string status "pending|approved|rejected|refunded|canceled — sempre consultado no gateway"
         numeric amount
+        timestamptz updated_at
     }
     SHIPMENT {
         uuid id PK
@@ -332,9 +335,10 @@ erDiagram
 erDiagram
     EXTERNAL_EVENT {
         uuid id PK
-        uuid tenant_id "RLS (nullable até resolver o tenant — ver nota)"
+        uuid tenant_id "RLS — vem da URL do webhook (cada loja tem a sua)"
         string source "mercado_livre|mercado_pago|cielo|meta|olx_hub|fiscal"
-        string idempotency_key "UK (source, idempotency_key)"
+        string idempotency_key "UK (tenant_id, source, idempotency_key)"
+        string resource_id "recurso a consultar na origem"
         jsonb payload
         string status "received|processed|ignored|failed"
         timestamptz received_at
