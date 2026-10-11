@@ -1,4 +1,5 @@
 using Ecommerce.Api.Auth;
+using Ecommerce.Api.Payments;
 using Ecommerce.Application.Identity;
 using Ecommerce.Application.Storage;
 using Ecommerce.Application.Store;
@@ -29,6 +30,7 @@ public static class PanelEndpoints
         panel.MapPartPhotoEndpoints();
         panel.MapCompatibilityEndpoints();
         panel.MapOrderEndpoints();
+        panel.MapPaymentSettings();
         panel.MapGroup("").RequirePermission(Permission.CatalogManage).MapVehicleCatalog();
 
         var users = panel.MapGroup("/usuarios").RequirePermission(Permission.UsersManage);

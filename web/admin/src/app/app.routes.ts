@@ -8,6 +8,7 @@ import { LoginPage } from './pages/login/login';
 import { OrdersPage } from './pages/orders/orders';
 import { PartFormPage } from './pages/parts/part-form';
 import { PartsListPage } from './pages/parts/parts-list';
+import { PaymentsPage } from './pages/payments/payments';
 import { StorePage } from './pages/store/store';
 import { UsersPage } from './pages/users/users';
 
@@ -30,6 +31,7 @@ export const routes: Routes = [
       { path: 'pecas/nova', component: PartFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Nova peça' },
       { path: 'pecas/:id', component: PartFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Peça' },
       { path: 'pedidos', component: OrdersPage, canActivate: [permissionGuard('ordersManage')], title: 'Pedidos' },
+      { path: 'pagamentos', component: PaymentsPage, canActivate: [permissionGuard('vaultManage')], title: 'Pagamentos' },
       { path: 'loja', component: StorePage, canActivate: [permissionGuard('storeManage')], title: 'Dados da loja' },
       { path: 'usuarios', component: UsersPage, canActivate: [permissionGuard('usersManage')], title: 'Usuários' },
     ],

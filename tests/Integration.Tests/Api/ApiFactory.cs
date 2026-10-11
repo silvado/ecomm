@@ -3,6 +3,8 @@ using System.Security.Cryptography;
 using Ecommerce.Domain.Identity;
 using Ecommerce.Domain.Platform;
 using Ecommerce.Infrastructure.Identity;
+using Ecommerce.Infrastructure.Payments;
+using Ecommerce.Integration.Tests.Payments;
 using Ecommerce.Infrastructure.Platform;
 using Ecommerce.Integration.Tests.Infrastructure;
 using Ecommerce.Integration.Tests.Vault;
@@ -63,8 +65,15 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Network:Internal:0", ProxyNetwork);
         builder.UseSetting("Auth:SigningKey", SigningKey);
         builder.ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Trace).AddProvider(Logs));
-        builder.ConfigureServices(services => services.AddSingleton<IStartupFilter, FakeRemoteIpStartupFilter>());
+        builder.ConfigureServices(services =>
+        {
+            services.AddSingleton<IStartupFilter, FakeRemoteIpStartupFilter>();
+            services.AddHttpClient(PaymentGatewayResolver.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => MercadoPago);
+        });
     }
+
+    /// <summary>Mercado Pago simulado, usado por lojas com credenciais do Mercado Pago no cofre.</summary>
+    public MercadoPagoStub MercadoPago { get; } = new();
 
     /// <summary>Sem gerenciamento automático de cookies: os testes controlam o cookie de renovação.</summary>
     public HttpClient ClientFor(string host, string? remoteIp = null)

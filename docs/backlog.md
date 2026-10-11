@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **974** |
 
-Progresso: 238 h de 974 h em tarefas concluídas (24%).
+Progresso: 248 h de 974 h em tarefas concluídas (25%).
 
 Referência: 6 h produtivas/dia ≈ 162 dias úteis ≈ 7,7 meses de uma pessoa.
 
@@ -175,10 +175,10 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 
 **Critérios de aceite:** Gateway escolhido por tenant; cartão tokenizado no gateway; pedido pago só por webhook validado; webhook repetido sem efeito duplicado; Pix quando o gateway suportar.
 
-- [ ] IPaymentGateway e fake — 4 h *(em andamento)*
-- [ ] Adapter Mercado Pago (cartão e Pix) — 16 h
+- [x] IPaymentGateway e fake — 4 h
+- [ ] Adapter Mercado Pago (cartão e Pix) — 16 h *(em andamento)*
 - [ ] Adapter Cielo E-commerce — 16 h
-- [ ] Webhooks de pagamento com validação e idempotência — 6 h *(em andamento)*
+- [x] Webhooks de pagamento com validação e idempotência — 6 h
 
 #### Área do cliente final — 12 h  `RF16`
 
