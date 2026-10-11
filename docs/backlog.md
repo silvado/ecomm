@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **974** |
 
-Progresso: 272 h de 974 h em tarefas concluídas (28%).
+Progresso: 290 h de 974 h em tarefas concluídas (30%).
 
 Referência: 6 h produtivas/dia ≈ 162 dias úteis ≈ 7,7 meses de uma pessoa.
 
@@ -117,13 +117,13 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 - [ ] Modelo e regras de rastreabilidade — 6 h
 - [ ] Telas e configuração de campos extras — 4 h
 
-#### Importação de peças por planilha — 18 h  `RF11`
+#### Importação de peças por planilha — 18 h  `RF11` · **concluído**
 
 **Critérios de aceite:** Modelo de planilha fornecido; validação linha a linha com relatório de erros; importação em background com progresso.
 
-- [ ] Modelo, leitura e validação da planilha — 8 h
-- [ ] Job de importação com progresso e relatório — 6 h
-- [ ] Tela de importação — 4 h
+- [x] Modelo, leitura e validação da planilha — 8 h
+- [x] Job de importação com progresso e relatório — 6 h
+- [x] Tela de importação — 4 h
 
 ### Estoque e sincronização interna — 48 h
 

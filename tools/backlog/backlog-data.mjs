@@ -87,7 +87,7 @@ export const epics = [
             title: 'Importação de peças por planilha',
             rf: 'RF11',
             ac: 'Modelo de planilha fornecido; validação linha a linha com relatório de erros; importação em background com progresso.',
-            t: [['Modelo, leitura e validação da planilha', 8], ['Job de importação com progresso e relatório', 6], ['Tela de importação', 4]],
+            t: [['Modelo, leitura e validação da planilha', 8, 'done'], ['Job de importação com progresso e relatório', 6, 'done'], ['Tela de importação', 4, 'done']],
           },
         ],
       },
