@@ -77,6 +77,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA1: importação por planilha (modelo XLSX/CSV fornecido) valida linha a linha e gera relatório de erros sem importar parcialmente sem aviso.
 - CA2: importação do ML lista os anúncios ativos/pausados do vendedor, cria peças vinculadas (`ChannelListing`) e não duplica em reimportação.
 - CA3: importação roda em background com progresso visível.
+- Decisões (Q33): planilha XLSX ou CSV (modelo nos dois; CSV com ";", "," ou tab, UTF-8 ou Windows-1252), até 5.000 peças e 5 MB; colunas código, título, descrição, estado, preço, quantidade, medidas da embalagem e OEM — sem compatibilidade nesta etapa. Prévia valida linha a linha (mesmas regras do cadastro) e mostra os erros; só as linhas válidas são importadas, depois de o usuário confirmar. Código já cadastrado é pulado e listado no relatório (a peça existente não muda), então reenviar a planilha não duplica. Peças entram como rascunho (precisam de foto para ativar).
 
 ### RF12 — Reserva atômica de estoque · E1
 - CA1: ao iniciar pagamento, a quantidade é reservada atomicamente; se não houver saldo, o checkout informa indisponibilidade.
@@ -294,6 +295,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q30 | Detalhes da integração com a Cielo a confirmar com credenciais de teste (avisos sem assinatura, número do pedido, valor pago, modo de teste, dois gateways conectados). | HIPÓTESE: aviso só dispara a consulta autenticada; `PED{número}`; valor = soma do carrinho; orientar desligar o modo de teste; cobra pelo último salvo. | RF15 |
 | Q31 | O que a loja faz com o pedido depois de pago ou em análise? Pode cancelar pedido pago? | Etapas Enviado (rastreio)/Entregue e Retirado; análise: aprovar ou cancelar; cancelar até antes da entrega, com motivo, devolvendo as peças ao estoque; estorno feito pela loja no gateway. | RF17, RF15, RF12 |
 | Q32 | Como é a venda de balcão: em que situação nasce, o preço pode mudar, que dados do cliente? | Vira pedido de origem "Balcão" já pago e retirado (baixa na hora); a loja pode cancelar com motivo para corrigir lançamento errado (peças voltam ao estoque). Preço ajustável por item (desconto negociado, registrado no histórico). Cliente opcional: nome, CPF ou CNPJ (validado) e telefone; sem nome, "Consumidor final". | RF18, RF17 |
+| Q33 | Como funciona a importação de peças por planilha? | XLSX e CSV; prévia com relatório de erros e confirmação antes de importar as linhas válidas; código já cadastrado é pulado e avisado (não atualiza a peça); sem compatibilidade com veículos nesta etapa; peças entram como rascunho. | RF11 |
 
 ## Fontes
 

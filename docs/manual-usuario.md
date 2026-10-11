@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 11/10/2026 (RF18: venda de balcão).
+> Última atualização: 11/10/2026 (RF11: importação de peças por planilha).
 
 ## Sumário
 
@@ -84,7 +84,7 @@ Tela de boas-vindas com o nome da loja. Os módulos ficam no menu do topo.
 **Lista de peças**
 - Busca por **título, código interno ou código OEM** (espaços, pontos e hífens são ignorados).
 - Filtros por **situação** (rascunho, ativa, inativa) e por **veículo** (marca → modelo → ano-modelo).
-- Clique na peça para abrir o cadastro. Use **Nova peça** para cadastrar.
+- Clique na peça para abrir o cadastro. Use **Nova peça** para cadastrar uma a uma, ou **Importar planilha** para cadastrar várias de uma vez (veja abaixo).
 
 **Cadastrar uma peça**
 1. **Peças → Nova peça**.
@@ -110,6 +110,27 @@ Tela de boas-vindas com o nome da loja. Os módulos ficam no menu do topo.
 **Publicar ou retirar da loja**
 - **Ativar** publica a peça (precisa de ao menos uma foto).
 - **Inativar** tira a peça da loja sem apagar o cadastro.
+
+**Importar peças por planilha**
+
+Use para cadastrar o estoque de uma vez, por exemplo na implantação da loja.
+
+1. **Peças → Importar planilha**.
+2. **Baixe o modelo** em Excel (.xlsx) ou CSV. Ele vem com o cabeçalho e duas linhas de exemplo; apague os exemplos e coloque uma peça por linha.
+   - **Obrigatórias:** código, título, estado (usada, nova ou recondicionada), preço e quantidade.
+   - **Opcionais:** descrição, medidas da embalagem (comprimento, largura e altura em cm, peso em g) e códigos OEM (separados por |).
+   - O preço pode ser escrito como no Excel em português (por exemplo, 1.234,56). A ordem das colunas não importa, desde que o cabeçalho tenha os nomes do modelo.
+3. **Envie o arquivo** (até 5 MB e 5.000 peças). O sistema confere cada linha com as mesmas regras do cadastro manual e mostra uma **prévia**:
+   - quantas linhas estão válidas e quantas têm erro, com o **número da linha e o motivo**;
+   - quantas têm código que **já existe na loja**: essas serão puladas, sem mudar a peça já cadastrada.
+4. Clique em **Importar N peças**. Só as linhas válidas entram. A importação roda em segundo plano, e a tela mostra o **progresso**. Pode sair da tela: em **Importações recentes** dá para acompanhar depois.
+5. Ao terminar, as peças estão em **Peças** como **rascunho**. Envie as fotos e ative cada uma para publicá-las na loja.
+
+**Bom saber**
+- Para corrigir as linhas com erro, ajuste a planilha e **envie de novo a planilha inteira**. As que já entraram são puladas, então nada é duplicado.
+- A importação **não muda** peças que já existem (nem preço, nem estoque). Para mudar uma peça, abra o cadastro dela.
+- Compatibilidade com veículos não vem pela planilha: informe no cadastro de cada peça.
+- O estoque inicial de cada peça fica registrado como movimento de "importação", em nome de quem enviou a planilha.
 
 **Estoque**
 - O cadastro mostra três números: **disponível**, **físico** e **reservado**. Reservado é o que está preso em pedidos aguardando pagamento.
@@ -274,6 +295,8 @@ Itens previstos que **ainda não estão no sistema**:
 - Integrações com Mercado Livre, Instagram (catálogo Meta) e OLX.
 - Emissão de NF-e (inclusive da venda de balcão).
 - Frete real (Melhor Envio): hoje o frete é simulado.
+- Compatibilidade com veículos e fotos pela planilha de importação; atualização em massa de peças já cadastradas.
+- Importação dos anúncios existentes do Mercado Livre.
 - Estorno automático e aviso por e-mail ao comprador.
 - Devolução depois de entregue ou retirado (inclusive no balcão), com opção de não voltar peça avariada ao estoque.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
@@ -285,3 +308,4 @@ Itens previstos que **ainda não estão no sistema**:
 |---|---|
 | 11/10/2026 | Primeira versão: acesso, perfis, peças, pedidos (RF17), dados da loja, pagamentos, usuários e loja virtual. |
 | 11/10/2026 | Venda de balcão (RF18): nova seção 4.5; origem Balcão, busca por CNPJ e cancelamento da venda de balcão em Pedidos. |
+| 11/10/2026 | Importação de peças por planilha (RF11), na seção 4.3 Peças. |
