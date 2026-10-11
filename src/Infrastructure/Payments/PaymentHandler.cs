@@ -4,7 +4,7 @@ using Ecommerce.Application.Payments;
 using Ecommerce.Domain.Inventory;
 using Ecommerce.Domain.Orders;
 using Ecommerce.Domain.Payments;
-using Ecommerce.Infrastructure.Inventory;
+using Ecommerce.Infrastructure.Orders;
 using Ecommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Wolverine;
@@ -19,7 +19,7 @@ public static class PaymentHandler
 {
     public const string LateSaleReason = "Pagamento aprovado depois que uma das peças foi vendida. Devolva o valor ao comprador ou combine outra peça.";
     public const string RefundedReason = "O pagamento foi estornado no gateway depois de aprovado. Confira o pedido e o estoque.";
-    private const string Savepoint = "confirmacao_pagamento";
+    public const string CanceledByStoreReason = "Pagamento aprovado de um pedido que a loja já tinha cancelado. Devolva o valor ao comprador ou aprove a venda.";
 
     public static async Task<(RecordOutcome, OutgoingMessages)> Handle(RecordPaymentNotification command, TenantDbContext db, TimeProvider clock, CancellationToken ct)
     {
@@ -48,27 +48,37 @@ public static class PaymentHandler
 
         var gateway = await gateways.ResolveAsync(notification.Source, ct);
         var info = gateway is null ? null : await gateway.GetPaymentAsync(notification.ResourceId, ct);
-        var order = info is null ? null
-            : Guid.TryParse(info.OrderReference, out var orderId)
-                ? await db.CustomerOrders.Include(o => o.Items).SingleOrDefaultAsync(o => o.Id == orderId, ct)
+        var orderId = info is null ? null
+            : Guid.TryParse(info.OrderReference, out var id)
+                ? await db.CustomerOrders.Where(o => o.Id == id).Select(o => (Guid?)o.Id).SingleOrDefaultAsync(ct)
                 : OrderReference.NumberOf(info.OrderReference) is { } number
-                    ? await db.CustomerOrders.Include(o => o.Items).SingleOrDefaultAsync(o => o.Number == number, ct)
+                    ? await db.CustomerOrders.Where(o => o.Number == number).Select(o => (Guid?)o.Id).SingleOrDefaultAsync(ct)
                     : null;
-        if (gateway is null || info is null || order is null)
+        if (gateway is null || info is null || orderId is null)
         {
             notification.Finish(ExternalEventStatus.Ignored, now);
             return outgoing;
         }
 
+        // Pedido travado: ações do painel e o prazo sobre ele esperam (e vice-versa) — ver OrderStock.LockAsync.
+        await OrderStock.LockAsync(db, orderId.Value, ct);
+        var order = await db.CustomerOrders.Include(o => o.Items).SingleAsync(o => o.Id == orderId, ct);
+        var from = order.Status;
+
         var payment = await db.Payments.SingleOrDefaultAsync(p => p.Gateway == gateway.Name && p.ExternalId == info.ExternalId, ct);
         if (payment is null) db.Payments.Add(new Payment(order.TenantId, order.Id, gateway.Name, info.ExternalId, info.Status, info.Amount, info.Method, now));
         else payment.Update(info.Status, info.Amount, info.Method, now);
 
-        if (info.Status == PaymentStatus.Approved && order.Status is OrderStatus.PendingPayment or OrderStatus.Canceled)
+        if (info.Status == PaymentStatus.Approved && order.AcceptsPayment)
             outgoing.AddRange(await ConfirmAsync(db, order, info.Amount, now, ct));
-        else if (info.Status == PaymentStatus.Refunded && order.Status == OrderStatus.Paid)
+        else if (info.Status == PaymentStatus.Approved && order is { Status: OrderStatus.Canceled, CanceledBy: CancellationSource.Store })
+            order.FlagForReview(CanceledByStoreReason);
+        else if (info.Status == PaymentStatus.Refunded && order.Status is OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Delivered or OrderStatus.PickedUp)
             order.FlagForReview(RefundedReason);
 
+        if (order.Status != from)
+            db.OrderHistory.Add(new OrderHistoryEntry(order.TenantId, order.Id, from, order.Status, OrderActor.Payment, null,
+                order.Status == OrderStatus.NeedsReview ? order.ReviewReason : $"Pagamento aprovado ({gateway.Name}).", now));
         notification.Finish(ExternalEventStatus.Processed, now);
         return outgoing;
     }
@@ -86,23 +96,13 @@ public static class PaymentHandler
             return [];
         }
 
-        var transaction = db.Database.CurrentTransaction ?? throw new InvalidOperationException("Confirmação de pagamento fora de transação.");
-        await transaction.CreateSavepointAsync(Savepoint, ct);
-        var outgoing = new OutgoingMessages();
-        foreach (var item in order.Items.OrderBy(i => i.PartId))
+        var (missing, events) = await OrderStock.ConfirmAllAsync(db, order, now, ct);
+        if (missing is not null)
         {
-            var (outcome, events) = await StockHandler.ConfirmAsync(db, item.ReservationId, now, ct);
-            if (outcome is ConfirmReservationOutcome.OutOfStock or ConfirmReservationOutcome.NotFound)
-            {
-                await transaction.RollbackToSavepointAsync(Savepoint, ct);
-                foreach (var movement in db.ChangeTracker.Entries<StockMovement>().Where(e => e.State == EntityState.Added).ToList())
-                    movement.State = EntityState.Detached;
-                order.FlagForReview(LateSaleReason);
-                return [];
-            }
-            outgoing.AddRange(events);
+            order.FlagForReview(LateSaleReason);
+            return [];
         }
         order.MarkPaid(now);
-        return outgoing;
+        return events;
     }
 }

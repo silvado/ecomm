@@ -118,6 +118,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 ### RF17 — Pedidos unificados · E1 (site, balcão) / E2 (ML) / E3 (OLX)
 - CA1: pedidos de todos os canais num único painel com coluna "origem" e filtros por origem/status/período.
 - CA2: pedido externo guarda o id do canal e é único por (tenant, canal, id externo).
+- **HIPÓTESE (Q31):** etapas depois de pago — entrega: Pago → Enviado (rastreio opcional) → Entregue; retirada: Pago → Retirado; o comprador vê a etapa e o rastreio na página do pedido. A loja resolve o pedido "em análise" aprovando (baixa as peças que ainda não foram baixadas; sem saldo, recusa) ou cancelando. A loja pode cancelar até antes da entrega/retirada, com motivo obrigatório: reservas são liberadas e peças já baixadas voltam ao estoque (movimento "devolução por cancelamento"); o estorno do pagamento é feito pela loja no gateway. Pagamento que chega depois de a loja cancelar vai para análise (só o cancelado pelo prazo é reativado). Cada mudança fica no histórico do pedido (quem, quando, observação). Devolução depois de entregue, estorno automático e aviso por e-mail ao comprador ficam para depois.
 
 ### RF18 — Venda de balcão · E1
 - CA1: lançamento com peças, quantidade, forma de pagamento e cliente opcional.
@@ -290,6 +291,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q28 | Como tratar pagamento que chega depois do prazo, com valor diferente ou estornado? Qual gateway e fluxo primeiro? | Mercado Pago, Checkout Pro (redirecionamento), credenciais coladas pelo Dono. Pago tarde com peças disponíveis → pago; peça já vendida, valor diferente ou estorno → "em análise", sem estorno automático (mesma linha da Q01). | RF15, RF12 |
 | Q29 | Detalhes da integração com o Mercado Pago a confirmar com credenciais de teste (frete na preferência, assinatura dos avisos do `notification_url`, contestação). | HIPÓTESE: frete como item; mesma chave secreta assina os avisos; sem janela de tempo no `ts`; `charged_back` = estorno (pedido pago vai para análise). | RF15 |
 | Q30 | Detalhes da integração com a Cielo a confirmar com credenciais de teste (avisos sem assinatura, número do pedido, valor pago, modo de teste, dois gateways conectados). | HIPÓTESE: aviso só dispara a consulta autenticada; `PED{número}`; valor = soma do carrinho; orientar desligar o modo de teste; cobra pelo último salvo. | RF15 |
+| Q31 | O que a loja faz com o pedido depois de pago ou em análise? Pode cancelar pedido pago? | Etapas Enviado (rastreio)/Entregue e Retirado; análise: aprovar ou cancelar; cancelar até antes da entrega, com motivo, devolvendo as peças ao estoque; estorno feito pela loja no gateway. | RF17, RF15, RF12 |
 
 ## Fontes
 

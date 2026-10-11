@@ -462,6 +462,15 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("canceled_at");
 
+                    b.Property<string>("CanceledBy")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("canceled_by");
+
+                    b.Property<DateTimeOffset?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("delivered_at");
+
                     b.Property<string>("DeliveryCity")
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)")
@@ -503,6 +512,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(120)")
                         .HasColumnName("delivery_street");
 
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("external_id");
+
                     b.Property<decimal>("ItemsTotal")
                         .HasPrecision(12, 2)
                         .HasColumnType("numeric(12,2)")
@@ -539,6 +553,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)")
                         .HasColumnName("review_reason");
+
+                    b.Property<DateTimeOffset?>("ShippedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("shipped_at");
 
                     b.Property<string>("ShippingCarrier")
                         .HasMaxLength(100)
@@ -579,6 +597,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("total");
 
+                    b.Property<string>("TrackingCode")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("tracking_code");
+
                     b.HasKey("Id")
                         .HasName("pk_customer_orders");
 
@@ -592,6 +615,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TenantId", "PlacedAt")
                         .HasDatabaseName("ix_customer_orders_tenant_id_placed_at");
+
+                    b.HasIndex("TenantId", "Origin", "ExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_customer_orders_tenant_id_origin_external_id")
+                        .HasFilter("external_id IS NOT NULL");
 
                     b.ToTable("customer_orders", null, t =>
                         {
@@ -616,6 +644,62 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasName("pk_order_counters");
 
                     b.ToTable("order_counters", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Orders.OrderHistoryEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Actor")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("actor");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<string>("FromStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("from_status");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("ToStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("to_status");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_order_history");
+
+                    b.HasIndex("OrderId")
+                        .HasDatabaseName("ix_order_history_order_id");
+
+                    b.HasIndex("TenantId", "OrderId", "At")
+                        .HasDatabaseName("ix_order_history_tenant_id_order_id_at");
+
+                    b.ToTable("order_history", (string)null);
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Orders.OrderItem", b =>
@@ -1118,6 +1202,16 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_stock_reservations_parts_part_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Orders.OrderHistoryEntry", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Orders.CustomerOrder", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_order_history_customer_orders_order_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Orders.OrderItem", b =>

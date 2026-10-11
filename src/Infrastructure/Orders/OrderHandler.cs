@@ -70,6 +70,7 @@ public static class OrderHandler
         var order = CustomerOrder.Place(tenantId, number, command.AccessTokenHash, command.Buyer, command.Address, command.Shipping,
             command.PickupAddress, orderLines, now, deadline);
         db.CustomerOrders.Add(order);
+        db.OrderHistory.Add(new OrderHistoryEntry(tenantId, order.Id, null, order.Status, OrderActor.Buyer, null, null, now));
         outgoing.Schedule(new ExpireOrder(order.Id), deadline);
         return (new PlaceOrderResult(PlaceOrderOutcome.Placed, order.Number, order.Total, order.PaymentDeadline, null), outgoing);
     }
@@ -81,7 +82,8 @@ public static class OrderHandler
         var now = clock.GetUtcNow();
 
         var canceled = await db.Database.SqlQuery<Guid>($"""
-            UPDATE customer_orders SET status = {nameof(OrderStatus.Canceled)}, canceled_at = {now}, cancel_reason = {ExpiredReason}
+            UPDATE customer_orders SET status = {nameof(OrderStatus.Canceled)}, canceled_at = {now}, cancel_reason = {ExpiredReason},
+                canceled_by = {nameof(CancellationSource.PaymentExpired)}
             WHERE id = {command.OrderId} AND status = {nameof(OrderStatus.PendingPayment)} AND payment_deadline <= {now}
             RETURNING id AS "Value"
             """).ToListAsync(ct);
@@ -95,11 +97,11 @@ public static class OrderHandler
             return outgoing;
         }
 
+        db.OrderHistory.Add(new OrderHistoryEntry(db.RequireTenantId(), command.OrderId, OrderStatus.PendingPayment, OrderStatus.Canceled,
+            OrderActor.System, null, ExpiredReason, now));
         var reservations = await db.OrderItems.Where(i => i.OrderId == command.OrderId).Select(i => i.ReservationId).ToListAsync(ct);
         foreach (var reservation in reservations)
             outgoing.AddRange(await StockHandler.EndReservationAsync(db, reservation, ReservationStatus.Expired, expiredBefore: now, ct));
         return outgoing;
     }
-
-
 }

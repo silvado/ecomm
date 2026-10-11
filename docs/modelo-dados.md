@@ -248,6 +248,7 @@ erDiagram
     CUSTOMER_ORDER ||--o{ SHIPMENT : ""
     CUSTOMER_ORDER ||--o{ FISCAL_DOCUMENT : ""
     CUSTOMER_ORDER ||--o{ STOCK_RESERVATION : ""
+    CUSTOMER_ORDER ||--o{ ORDER_HISTORY : ""
 
     CUSTOMER {
         uuid id PK
@@ -272,7 +273,7 @@ erDiagram
         string delivery_address "colunas delivery_* — só na entrega"
         string shipping_service "id, transportadora, serviço, prazo cotados"
         string pickup_address "cópia do endereço de retirada"
-        string status "pending_payment|paid|needs_review|invoiced|shipped|delivered|canceled|returned"
+        string status "pending_payment|paid|needs_review|shipped|delivered|picked_up|canceled (invoiced/returned: RF19 e devoluções)"
         numeric items_total
         numeric shipping_total
         numeric total "CHECK = items_total + shipping_total"
@@ -280,7 +281,23 @@ erDiagram
         timestamptz payment_deadline "fim da reserva; sem pagamento, cancela"
         timestamptz paid_at
         string review_reason "por que está em análise (needs_review)"
+        string tracking_code "rastreio informado ao marcar enviado (RF17)"
+        timestamptz shipped_at
+        timestamptz delivered_at "entregue ou retirado"
         timestamptz canceled_at
+        string canceled_by "payment_expired|store — pagamento atrasado só reativa o cancelado pelo prazo"
+        string cancel_reason "motivo (obrigatório quando a loja cancela)"
+    }
+    ORDER_HISTORY {
+        uuid id PK
+        uuid tenant_id "RLS"
+        uuid order_id FK
+        string from_status "nulo na criação"
+        string to_status
+        string actor "buyer|user|payment|system"
+        uuid user_id "quem fez, quando actor = user"
+        string note "motivo, rastreio, razão da análise"
+        timestamptz at
     }
     ORDER_ITEM {
         uuid id PK

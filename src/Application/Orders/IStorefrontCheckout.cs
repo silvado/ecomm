@@ -32,7 +32,8 @@ public sealed record StoreOrderItemView(Guid PartId, string Title, decimal UnitP
 public sealed record StoreOrderView(
     long Number, OrderStatus Status, DateTimeOffset PlacedAt, DateTimeOffset PaymentDeadline, string BuyerName,
     DeliveryMethod DeliveryMethod, DeliveryAddress? Address, string? Carrier, string? Service, int? DeliveryDays, string? PickupAddress,
-    IReadOnlyList<StoreOrderItemView> Items, decimal ItemsTotal, decimal ShippingTotal, decimal Total, string? CancelReason);
+    IReadOnlyList<StoreOrderItemView> Items, decimal ItemsTotal, decimal ShippingTotal, decimal Total, string? CancelReason,
+    string? TrackingCode, DateTimeOffset? ShippedAt, DateTimeOffset? DeliveredAt);
 
 /// <summary>Checkout como convidado na loja do Host (RF14 CA3) e acompanhamento do pedido pelo link com token.</summary>
 public interface IStorefrontCheckout
