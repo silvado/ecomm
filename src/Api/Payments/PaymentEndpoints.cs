@@ -33,21 +33,31 @@ internal static class PaymentEndpoints
             };
         }).RequireRateLimiting("pedido");
 
-    /// <summary>No painel, só para quem administra o cofre (Dono): credenciais do Mercado Pago, nunca devolvidas (RF06 CA3).</summary>
+    /// <summary>
+    /// No painel, só para quem administra o cofre (Dono): contas dos gateways (Mercado Pago, Cielo). As credenciais nunca
+    /// voltam (RF06 CA3) — só os 4 últimos caracteres.
+    /// </summary>
     public static void MapPaymentSettings(this RouteGroupBuilder panel)
     {
-        var settings = panel.MapGroup("/pagamentos/mercado-pago").RequirePermission(Permission.VaultManage);
+        var settings = panel.MapGroup("/pagamentos").RequirePermission(Permission.VaultManage);
 
-        settings.MapGet("/", async (IPaymentSettings payments, CancellationToken ct) => TypedResults.Ok(await payments.GetMercadoPagoAsync(ct)));
+        settings.MapGet("/", async (IPaymentSettings payments, CancellationToken ct) => TypedResults.Ok(await payments.ListAsync(ct)));
 
-        settings.MapPut("/", async Task<Results<Ok<MercadoPagoSettings>, ProblemHttpResult>> (
-            SaveMercadoPagoCredentials request, IPaymentSettings payments, CancellationToken ct) =>
+        settings.MapPut("/{gateway}", async Task<Results<Ok<IReadOnlyList<GatewaySettings>>, ProblemHttpResult, NotFound>> (
+            string gateway, Dictionary<string, string?> credentials, IPaymentSettings payments, CancellationToken ct) =>
         {
-            var result = await payments.SaveMercadoPagoAsync(request, ct);
-            return result.Settings is { } saved ? TypedResults.Ok(saved) : AuthEndpoints.Problem(StatusCodes.Status400BadRequest, result.Error!);
+            var result = await payments.SaveAsync(gateway, credentials, ct);
+            return result.Outcome switch
+            {
+                SaveGatewayOutcome.Saved => TypedResults.Ok(result.Settings!),
+                SaveGatewayOutcome.UnknownGateway => TypedResults.NotFound(),
+                _ => AuthEndpoints.Problem(StatusCodes.Status400BadRequest, result.Error!),
+            };
         });
 
-        settings.MapDelete("/", async (IPaymentSettings payments, CancellationToken ct) => TypedResults.Ok(await payments.RemoveMercadoPagoAsync(ct)));
+        settings.MapDelete("/{gateway}", async Task<Results<Ok<IReadOnlyList<GatewaySettings>>, NotFound>> (
+            string gateway, IPaymentSettings payments, CancellationToken ct) =>
+            await payments.RemoveAsync(gateway, ct) is { } list ? TypedResults.Ok(list) : TypedResults.NotFound());
     }
 
     /// <summary>
@@ -71,7 +81,7 @@ internal static class PaymentEndpoints
                 WebhookOutcome.Rejected => TypedResults.Unauthorized(),
                 _ => TypedResults.NotFound(),
             };
-        }).ExcludeFromDescription();
+        }).RequireRateLimiting("webhook").ExcludeFromDescription();
 
     /// <summary>
     /// Só com o gateway fake: página do "gateway" onde o comprador aprova ou recusa. A notificação é assinada e entra

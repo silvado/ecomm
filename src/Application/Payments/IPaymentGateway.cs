@@ -38,6 +38,23 @@ public sealed record PaymentNotification(NotificationValidity Validity, string? 
 /// <param name="OrderReference">Referência que enviamos ao criar o checkout (id do pedido).</param>
 public sealed record GatewayPayment(string ExternalId, PaymentStatus Status, decimal Amount, string? OrderReference, string? Method);
 
+/// <summary>
+/// Referência do pedido enviada ao gateway: o id do pedido ou, quando o gateway só aceita um número curto (Cielo: letras e
+/// dígitos, até 20), <c>PED{número}</c> — único na loja.
+/// </summary>
+public static class OrderReference
+{
+    private const string NumberPrefix = "PED";
+
+    public static string FromNumber(long number) => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{NumberPrefix}{number}");
+
+    public static long? NumberOf(string? reference) =>
+        reference is { Length: > 3 and <= 20 } && reference.StartsWith(NumberPrefix, StringComparison.Ordinal)
+        && long.TryParse(reference.AsSpan(NumberPrefix.Length), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var number)
+            ? number
+            : null;
+}
+
 public sealed class PaymentGatewayException(string message, Exception? inner = null) : Exception(message, inner);
 
 /// <summary>

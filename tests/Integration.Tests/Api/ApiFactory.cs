@@ -68,12 +68,14 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.ConfigureServices(services =>
         {
             services.AddSingleton<IStartupFilter, FakeRemoteIpStartupFilter>();
-            services.AddHttpClient(PaymentGatewayResolver.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => MercadoPago);
+            services.AddHttpClient(PaymentGatewayResolver.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => new GatewayStubs(MercadoPago, Cielo));
         });
     }
 
-    /// <summary>Mercado Pago simulado, usado por lojas com credenciais do Mercado Pago no cofre.</summary>
+    /// <summary>Gateways simulados, usados por lojas com credenciais do Mercado Pago ou da Cielo no cofre.</summary>
     public MercadoPagoStub MercadoPago { get; } = new();
+
+    public CieloStub Cielo { get; } = new();
 
     /// <summary>Sem gerenciamento automático de cookies: os testes controlam o cookie de renovação.</summary>
     public HttpClient ClientFor(string host, string? remoteIp = null)

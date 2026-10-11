@@ -81,7 +81,8 @@ public static class DependencyInjection
         services.AddScoped<IOrderQueries, OrderQueries>();
         services.Configure<PaymentOptions>(configuration.GetSection(PaymentOptions.Section));
         services.AddHttpClient(PaymentGatewayResolver.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(15));
-        services.AddScoped<IPaymentGatewayResolver, PaymentGatewayResolver>();
+        services.AddScoped<PaymentGatewayResolver>();
+        services.AddScoped<IPaymentGatewayResolver>(sp => sp.GetRequiredService<PaymentGatewayResolver>());
         services.AddScoped<IPaymentSettings, PaymentSettings>();
         services.AddScoped<IStorefrontPayment, StorefrontPayment>();
         services.AddScoped<IPaymentWebhook, PaymentWebhook>();
