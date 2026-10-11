@@ -14,7 +14,10 @@ import { VehicleOption, VehiclesApi } from './vehicles.api';
     <main class="card wide">
       <div class="header-row">
         <h1>Peças</h1>
-        <a routerLink="/pecas/nova" class="button-like">Nova peça</a>
+        <span class="order-actions">
+          <a routerLink="/pecas/importar">Importar planilha</a>
+          <a routerLink="/pecas/nova" class="button-like">Nova peça</a>
+        </span>
       </div>
 
       <div class="filters">
