@@ -12,6 +12,8 @@ public sealed class PaymentOptions
 
     /// <summary>Gateway fake com página de pagamento simulado (só dev e testes; a API recusa subir com ele em produção).</summary>
     public bool UseFakeGateway { get; set; }
+
+    public MercadoPagoOptions MercadoPago { get; set; } = new();
 }
 
 /// <summary>

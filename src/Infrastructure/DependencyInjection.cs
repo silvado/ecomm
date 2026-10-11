@@ -80,7 +80,9 @@ public static class DependencyInjection
         services.AddScoped<IStorefrontCheckout, StorefrontCheckout>();
         services.AddScoped<IOrderQueries, OrderQueries>();
         services.Configure<PaymentOptions>(configuration.GetSection(PaymentOptions.Section));
+        services.AddHttpClient(PaymentGatewayResolver.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(15));
         services.AddScoped<IPaymentGatewayResolver, PaymentGatewayResolver>();
+        services.AddScoped<IPaymentSettings, PaymentSettings>();
         services.AddScoped<IStorefrontPayment, StorefrontPayment>();
         services.AddScoped<IPaymentWebhook, PaymentWebhook>();
         services.AddScoped<IPartPhotos, PartPhotoService>();

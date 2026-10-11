@@ -1,6 +1,9 @@
 using System.Globalization;
 using System.Net;
+using Ecommerce.Api.Auth;
+using Ecommerce.Api.Panel;
 using Ecommerce.Application.Payments;
+using Ecommerce.Domain.Identity;
 using Ecommerce.Domain.Payments;
 using Ecommerce.Infrastructure.Payments;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -29,6 +32,23 @@ internal static class PaymentEndpoints
                 _ => TypedResults.Problem(statusCode: StatusCodes.Status409Conflict, title: result.Message),
             };
         }).RequireRateLimiting("pedido");
+
+    /// <summary>No painel, só para quem administra o cofre (Dono): credenciais do Mercado Pago, nunca devolvidas (RF06 CA3).</summary>
+    public static void MapPaymentSettings(this RouteGroupBuilder panel)
+    {
+        var settings = panel.MapGroup("/pagamentos/mercado-pago").RequirePermission(Permission.VaultManage);
+
+        settings.MapGet("/", async (IPaymentSettings payments, CancellationToken ct) => TypedResults.Ok(await payments.GetMercadoPagoAsync(ct)));
+
+        settings.MapPut("/", async Task<Results<Ok<MercadoPagoSettings>, ProblemHttpResult>> (
+            SaveMercadoPagoCredentials request, IPaymentSettings payments, CancellationToken ct) =>
+        {
+            var result = await payments.SaveMercadoPagoAsync(request, ct);
+            return result.Settings is { } saved ? TypedResults.Ok(saved) : AuthEndpoints.Problem(StatusCodes.Status400BadRequest, result.Error!);
+        });
+
+        settings.MapDelete("/", async (IPaymentSettings payments, CancellationToken ct) => TypedResults.Ok(await payments.RemoveMercadoPagoAsync(ct)));
+    }
 
     /// <summary>
     /// Webhook do gateway, com a loja na URL (cada loja tem a própria conta e chave de assinatura). Responde logo:
