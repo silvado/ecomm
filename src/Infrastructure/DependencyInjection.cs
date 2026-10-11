@@ -1,3 +1,4 @@
+using Ecommerce.Infrastructure.Catalog.Import;
 using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Identity;
 using Ecommerce.Infrastructure.Catalog;
@@ -87,6 +88,7 @@ public static class DependencyInjection
         services.AddScoped<IStorefrontPayment, StorefrontPayment>();
         services.AddScoped<IPaymentWebhook, PaymentWebhook>();
         services.AddScoped<IPartPhotos, PartPhotoService>();
+        services.AddScoped<IPartImports, PartImportService>();
         services.AddScoped<VehicleImporter>();
         services.AddScoped<IVehicleCatalog, VehicleCatalog>();
         services.AddScoped<IPartCompatibilities, PartCompatibilityService>();

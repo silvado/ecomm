@@ -8,6 +8,7 @@ import { HomePage } from './pages/home/home';
 import { LoginPage } from './pages/login/login';
 import { OrdersPage } from './pages/orders/orders';
 import { PartFormPage } from './pages/parts/part-form';
+import { PartImportPage } from './pages/parts/part-import';
 import { PartsListPage } from './pages/parts/parts-list';
 import { PaymentsPage } from './pages/payments/payments';
 import { StorePage } from './pages/store/store';
@@ -29,6 +30,7 @@ export const routes: Routes = [
     children: [
       { path: '', component: HomePage, title: 'Painel' },
       { path: 'pecas', component: PartsListPage, canActivate: [permissionGuard('catalogManage')], title: 'Peças' },
+      { path: 'pecas/importar', component: PartImportPage, canActivate: [permissionGuard('catalogManage')], title: 'Importar peças' },
       { path: 'pecas/nova', component: PartFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Nova peça' },
       { path: 'pecas/:id', component: PartFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Peça' },
       { path: 'pedidos', component: OrdersPage, canActivate: [permissionGuard('ordersManage')], title: 'Pedidos' },

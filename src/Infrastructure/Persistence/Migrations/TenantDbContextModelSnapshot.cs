@@ -168,6 +168,91 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Catalog.PartImport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("ErrorCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("error_count");
+
+                    b.Property<string>("Errors")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("errors");
+
+                    b.Property<int>("ExistingCodesAtPreview")
+                        .HasColumnType("integer")
+                        .HasColumnName("existing_codes_at_preview");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("file_name");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<int>("ImportedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("imported_count");
+
+                    b.Property<int>("ProcessedRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("processed_rows");
+
+                    b.Property<string>("Rows")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("rows");
+
+                    b.Property<string>("Skipped")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("skipped");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<int>("TotalRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_rows");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_part_imports");
+
+                    b.HasIndex("TenantId", "CreatedAt")
+                        .HasDatabaseName("ix_part_imports_tenant_id_created_at");
+
+                    b.ToTable("part_imports", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_part_imports_progress", "processed_rows >= 0 AND imported_count >= 0 AND imported_count <= processed_rows");
+                        });
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Catalog.PartOemCode", b =>
                 {
                     b.Property<Guid>("PartId")

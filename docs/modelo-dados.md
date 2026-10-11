@@ -197,6 +197,24 @@ erDiagram
         string source "manual|ai_suggested|ml_import"
         bool confirmed
     }
+    PART_IMPORT {
+        uuid id PK
+        uuid tenant_id "RLS — importação de peças por planilha (RF11)"
+        uuid user_id "quem enviou; movimentos de estoque em nome dele"
+        string file_name
+        string status "validated|processing|completed"
+        int total_rows "linhas de dados no arquivo"
+        jsonb rows "linhas válidas já normalizadas, cadastradas em lotes"
+        int error_count
+        jsonb errors "linha + motivo (até 500 listados)"
+        int existing_codes_at_preview "informativo"
+        int processed_rows "progresso, gravado na transação de cada lote"
+        int imported_count
+        jsonb skipped "linha + código já cadastrado (pulado, Q33)"
+        timestamptz created_at
+        timestamptz started_at
+        timestamptz finished_at
+    }
     PART_TRACEABILITY {
         uuid part_id PK
         uuid tenant_id "RLS"
