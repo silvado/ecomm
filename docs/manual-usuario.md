@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 11/10/2026 (RF11: importação de peças por planilha).
+> Última atualização: 11/10/2026 (RF10: rastreabilidade da peça usada).
 
 ## Sumário
 
@@ -12,6 +12,7 @@
    - 4.1 [Entrar, trocar senha, trocar de loja e sair](#41-entrar-trocar-senha-trocar-de-loja-e-sair)
    - 4.2 [Início](#42-início)
    - 4.3 [Peças](#43-peças)
+   - 4.3.1 [Veículos doadores e rastreabilidade](#431-veículos-doadores-e-rastreabilidade)
    - 4.4 [Pedidos](#44-pedidos)
    - 4.5 [Venda de balcão](#45-venda-de-balcão)
    - 4.6 [Dados da loja](#46-dados-da-loja)
@@ -50,6 +51,8 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Módulo do painel | Dono | Operador |
 |---|:---:|:---:|
 | Peças | ✔ | ✔ |
+| Veículos doadores e rastreabilidade das peças | ✔ | ✔ |
+| Configurar rastreabilidade (modo desmontadora, campos extras) | ✔ | — |
 | Pedidos | ✔ | ✔ |
 | Venda de balcão | ✔ | ✔ |
 | Dados da loja | ✔ | — |
@@ -135,6 +138,43 @@ Use para cadastrar o estoque de uma vez, por exemplo na implantação da loja.
 **Estoque**
 - O cadastro mostra três números: **disponível**, **físico** e **reservado**. Reservado é o que está preso em pedidos aguardando pagamento.
 - Não é possível baixar a quantidade abaixo do que está reservado.
+
+### 4.3.1 Veículos doadores e rastreabilidade
+
+**Acesso:** menu **Doadores** (Dono e Operador) e seção **Rastreabilidade** no cadastro de cada peça.
+
+Serve para registrar de onde veio cada peça usada, como pede a Lei 12.977/2014 para empresas de desmontagem. **Esses dados ficam só no painel:** nunca aparecem na loja nem nos canais de venda.
+
+**Cadastrar um veículo doador** (uma vez por carro que entra no desmanche)
+1. **Doadores → Novo veículo**.
+2. Preencha marca e modelo e informe a **placa** (antiga ou Mercosul) ou o **chassi**. Complete, se tiver:
+   - Renavam;
+   - nº da certidão de baixa;
+   - chave da NF de entrada (44 dígitos);
+   - ano-modelo, cor, data de entrada e observações.
+
+   O sistema confere os dígitos do Renavam e da chave da NF, e não aceita duas vezes a mesma placa, chassi ou Renavam.
+3. Clique em **Cadastrar**. A lista mostra se a documentação está **Completa** ou **Incompleta**.
+
+**Ligar uma peça ao veículo**
+1. Abra a peça em **Peças** e desça até **Rastreabilidade**.
+2. Busque o veículo pela placa, chassi ou modelo e clique nele.
+3. Informe a **etiqueta de rastreabilidade** (única na loja) e os campos extras que a loja configurou.
+4. Clique em **Salvar rastreabilidade**. Dá para buscar a peça pela etiqueta na lista de **Peças**.
+
+O cadastro do veículo mostra todas as peças ligadas a ele. Um veículo só pode ser excluído se não tiver peças.
+
+**Modo desmontadora** (só o Dono, em **Dados da loja → Rastreabilidade de peças usadas**)
+- **Desligado (padrão):** os dados de rastreabilidade são opcionais.
+- **Ligado:** uma peça **usada** só pode ser **ativada** quando tiver:
+  - veículo doador com chassi, Renavam, certidão de baixa e NF de entrada;
+  - etiqueta de rastreabilidade;
+  - os campos extras marcados como obrigatórios.
+
+  A peça mostra o que falta. Enquanto ela estiver à venda, esses dados não podem ser apagados (inative a peça antes). Peças novas e recondicionadas não são afetadas.
+- **Campos extras:** até 10, por exemplo "Nº do registro no Detran". Marque **Obrigatório** para exigi-los no modo desmontadora.
+
+> O sistema guarda os dados para a loja informar ao Detran. O envio ao banco de dados do Detran não é automático.
 
 ### 4.4 Pedidos
 
@@ -297,6 +337,7 @@ Itens previstos que **ainda não estão no sistema**:
 - Frete real (Melhor Envio): hoje o frete é simulado.
 - Compatibilidade com veículos e fotos pela planilha de importação; atualização em massa de peças já cadastradas.
 - Importação dos anúncios existentes do Mercado Livre.
+- Envio automático da rastreabilidade ao banco de dados do Detran; rastreabilidade pela planilha de importação.
 - Estorno automático e aviso por e-mail ao comprador.
 - Devolução depois de entregue ou retirado (inclusive no balcão), com opção de não voltar peça avariada ao estoque.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
@@ -309,3 +350,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 11/10/2026 | Primeira versão: acesso, perfis, peças, pedidos (RF17), dados da loja, pagamentos, usuários e loja virtual. |
 | 11/10/2026 | Venda de balcão (RF18): nova seção 4.5; origem Balcão, busca por CNPJ e cancelamento da venda de balcão em Pedidos. |
 | 11/10/2026 | Importação de peças por planilha (RF11), na seção 4.3 Peças. |
+| 11/10/2026 | Veículos doadores, rastreabilidade e modo desmontadora (RF10): seção 4.3.1 e perfis. |

@@ -72,6 +72,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA1: peça usada tem: origem (veículo doador: placa/chassi parcial, Renavam, certidão de baixa), NF de entrada, e campos extras configuráveis por tenant.
 - CA2: se o tenant marcar "empresa de desmontagem (Lei 12.977)", esses campos tornam-se obrigatórios para publicar. **HIPÓTESE:** opcionais por padrão.
 - CA3: dados do veículo doador nunca aparecem na loja nem nos canais.
+- Decisões (Q34): **veículo doador** cadastrado uma vez (placa antiga ou Mercosul e/ou chassi; Renavam e chave da NF de entrada com dígito verificador conferido; certidão de baixa; marca, modelo, ano, cor, data de entrada) e ligado às peças; placa e chassi completos, só no painel. Na peça: veículo doador, **etiqueta de rastreabilidade** (única na loja) e até 10 **campos extras** configurados pelo Dono. **Modo desmontadora** desligado por padrão; ligado, peça **usada** só vai à venda com o veículo completo (chassi, Renavam, certidão de baixa, NF de entrada), a etiqueta e os campos obrigatórios — e não perde esses dados enquanto estiver à venda. Não há integração com o banco de dados do Detran nesta etapa (a loja informa lá; HIPÓTESE até a Q02).
 
 ### RF11 — Importação inicial · E1 (planilha) / E2 (ML)
 - CA1: importação por planilha (modelo XLSX/CSV fornecido) valida linha a linha e gera relatório de erros sem importar parcialmente sem aviso.
@@ -296,6 +297,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q31 | O que a loja faz com o pedido depois de pago ou em análise? Pode cancelar pedido pago? | Etapas Enviado (rastreio)/Entregue e Retirado; análise: aprovar ou cancelar; cancelar até antes da entrega, com motivo, devolvendo as peças ao estoque; estorno feito pela loja no gateway. | RF17, RF15, RF12 |
 | Q32 | Como é a venda de balcão: em que situação nasce, o preço pode mudar, que dados do cliente? | Vira pedido de origem "Balcão" já pago e retirado (baixa na hora); a loja pode cancelar com motivo para corrigir lançamento errado (peças voltam ao estoque). Preço ajustável por item (desconto negociado, registrado no histórico). Cliente opcional: nome, CPF ou CNPJ (validado) e telefone; sem nome, "Consumidor final". | RF18, RF17 |
 | Q33 | Como funciona a importação de peças por planilha? | XLSX e CSV; prévia com relatório de erros e confirmação antes de importar as linhas válidas; código já cadastrado é pulado e avisado (não atualiza a peça); sem compatibilidade com veículos nesta etapa; peças entram como rascunho. | RF11 |
+| Q34 | Como organizar a rastreabilidade da peça usada (RF10)? | Cadastro de veículo doador ligado às peças; placa e chassi completos, só no painel; modo desmontadora desligado por padrão (a loja liga); etiqueta e campos extras na peça. | RF10 |
 
 ## Fontes
 

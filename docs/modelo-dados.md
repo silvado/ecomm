@@ -123,7 +123,7 @@ erDiagram
     PART ||--o{ PART_PHOTO : ""
     PART ||--o{ PART_OEM_CODE : ""
     PART ||--o{ PART_COMPATIBILITY : ""
-    PART ||--o| PART_TRACEABILITY : "peça usada"
+    DONOR_VEHICLE ||--o{ PART : "origem (peça usada)"
     PART ||--|| STOCK : ""
     PART ||--o{ STOCK_RESERVATION : ""
     PART ||--o{ STOCK_MOVEMENT : ""
@@ -148,6 +148,9 @@ erDiagram
         jsonb extra_attributes "atributos do ML etc."
         bool ai_generated_pending_review
         tsvector search_vector
+        uuid donor_vehicle_id FK "RF10 — origem; só no painel"
+        string traceability_tag "etiqueta de rastreabilidade; UK (tenant_id, tag) parcial"
+        jsonb custom_fields "campos extras de rastreabilidade configurados na loja"
     }
     STOCK {
         uuid part_id PK
@@ -215,15 +218,17 @@ erDiagram
         timestamptz started_at
         timestamptz finished_at
     }
-    PART_TRACEABILITY {
-        uuid part_id PK
-        uuid tenant_id "RLS"
-        string donor_plate_partial
-        string donor_chassis_partial
-        string donor_renavam
-        string deregistration_certificate "certidão de baixa"
-        string entry_invoice_key "chave NF de entrada"
-        jsonb custom_fields
+    DONOR_VEHICLE {
+        uuid id PK
+        uuid tenant_id "RLS — veículo doador (RF10, Lei 12.977); só no painel"
+        string plate "ABC1234 ou ABC1D23; UK (tenant_id, plate) parcial"
+        string chassis "VIN 17; UK (tenant_id, chassis) parcial; CHECK placa ou chassi"
+        string renavam "11 dígitos, DV conferido; UK parcial"
+        string brand_model_year_color
+        string deregistration_certificate "nº da certidão de baixa"
+        string entry_invoice_key "chave da NF de entrada (44 dígitos, DV conferido)"
+        date entry_date
+        string notes
     }
     CHANNEL_CONNECTION {
         uuid id PK
@@ -447,6 +452,8 @@ erDiagram
         int reservation_minutes "padrão 30"
         jsonb shipping "CEP origem, retirada"
         jsonb payment "gateway escolhido"
+        bool dismantler_mode "RF10: modo desmontadora (Lei 12.977)"
+        jsonb traceability_fields "campos extras: chave, rótulo, obrigatório"
     }
     ACCESS_LOG {
         uuid id PK
