@@ -123,6 +123,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 ### RF18 — Venda de balcão · E1
 - CA1: lançamento com peças, quantidade, forma de pagamento e cliente opcional.
 - CA2: dá baixa atômica no estoque e gera evento de sincronização.
+- Decisões (Q32): a venda vira pedido de origem "Balcão", já pago e retirado, e aparece no painel de pedidos (RF17); formas de pagamento dinheiro, Pix, cartão de débito, cartão de crédito e outra; preço ajustável por item, com o ajuste registrado no histórico; cliente opcional (nome, CPF ou CNPJ, telefone); a loja pode cancelar com motivo para corrigir lançamento errado, devolvendo as peças ao estoque. Devolução de verdade é o RF20.
 
 ### RF19 — NF-e · E1
 - CA1: emissão via `IFiscalProvider`, com certificado A1 do cofre; status (processando/autorizada/rejeitada) e DANFE/XML disponíveis no pedido.
@@ -292,6 +293,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q29 | Detalhes da integração com o Mercado Pago a confirmar com credenciais de teste (frete na preferência, assinatura dos avisos do `notification_url`, contestação). | HIPÓTESE: frete como item; mesma chave secreta assina os avisos; sem janela de tempo no `ts`; `charged_back` = estorno (pedido pago vai para análise). | RF15 |
 | Q30 | Detalhes da integração com a Cielo a confirmar com credenciais de teste (avisos sem assinatura, número do pedido, valor pago, modo de teste, dois gateways conectados). | HIPÓTESE: aviso só dispara a consulta autenticada; `PED{número}`; valor = soma do carrinho; orientar desligar o modo de teste; cobra pelo último salvo. | RF15 |
 | Q31 | O que a loja faz com o pedido depois de pago ou em análise? Pode cancelar pedido pago? | Etapas Enviado (rastreio)/Entregue e Retirado; análise: aprovar ou cancelar; cancelar até antes da entrega, com motivo, devolvendo as peças ao estoque; estorno feito pela loja no gateway. | RF17, RF15, RF12 |
+| Q32 | Como é a venda de balcão: em que situação nasce, o preço pode mudar, que dados do cliente? | Vira pedido de origem "Balcão" já pago e retirado (baixa na hora); a loja pode cancelar com motivo para corrigir lançamento errado (peças voltam ao estoque). Preço ajustável por item (desconto negociado, registrado no histórico). Cliente opcional: nome, CPF ou CNPJ (validado) e telefone; sem nome, "Consumidor final". | RF18, RF17 |
 
 ## Fontes
 

@@ -9,7 +9,8 @@ public sealed record OrderSummary(
 
 public sealed record OrderItemView(Guid PartId, string InternalCode, string Title, decimal UnitPrice, int Quantity);
 
-public sealed record OrderBuyerView(string Name, string Email, string Phone, string Cpf);
+/// <summary>Na venda de balcão, e-mail, telefone e CPF podem vir vazios e o documento pode ser CNPJ.</summary>
+public sealed record OrderBuyerView(string Name, string Email, string Phone, string Cpf, string? Cnpj);
 
 public sealed record OrderPaymentView(string Gateway, string ExternalId, PaymentStatus Status, decimal Amount, string? Method, DateTimeOffset UpdatedAt);
 
@@ -21,7 +22,7 @@ public sealed record OrderView(
     OrderBuyerView Buyer, DeliveryMethod DeliveryMethod, DeliveryAddress? Address, string? Carrier, string? Service, int? DeliveryDays,
     string? PickupAddress, IReadOnlyList<OrderItemView> Items, decimal ItemsTotal, decimal ShippingTotal, decimal Total,
     DateTimeOffset? CanceledAt, string? CancelReason, CancellationSource? CanceledBy, DateTimeOffset? PaidAt, string? ReviewReason,
-    string? TrackingCode, DateTimeOffset? ShippedAt, DateTimeOffset? DeliveredAt,
+    string? TrackingCode, DateTimeOffset? ShippedAt, DateTimeOffset? DeliveredAt, CounterPaymentMethod? PaymentMethod,
     IReadOnlyList<OrderPaymentView> Payments, IReadOnlyList<OrderHistoryView> History);
 
 /// <summary>
@@ -44,4 +45,7 @@ public interface IOrderQueries
     Task<OrderPage> SearchAsync(OrderSearch search, CancellationToken ct = default);
 
     Task<OrderView?> GetAsync(Guid orderId, CancellationToken ct = default);
+
+    /// <summary>Pedido criado com este hash de token (idempotência do checkout e da venda de balcão).</summary>
+    Task<Guid?> FindByAccessHashAsync(byte[] hash, CancellationToken ct = default);
 }

@@ -36,6 +36,27 @@ public sealed class StockReservation : ITenantOwned
         ExpiresAt = expiresAt;
     }
 
+    /// <summary>
+    /// Baixa direta já feita (venda de balcão, RF18): nasce convertida, sem prazo. Ligada à linha do pedido, permite
+    /// devolver a peça ao estoque se a venda for cancelada.
+    /// </summary>
+    public static StockReservation Sold(Guid tenantId, Guid partId, int quantity, string reference, DateTimeOffset now)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
+        ArgumentException.ThrowIfNullOrWhiteSpace(reference);
+        return new StockReservation
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = tenantId,
+            PartId = partId,
+            Quantity = quantity,
+            Reference = reference,
+            Status = ReservationStatus.Converted,
+            CreatedAt = now,
+            ExpiresAt = now,
+        };
+    }
+
     public Guid Id { get; private set; }
     public Guid TenantId { get; private set; }
     public Guid PartId { get; private set; }

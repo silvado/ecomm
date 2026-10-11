@@ -18,7 +18,7 @@ describe('OrdersPage', () => {
     status: 'paid',
     placedAt: '2026-10-11T12:00:00Z',
     paymentDeadline: '2026-10-12T12:00:00Z',
-    buyer: { name: 'Maria da Silva', email: 'maria@exemplo.com.br', phone: '48999991234', cpf: '52998224725' },
+    buyer: { name: 'Maria da Silva', email: 'maria@exemplo.com.br', phone: '48999991234', cpf: '52998224725', cnpj: null },
     deliveryMethod: 'shipping',
     address: { postalCode: '88015200', street: 'Rua Felipe Schmidt', number: '100', complement: null, district: 'Centro', city: 'Florianópolis', state: 'SC' },
     carrier: 'Correios',
@@ -37,6 +37,7 @@ describe('OrdersPage', () => {
     trackingCode: null,
     shippedAt: null,
     deliveredAt: null,
+    paymentMethod: null,
     payments: [],
     history: [
       { at: '2026-10-11T12:00:00Z', from: null, to: 'pendingPayment', actor: 'buyer', userEmail: null, note: null },
@@ -86,6 +87,8 @@ describe('OrdersPage', () => {
     expect(availableActions('shipped', 'shipping')).toEqual(['entregar', 'cancelar']);
     expect(availableActions('pendingPayment', 'pickup')).toEqual(['cancelar']);
     for (const s of ['delivered', 'pickedUp', 'canceled'] as const) expect(availableActions(s, 'shipping')).toEqual([]);
+    expect(availableActions('pickedUp', 'pickup', 'counter')).toEqual(['cancelar']);
+    expect(availableActions('canceled', 'pickup', 'counter')).toEqual([]);
   });
 
   it('lê os filtros da URL e manda à API', async () => {

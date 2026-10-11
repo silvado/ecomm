@@ -1,5 +1,6 @@
 using System.Net.Mail;
 using Ecommerce.Domain.Common;
+using Ecommerce.Domain.Platform;
 using Ecommerce.Domain.Shipping;
 
 namespace Ecommerce.Domain.Orders;
@@ -8,6 +9,18 @@ public enum OrderOrigin
 {
     /// <summary>Loja virtual do tenant (RF14).</summary>
     Site,
+    /// <summary>Venda de balcão lançada no painel (RF18).</summary>
+    Counter,
+}
+
+/// <summary>Como o cliente pagou no balcão (RF18).</summary>
+public enum CounterPaymentMethod
+{
+    Cash,
+    Pix,
+    DebitCard,
+    CreditCard,
+    Other,
 }
 
 public enum OrderStatus
@@ -46,6 +59,9 @@ public sealed record DeliveryAddress(string PostalCode, string Street, string Nu
 /// <summary>Opção de frete escolhida, com o preço cotado pelo servidor.</summary>
 public sealed record ShippingChoice(string ServiceId, string Carrier, string Service, decimal Price, int DeliveryDays);
 
+/// <summary>Cliente opcional da venda de balcão: tudo pode ficar em branco; documento é CPF ou CNPJ.</summary>
+public sealed record CounterCustomer(string? Name, string? Document, string? Phone);
+
 /// <summary>Item com preço e título do momento da compra e a reserva que segura a peça.</summary>
 public sealed record OrderLine(Guid PartId, string InternalCode, string Title, decimal UnitPrice, int Quantity, Guid ReservationId);
 
@@ -61,6 +77,12 @@ public sealed class CustomerOrder : ITenantOwned
     public const int CancelReasonMaxLength = 200;
     public const int TrackingCodeMaxLength = 60;
     public const int ExternalIdMaxLength = 100;
+
+    /// <summary>Nome mostrado na venda de balcão sem cliente informado.</summary>
+    public const string WalkInCustomer = "Consumidor final";
+
+    /// <summary>Local de "retirada" da venda de balcão: as peças saem na hora.</summary>
+    public const string CounterPickup = "Venda no balcão";
 
     private static readonly HashSet<string> States =
     [
@@ -95,6 +117,12 @@ public sealed class CustomerOrder : ITenantOwned
     public string BuyerEmail { get; private set; } = string.Empty;
     public string BuyerPhone { get; private set; } = string.Empty;
     public string BuyerCpf { get; private set; } = string.Empty;
+
+    /// <summary>Cliente pessoa jurídica (oficina) na venda de balcão; o site só aceita CPF.</summary>
+    public string? BuyerCnpj { get; private set; }
+
+    /// <summary>Só na venda de balcão (RF18).</summary>
+    public CounterPaymentMethod? PaymentMethod { get; private set; }
 
     public DeliveryMethod DeliveryMethod { get; private set; }
     public string? DeliveryPostalCode { get; private set; }
@@ -181,9 +209,7 @@ public sealed class CustomerOrder : ITenantOwned
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(number);
         if (accessTokenHash.Length != 32) throw new ArgumentException("Hash do token de acesso inválido.", nameof(accessTokenHash));
-        if (lines.Count is 0 or > MaxLines) throw new ArgumentException($"O pedido precisa ter de 1 a {MaxLines} peças.", nameof(lines));
-        if (lines.Select(l => l.PartId).Distinct().Count() != lines.Count) throw new ArgumentException("Peça repetida no pedido.", nameof(lines));
-        if (lines.Any(l => l.Quantity <= 0 || l.UnitPrice <= 0)) throw new ArgumentException("Quantidade e preço precisam ser positivos.", nameof(lines));
+        ValidateLines(lines);
         if (paymentDeadline <= now) throw new ArgumentException("O prazo de pagamento precisa estar no futuro.", nameof(paymentDeadline));
 
         var order = new CustomerOrder
@@ -228,6 +254,75 @@ public sealed class CustomerOrder : ITenantOwned
     }
 
     /// <summary>
+    /// Venda de balcão (RF18): já paga e retirada — as peças saem na hora (baixas já feitas pelo chamador, cada linha com a
+    /// sua reserva convertida). Sem prazo nem link do comprador; o hash é a chave de idempotência do formulário do painel.
+    /// </summary>
+    public static CustomerOrder PlaceCounterSale(Guid tenantId, long number, byte[] idempotencyHash, CounterCustomer? customer,
+        CounterPaymentMethod paymentMethod, IReadOnlyList<OrderLine> lines, DateTimeOffset now)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(number);
+        if (idempotencyHash.Length != 32) throw new ArgumentException("Hash de idempotência inválido.", nameof(idempotencyHash));
+        if (!Enum.IsDefined(paymentMethod)) throw new ArgumentException("Escolha a forma de pagamento.", nameof(paymentMethod));
+        ValidateLines(lines);
+
+        var (name, cpf, cnpj, phone) = NormalizeCounterCustomer(customer);
+        var order = new CustomerOrder
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = tenantId,
+            Number = number,
+            Origin = OrderOrigin.Counter,
+            Status = OrderStatus.PickedUp,
+            AccessTokenHash = idempotencyHash,
+            PlacedAt = now,
+            PaymentDeadline = now,
+            PaidAt = now,
+            DeliveredAt = now,
+            PaymentMethod = paymentMethod,
+            BuyerName = name,
+            BuyerEmail = string.Empty,
+            BuyerPhone = phone,
+            BuyerCpf = cpf,
+            BuyerCnpj = cnpj,
+            DeliveryMethod = DeliveryMethod.Pickup,
+            PickupAddress = CounterPickup,
+        };
+        foreach (var line in lines) order._items.Add(new OrderItem(order, line));
+        order.ItemsTotal = order._items.Sum(i => i.UnitPrice * i.Quantity);
+        order.Total = order.ItemsTotal;
+        return order;
+    }
+
+    /// <summary>Cliente do balcão: nome (ou <see cref="WalkInCustomer"/>), CPF ou CNPJ válido e telefone com DDD, se informados.</summary>
+    public static (string Name, string Cpf, string? Cnpj, string Phone) NormalizeCounterCustomer(CounterCustomer? customer)
+    {
+        var name = Collapse(customer?.Name);
+        if (name.Length > NameMaxLength) throw new ArgumentException($"Nome com no máximo {NameMaxLength} caracteres.", nameof(customer));
+        if (name.Length is > 0 and < 3) throw new ArgumentException("Informe o nome do cliente (ou deixe em branco).", nameof(customer));
+
+        // CNPJ pode ser alfanumérico (IN RFB 2.229/2024): cada tipo valida o próprio formato.
+        var document = customer?.Document;
+        var cpf = string.Empty;
+        string? cnpj = null;
+        if (Orders.Cpf.TryParse(document, out var parsedCpf)) cpf = parsedCpf!.Value;
+        else if (Cnpj.TryParse(document, out var parsedCnpj)) cnpj = parsedCnpj!.Value;
+        else if (!string.IsNullOrWhiteSpace(document)) throw new ArgumentException("CPF ou CNPJ inválido.", nameof(customer));
+
+        var phone = Digits(customer?.Phone);
+        if (phone.Length > 0 && (phone.Length is < 10 or > 11 || phone[0] == '0'))
+            throw new ArgumentException("Informe o telefone com DDD (ou deixe em branco).", nameof(customer));
+
+        return (name.Length == 0 ? WalkInCustomer : name, cpf, cnpj, phone);
+    }
+
+    private static void ValidateLines(IReadOnlyList<OrderLine> lines)
+    {
+        if (lines.Count is 0 or > MaxLines) throw new ArgumentException($"O pedido precisa ter de 1 a {MaxLines} peças.", nameof(lines));
+        if (lines.Select(l => l.PartId).Distinct().Count() != lines.Count) throw new ArgumentException("Peça repetida no pedido.", nameof(lines));
+        if (lines.Any(l => l.Quantity <= 0 || l.UnitPrice <= 0)) throw new ArgumentException("Quantidade e preço precisam ser positivos.", nameof(lines));
+    }
+
+    /// <summary>
     /// Pagamento aprovado e peças baixadas. Vale também para pedido cancelado por falta de pagamento: o pagamento chegou
     /// depois do prazo, mas as peças ainda estavam disponíveis (RF12 CA3).
     /// </summary>
@@ -258,9 +353,13 @@ public sealed class CustomerOrder : ITenantOwned
         ReviewReason = null;
     }
 
-    /// <summary>Situações em que a loja pode cancelar (RF17): antes da entrega ou retirada.</summary>
+    /// <summary>
+    /// Situações em que a loja pode cancelar (RF17): antes da entrega ou retirada. A venda de balcão já nasce retirada e
+    /// pode ser cancelada para corrigir um lançamento errado (RF18); devolução de verdade é o RF20.
+    /// </summary>
     public bool CanBeCanceledByStore =>
-        Status is OrderStatus.PendingPayment or OrderStatus.NeedsReview or OrderStatus.Paid or OrderStatus.Shipped;
+        Status is OrderStatus.PendingPayment or OrderStatus.NeedsReview or OrderStatus.Paid or OrderStatus.Shipped
+        || (Origin == OrderOrigin.Counter && Status == OrderStatus.PickedUp);
 
     /// <summary>Cancelamento pela loja, com motivo. Peças: o chamador libera as reservas ou devolve ao estoque o que foi baixado.</summary>
     public void CancelByStore(string reason, DateTimeOffset now)

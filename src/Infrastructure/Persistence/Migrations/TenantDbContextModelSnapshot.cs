@@ -429,6 +429,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("bytea")
                         .HasColumnName("access_token_hash");
 
+                    b.Property<string>("BuyerCnpj")
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)")
+                        .HasColumnName("buyer_cnpj");
+
                     b.Property<string>("BuyerCpf")
                         .IsRequired()
                         .HasMaxLength(11)
@@ -540,6 +545,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("payment_deadline");
 
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("payment_method");
+
                     b.Property<string>("PickupAddress")
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)")
@@ -623,6 +633,8 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
 
                     b.ToTable("customer_orders", null, t =>
                         {
+                            t.HasCheckConstraint("ck_customer_orders_counter_payment", "(origin = 'Counter') = (payment_method IS NOT NULL)");
+
                             t.HasCheckConstraint("ck_customer_orders_delivery", "(delivery_method = 'Shipping' AND delivery_postal_code IS NOT NULL AND shipping_service_id IS NOT NULL) OR (delivery_method = 'Pickup' AND pickup_address IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_customer_orders_totals", "items_total > 0 AND shipping_total >= 0 AND total = items_total + shipping_total");

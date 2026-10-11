@@ -19,6 +19,8 @@ internal sealed class CustomerOrderConfiguration : IEntityTypeConfiguration<Cust
         builder.Property(o => o.BuyerEmail).HasMaxLength(CustomerOrder.EmailMaxLength).IsRequired();
         builder.Property(o => o.BuyerPhone).HasMaxLength(11).IsRequired();
         builder.Property(o => o.BuyerCpf).HasMaxLength(11).IsRequired();
+        builder.Property(o => o.BuyerCnpj).HasMaxLength(14);
+        builder.Property(o => o.PaymentMethod).HasConversion<string>().HasMaxLength(20);
         builder.Property(o => o.DeliveryMethod).HasConversion<string>().HasMaxLength(20);
         builder.Property(o => o.DeliveryPostalCode).HasMaxLength(8);
         builder.Property(o => o.DeliveryStreet).HasMaxLength(120);
@@ -52,6 +54,7 @@ internal sealed class CustomerOrderConfiguration : IEntityTypeConfiguration<Cust
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("ck_customer_orders_totals", "items_total > 0 AND shipping_total >= 0 AND total = items_total + shipping_total");
+            t.HasCheckConstraint("ck_customer_orders_counter_payment", "(origin = 'Counter') = (payment_method IS NOT NULL)");
             t.HasCheckConstraint("ck_customer_orders_delivery",
                 "(delivery_method = 'Shipping' AND delivery_postal_code IS NOT NULL AND shipping_service_id IS NOT NULL)"
                 + " OR (delivery_method = 'Pickup' AND pickup_address IS NOT NULL)");

@@ -3,6 +3,7 @@ import { authGuard, passwordChangedGuard, permissionGuard, tenantGuard } from '.
 import { Shell } from './layout/shell';
 import { ChangePasswordPage } from './pages/change-password/change-password';
 import { ChooseStorePage } from './pages/choose-store/choose-store';
+import { CounterPage } from './pages/counter/counter';
 import { HomePage } from './pages/home/home';
 import { LoginPage } from './pages/login/login';
 import { OrdersPage } from './pages/orders/orders';
@@ -31,6 +32,7 @@ export const routes: Routes = [
       { path: 'pecas/nova', component: PartFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Nova peça' },
       { path: 'pecas/:id', component: PartFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Peça' },
       { path: 'pedidos', component: OrdersPage, canActivate: [permissionGuard('ordersManage')], title: 'Pedidos' },
+      { path: 'balcao', component: CounterPage, canActivate: [permissionGuard('ordersManage')], title: 'Venda de balcão' },
       { path: 'pagamentos', component: PaymentsPage, canActivate: [permissionGuard('vaultManage')], title: 'Pagamentos' },
       { path: 'loja', component: StorePage, canActivate: [permissionGuard('storeManage')], title: 'Dados da loja' },
       { path: 'usuarios', component: UsersPage, canActivate: [permissionGuard('usersManage')], title: 'Usuários' },

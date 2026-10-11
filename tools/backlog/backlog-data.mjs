@@ -156,7 +156,7 @@ export const epics = [
             title: 'Venda de balcão',
             rf: 'RF18',
             ac: 'Lançamento de venda com baixa atômica de estoque e evento de sincronização.',
-            t: [['Caso de uso e tela de venda de balcão', 8]],
+            t: [['Caso de uso e tela de venda de balcão', 8, 'done']],
           },
           {
             title: 'Emissão de NF-e',
