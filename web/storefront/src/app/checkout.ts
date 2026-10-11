@@ -34,7 +34,7 @@ export interface PlacedOrder {
   paymentDeadline: string;
 }
 
-export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview';
+export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview' | 'shipped' | 'delivered' | 'pickedUp';
 
 export interface StoreOrder {
   number: number;
@@ -53,6 +53,9 @@ export interface StoreOrder {
   shippingTotal: number;
   total: number;
   cancelReason: string | null;
+  trackingCode: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
 }
 
 export const UF = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
