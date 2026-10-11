@@ -14,6 +14,8 @@ public sealed class PaymentOptions
     public bool UseFakeGateway { get; set; }
 
     public MercadoPagoOptions MercadoPago { get; set; } = new();
+
+    public CieloOptions Cielo { get; set; } = new();
 }
 
 /// <summary>

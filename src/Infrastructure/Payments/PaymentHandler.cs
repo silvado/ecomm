@@ -48,9 +48,12 @@ public static class PaymentHandler
 
         var gateway = await gateways.ResolveAsync(notification.Source, ct);
         var info = gateway is null ? null : await gateway.GetPaymentAsync(notification.ResourceId, ct);
-        var order = info is not null && Guid.TryParse(info.OrderReference, out var orderId)
-            ? await db.CustomerOrders.Include(o => o.Items).SingleOrDefaultAsync(o => o.Id == orderId, ct)
-            : null;
+        var order = info is null ? null
+            : Guid.TryParse(info.OrderReference, out var orderId)
+                ? await db.CustomerOrders.Include(o => o.Items).SingleOrDefaultAsync(o => o.Id == orderId, ct)
+                : OrderReference.NumberOf(info.OrderReference) is { } number
+                    ? await db.CustomerOrders.Include(o => o.Items).SingleOrDefaultAsync(o => o.Number == number, ct)
+                    : null;
         if (gateway is null || info is null || order is null)
         {
             notification.Finish(ExternalEventStatus.Ignored, now);

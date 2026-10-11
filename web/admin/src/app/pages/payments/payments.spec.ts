@@ -1,20 +1,21 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { MercadoPagoSettings } from './payments.api';
+import { GatewaySettings } from './payments.api';
 import { PaymentsPage } from './payments';
 
 describe('PaymentsPage', () => {
-  const url = 'https://loja.plataforma.test/api/webhooks/pagamentos/mercado-pago/t1';
-  const empty: MercadoPagoSettings = {
+  const settings = (gateway: 'mercado-pago' | 'cielo', extra: Partial<GatewaySettings> = {}): GatewaySettings => ({
+    gateway,
     configured: false,
-    accessTokenHint: null,
-    webhookSecretHint: null,
+    active: false,
+    credentials: [],
     updatedAt: null,
-    notificationUrl: url,
-  };
+    notificationUrl: `https://loja.plataforma.test/api/webhooks/pagamentos/${gateway}/t1`,
+    ...extra,
+  });
 
-  async function setup() {
+  async function setup(list = [settings('cielo'), settings('mercado-pago')]) {
     TestBed.configureTestingModule({
       imports: [PaymentsPage],
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -22,48 +23,80 @@ describe('PaymentsPage', () => {
     const fixture = TestBed.createComponent(PaymentsPage);
     fixture.detectChanges();
     const backend = TestBed.inject(HttpTestingController);
-    backend.expectOne({ method: 'GET', url: '/api/painel/pagamentos/mercado-pago' }).flush(empty);
+    backend.expectOne({ method: 'GET', url: '/api/painel/pagamentos' }).flush(list);
     await fixture.whenStable();
     fixture.detectChanges();
     return { fixture, backend, element: fixture.nativeElement as HTMLElement };
   }
 
-  it('mostra a URL de notificação da loja e envia as chaves sem espaços, limpando o formulário', async () => {
-    const { fixture, backend, element } = await setup();
-    expect(element.textContent).toContain('Sem pagamento online');
-    expect(element.querySelector('code')!.textContent).toBe(url);
+  function type(input: HTMLInputElement, value: string): void {
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+  }
 
-    const [token, secret] = Array.from(element.querySelectorAll<HTMLInputElement>('input'));
+  it('mostra a URL de cada gateway e envia as chaves sem espaços, limpando o formulário', async () => {
+    const { fixture, backend, element } = await setup();
+    const mp = element.querySelector<HTMLElement>('[data-gateway="mercado-pago"]')!;
+    expect(mp.querySelector('code')!.textContent).toBe('https://loja.plataforma.test/api/webhooks/pagamentos/mercado-pago/t1');
+    expect(element.querySelector('[data-gateway="cielo"] code')!.textContent).toContain('/pagamentos/cielo/t1');
+
+    const [token, secret] = Array.from(mp.querySelectorAll<HTMLInputElement>('input'));
     expect(token.type).toBe('password');
-    token.value = '  APP_USR-1234567890abcdef-wxyz ';
-    token.dispatchEvent(new Event('input'));
-    secret.value = 'segredo-do-webhook-1234';
-    secret.dispatchEvent(new Event('input'));
+    type(token, '  APP_USR-1234567890abcdef-wxyz ');
+    type(secret, 'segredo-do-webhook-1234');
     fixture.detectChanges();
-    element.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+    mp.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
 
     const save = backend.expectOne({ method: 'PUT', url: '/api/painel/pagamentos/mercado-pago' });
     expect(save.request.body).toEqual({ accessToken: 'APP_USR-1234567890abcdef-wxyz', webhookSecret: 'segredo-do-webhook-1234' });
-    save.flush({ ...empty, configured: true, accessTokenHint: 'wxyz', webhookSecretHint: '1234', updatedAt: '2026-10-11T12:00:00Z' });
+    save.flush([
+      settings('cielo'),
+      settings('mercado-pago', {
+        configured: true,
+        active: true,
+        credentials: [
+          { field: 'accessToken', hint: 'wxyz' },
+          { field: 'webhookSecret', hint: '1234' },
+        ],
+        updatedAt: '2026-10-11T12:00:00Z',
+      }),
+    ]);
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(element.textContent).toContain('Mercado Pago conectado');
-    expect(element.textContent).toContain('wxyz');
-    expect(Array.from(element.querySelectorAll('input')).map((i) => i.value)).toEqual(['', '']);
+    expect(mp.textContent).toContain('Em uso pela loja');
+    expect(mp.textContent).toContain('wxyz');
+    expect(Array.from(mp.querySelectorAll('input')).map((i) => i.value)).toEqual(['', '']);
+    backend.verify();
+  });
+
+  it('Cielo exige MerchantId no formato de GUID', async () => {
+    const { fixture, backend, element } = await setup();
+    const cielo = element.querySelector<HTMLElement>('[data-gateway="cielo"]')!;
+    const [merchant, client, secret] = Array.from(cielo.querySelectorAll<HTMLInputElement>('input'));
+    const submit = cielo.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    type(client, 'client-id-comprido-o-bastante');
+    type(secret, 'client-secret-comprido-o-bastante');
+
+    type(merchant, 'nao-e-guid');
+    fixture.detectChanges();
+    expect(submit.disabled).toBe(true);
+
+    type(merchant, '4c1c5b5a-1d5f-4a3e-9a0b-6f1d2e3c4b5a');
+    fixture.detectChanges();
+    expect(submit.disabled).toBe(false);
     backend.verify();
   });
 
   it('não envia chave curta demais', async () => {
     const { fixture, backend, element } = await setup();
-    const [token, secret] = Array.from(element.querySelectorAll<HTMLInputElement>('input'));
-    token.value = 'curto';
-    token.dispatchEvent(new Event('input'));
-    secret.value = 'segredo-do-webhook-1234';
-    secret.dispatchEvent(new Event('input'));
+    const mp = element.querySelector<HTMLElement>('[data-gateway="mercado-pago"]')!;
+    const [token, secret] = Array.from(mp.querySelectorAll<HTMLInputElement>('input'));
+    type(token, 'curto');
+    type(secret, 'segredo-do-webhook-1234');
     fixture.detectChanges();
 
-    expect(element.querySelector<HTMLButtonElement>('button[type=submit]')!.disabled).toBe(true);
+    expect(mp.querySelector<HTMLButtonElement>('button[type=submit]')!.disabled).toBe(true);
     backend.verify();
   });
 });
