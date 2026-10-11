@@ -41,7 +41,7 @@ async function create(key, type, fields, parentId) {
     return ids[key];
   }
   const ops = Object.entries(fields)
-    .filter(([, v]) => v !== undefined && v !== '')
+    .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .map(([f, v]) => ({ op: 'add', path: `/fields/${f}`, value: v }));
   if (parentId) {
     ops.push({
@@ -97,9 +97,10 @@ async function updateExisting() {
       continue;
     }
     const ops = SYNCED.filter((f) => item.fields[f] !== undefined && !same(now[f], item.fields[f]))
-      .map((f) => ({ op: 'add', path: `/fields/${f}`, value: item.fields[f] }));
+      // null = campo vazio (ex.: Remaining Work de tarefa Done, que o processo Scrum exige vazio).
+      .map((f) => (item.fields[f] === null ? { op: 'remove', path: `/fields/${f}` } : { op: 'add', path: `/fields/${f}`, value: item.fields[f] }));
     if (ops.length === 0) continue;
-    const changes = ops.map((o) => `${o.path.split('.').pop()}=${String(o.value).slice(0, 40)}`).join(', ');
+    const changes = ops.map((o) => `${o.path.split('.').pop()}=${o.op === 'remove' ? '(vazio)' : String(o.value).slice(0, 40)}`).join(', ');
     if (dryRun) {
       console.log(`[dry-run] atualizar #${item.id} ${item.type}: ${item.title} — ${changes}`);
       continue;
@@ -154,7 +155,7 @@ for (const e of epics) {
           'System.Title': t,
           'System.Tags': e.tags,
           'System.State': boardState('Task', status),
-          'Microsoft.VSTS.Scheduling.RemainingWork': status === 'done' ? 0 : h,
+          'Microsoft.VSTS.Scheduling.RemainingWork': status === 'done' ? null : h,
         }, pId);
       }
     }
