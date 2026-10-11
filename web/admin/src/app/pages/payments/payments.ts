@@ -1,17 +1,65 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { problemTitle } from '../../core/auth';
-import { MercadoPagoSettings, PaymentsApi } from './payments.api';
+import { GatewayName, GatewaySettings, PaymentsApi } from './payments.api';
 
-/** Mesmo limite da API: só o formato é conferido aqui; a chave errada aparece no primeiro pagamento. */
+/** Mesmos limites da API: só o formato é conferido aqui; a chave errada aparece no primeiro pagamento. */
 export const CREDENTIAL_MIN = 16;
 export const CREDENTIAL_MAX = 500;
+const GUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+interface Field {
+  name: string;
+  label: string;
+  guid?: boolean;
+}
+
+interface Gateway {
+  name: GatewayName;
+  title: string;
+  fields: Field[];
+  steps: string[];
+  notificationStep: string;
+}
+
+const GATEWAYS: Gateway[] = [
+  {
+    name: 'mercado-pago',
+    title: 'Mercado Pago',
+    fields: [
+      { name: 'accessToken', label: 'Access Token' },
+      { name: 'webhookSecret', label: 'Assinatura secreta (Webhooks)' },
+    ],
+    steps: ['No Mercado Pago, abra Suas integrações e crie (ou escolha) uma aplicação.', 'Em Credenciais de produção, copie o Access Token.'],
+    notificationStep: 'Em Webhooks → Configurar notificações, informe esta URL, marque o evento Pagamentos, salve e copie a assinatura secreta:',
+  },
+  {
+    name: 'cielo',
+    title: 'Cielo (Checkout Cielo / Link de Pagamento)',
+    fields: [
+      { name: 'merchantId', label: 'MerchantId', guid: true },
+      { name: 'clientId', label: 'Client ID' },
+      { name: 'clientSecret', label: 'Client Secret' },
+    ],
+    steps: [
+      'No site da Cielo, copie o MerchantId da sua loja (Configurações → Dados cadastrais).',
+      'Em E-commerce → Link de Pagamento → Configurações → Credenciais de API, gere e copie o Client ID e o Client Secret (aparecem só uma vez).',
+      'Desligue o modo de teste do Checkout antes de vender: pedidos de teste também seriam confirmados.',
+    ],
+    notificationStep: 'Nas configurações da loja na Cielo, informe esta URL como URL de notificação e de mudança de status:',
+  },
+];
 
 @Component({
   selector: 'app-payments',
   imports: [ReactiveFormsModule, DatePipe],
   styles: `
+    section + section {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
     .copy {
       display: block;
       margin-top: 0.4rem;
@@ -29,8 +77,9 @@ export const CREDENTIAL_MAX = 500;
     <main class="card">
       <h1>Pagamentos</h1>
       <p class="muted">
-        Os pagamentos da loja vão direto para a sua conta do Mercado Pago (cartão e Pix, na página do próprio Mercado
-        Pago). As chaves ficam guardadas cifradas e nunca são mostradas de novo.
+        Os pagamentos da loja vão direto para a sua conta no gateway (cartão e Pix, na página do próprio gateway). As chaves
+        ficam guardadas cifradas e nunca são mostradas de novo. Com dois gateways conectados, a loja cobra pelo último
+        salvo; pagamentos já iniciados no outro continuam sendo confirmados.
       </p>
 
       @if (error()) {
@@ -40,42 +89,52 @@ export const CREDENTIAL_MAX = 500;
         <p class="notice" role="status">{{ notice() }}</p>
       }
 
-      @if (settings(); as s) {
-        @if (s.configured) {
-          <p>
-            <span class="badge ok">Mercado Pago conectado</span>
-            Access Token terminado em <strong>{{ s.accessTokenHint || '—' }}</strong>, chave secreta terminada em
-            <strong>{{ s.webhookSecretHint || '—' }}</strong>
-            @if (s.updatedAt) {
-              <span class="muted">(atualizado em {{ s.updatedAt | date: 'dd/MM/yyyy HH:mm' }})</span>
-            }
-          </p>
-          <button type="button" class="link danger" (click)="remove()" [disabled]="busy()">Desconectar o Mercado Pago</button>
-        } @else {
-          <p><span class="badge warn">Sem pagamento online</span> Conecte o Mercado Pago para receber pela loja.</p>
-        }
+      @if (loaded()) {
+        @for (g of gateways; track g.name) {
+          <section [attr.data-gateway]="g.name">
+            <h2>{{ g.title }}</h2>
+            @if (settings(g.name); as s) {
+              @if (s.configured) {
+                <p>
+                  @if (s.active) {
+                    <span class="badge ok">Em uso pela loja</span>
+                  } @else {
+                    <span class="badge">Conectado</span>
+                  }
+                  @for (c of s.credentials; track c.field) {
+                    <span class="muted"> {{ label(g, c.field) }} terminado em <strong>{{ c.hint || '—' }}</strong>;</span>
+                  }
+                  @if (s.updatedAt) {
+                    <span class="muted"> atualizado em {{ s.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+                  }
+                </p>
+                <button type="button" class="link danger" (click)="remove(g)" [disabled]="busy()">Desconectar</button>
+              } @else {
+                <p><span class="badge warn">Não conectado</span></p>
+              }
 
-        <h2>{{ s.configured ? 'Trocar as chaves' : 'Conectar o Mercado Pago' }}</h2>
-        <ol class="muted">
-          <li>No Mercado Pago, abra <em>Suas integrações</em> e crie (ou escolha) uma aplicação.</li>
-          <li>Em <em>Credenciais de produção</em>, copie o <strong>Access Token</strong>.</li>
-          <li>
-            Em <em>Webhooks → Configurar notificações</em>, informe esta URL, marque o evento <em>Pagamentos</em>, salve e
-            copie a <strong>assinatura secreta</strong>:
-            <code class="copy">{{ s.notificationUrl }}</code>
-          </li>
-        </ol>
-        <form [formGroup]="form" (ngSubmit)="save()">
-          <label>
-            Access Token
-            <input type="password" formControlName="accessToken" autocomplete="off" spellcheck="false" />
-          </label>
-          <label>
-            Assinatura secreta (Webhooks)
-            <input type="password" formControlName="webhookSecret" autocomplete="off" spellcheck="false" />
-          </label>
-          <button type="submit" [disabled]="form.invalid || busy()">Salvar</button>
-        </form>
+              <h3>{{ s.configured ? 'Trocar as chaves' : 'Conectar' }}</h3>
+              <ol class="muted">
+                @for (step of g.steps; track step) {
+                  <li>{{ step }}</li>
+                }
+                <li>
+                  {{ g.notificationStep }}
+                  <code class="copy">{{ s.notificationUrl }}</code>
+                </li>
+              </ol>
+              <form [formGroup]="forms[g.name]" (ngSubmit)="save(g)">
+                @for (f of g.fields; track f.name) {
+                  <label>
+                    {{ f.label }}
+                    <input [type]="f.guid ? 'text' : 'password'" [formControlName]="f.name" autocomplete="off" spellcheck="false" />
+                  </label>
+                }
+                <button type="submit" [disabled]="forms[g.name].invalid || busy()">Salvar</button>
+              </form>
+            }
+          </section>
+        }
       } @else {
         <p class="muted">Carregando…</p>
       }
@@ -84,42 +143,63 @@ export const CREDENTIAL_MAX = 500;
 })
 export class PaymentsPage implements OnInit {
   private readonly api = inject(PaymentsApi);
+  private readonly fb = inject(FormBuilder).nonNullable;
 
-  protected readonly settings = signal<MercadoPagoSettings | null>(null);
+  protected readonly gateways = GATEWAYS;
+  protected readonly list = signal<GatewaySettings[]>([]);
+  protected readonly loaded = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
-  private readonly credential = [Validators.required, Validators.minLength(CREDENTIAL_MIN), Validators.maxLength(CREDENTIAL_MAX)];
-  protected readonly form = inject(FormBuilder).nonNullable.group({
-    accessToken: ['', this.credential],
-    webhookSecret: ['', this.credential],
-  });
+  protected readonly forms = Object.fromEntries(
+    GATEWAYS.map((g) => [
+      g.name,
+      this.fb.group(
+        Object.fromEntries(
+          g.fields.map((f) => [
+            f.name,
+            ['', f.guid ? [Validators.required, Validators.pattern(GUID)] : [Validators.required, Validators.minLength(CREDENTIAL_MIN), Validators.maxLength(CREDENTIAL_MAX)]],
+          ]),
+        ),
+      ),
+    ]),
+  ) as Record<GatewayName, FormGroup>;
 
   async ngOnInit(): Promise<void> {
     try {
-      this.settings.set(await this.api.get());
+      this.list.set(await this.api.list());
+      this.loaded.set(true);
     } catch (error) {
       this.error.set(problemTitle(error));
     }
   }
 
-  save(): Promise<void> {
-    const { accessToken, webhookSecret } = this.form.getRawValue();
+  protected settings(name: GatewayName): GatewaySettings | undefined {
+    return this.list().find((s) => s.gateway === name);
+  }
+
+  protected label(gateway: Gateway, field: string): string {
+    return gateway.fields.find((f) => f.name === field)?.label ?? field;
+  }
+
+  save(gateway: Gateway): Promise<void> {
+    const form = this.forms[gateway.name];
+    const values = Object.fromEntries(Object.entries(form.getRawValue() as Record<string, string>).map(([k, v]) => [k, v.trim()]));
     return this.run(async () => {
-      this.settings.set(await this.api.save(accessToken.trim(), webhookSecret.trim()));
+      this.list.set(await this.api.save(gateway.name, values));
       // As chaves não ficam no formulário depois de salvas.
-      this.form.reset({ accessToken: '', webhookSecret: '' });
-      this.notice.set('Mercado Pago conectado. Os próximos pedidos já podem ser pagos pela loja.');
+      form.reset();
+      this.notice.set(`${gateway.title} conectado. Os próximos pedidos já podem ser pagos pela loja.`);
     });
   }
 
-  remove(): Promise<void> {
-    if (!confirm('Desconectar o Mercado Pago? A loja deixa de receber pagamentos online até você conectar de novo.')) {
+  remove(gateway: Gateway): Promise<void> {
+    if (!confirm(`Desconectar ${gateway.title}? Pagamentos iniciados nele deixam de ser confirmados automaticamente.`)) {
       return Promise.resolve();
     }
     return this.run(async () => {
-      this.settings.set(await this.api.remove());
-      this.notice.set('Mercado Pago desconectado.');
+      this.list.set(await this.api.remove(gateway.name));
+      this.notice.set(`${gateway.title} desconectado.`);
     });
   }
 

@@ -2,30 +2,34 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-/** O que o painel vê da conta do Mercado Pago: nunca as chaves, só os 4 últimos caracteres (RF06 CA3). */
-export interface MercadoPagoSettings {
+export type GatewayName = 'mercado-pago' | 'cielo';
+
+/** O que o painel vê de uma conta de pagamento: nunca as chaves, só os 4 últimos caracteres (RF06 CA3). */
+export interface GatewaySettings {
+  gateway: GatewayName;
   configured: boolean;
-  accessTokenHint: string | null;
-  webhookSecretHint: string | null;
+  /** Com os dois conectados, a loja cobra pelo salvo por último. */
+  active: boolean;
+  credentials: { field: string; hint: string }[];
   updatedAt: string | null;
   notificationUrl: string;
 }
 
-/** Credenciais de pagamento da loja atual (RF15) — só o Dono (permissão vaultManage). */
+/** Contas de pagamento da loja atual (RF15) — só o Dono (permissão vaultManage). */
 @Injectable({ providedIn: 'root' })
 export class PaymentsApi {
   private readonly http = inject(HttpClient);
-  private readonly base = '/api/painel/pagamentos/mercado-pago';
+  private readonly base = '/api/painel/pagamentos';
 
-  get(): Promise<MercadoPagoSettings> {
-    return firstValueFrom(this.http.get<MercadoPagoSettings>(this.base));
+  list(): Promise<GatewaySettings[]> {
+    return firstValueFrom(this.http.get<GatewaySettings[]>(this.base));
   }
 
-  save(accessToken: string, webhookSecret: string): Promise<MercadoPagoSettings> {
-    return firstValueFrom(this.http.put<MercadoPagoSettings>(this.base, { accessToken, webhookSecret }));
+  save(gateway: GatewayName, credentials: Record<string, string>): Promise<GatewaySettings[]> {
+    return firstValueFrom(this.http.put<GatewaySettings[]>(`${this.base}/${gateway}`, credentials));
   }
 
-  remove(): Promise<MercadoPagoSettings> {
-    return firstValueFrom(this.http.delete<MercadoPagoSettings>(this.base));
+  remove(gateway: GatewayName): Promise<GatewaySettings[]> {
+    return firstValueFrom(this.http.delete<GatewaySettings[]>(`${this.base}/${gateway}`));
   }
 }
