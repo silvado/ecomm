@@ -3,11 +3,18 @@ import { afterNextRender, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { CheckoutApi, lastOrderToken, StoreOrder } from './checkout';
+import { CheckoutApi, lastOrderToken, OrderStatus, StoreOrder } from './checkout';
 import { Seo } from './seo';
 import { StoreContext } from './store';
 
 const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' });
+
+interface OrderStep {
+  label: string;
+  done: boolean;
+  current: boolean;
+  at: string | null;
+}
 
 /**
  * Acompanhamento do pedido pelo link do comprador (/pedido#token). O token fica no fragmento da URL, que o navegador
@@ -28,6 +35,18 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
       @default {
         @if (order(); as o) {
           <h1>Pedido nº {{ o.number }}</h1>
+          @if (steps(o); as s) {
+            <ol class="order-steps" aria-label="Andamento do pedido">
+              @for (step of s; track step.label) {
+                <li [class.done]="step.done" [attr.aria-current]="step.current ? 'step' : null">
+                  <span>{{ step.label }}</span>
+                  @if (step.at) {
+                    <small>{{ when(step.at) }}</small>
+                  }
+                </li>
+              }
+            </ol>
+          }
           @switch (o.status) {
             @case ('pendingPayment') {
               <p class="notice">Pedido recebido! As peças ficam reservadas para você até <strong>{{ when(o.paymentDeadline) }}</strong>, aguardando o pagamento.</p>
@@ -40,7 +59,24 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
               <p class="muted">Já pagou? A confirmação pode levar alguns instantes. <button type="button" class="link" (click)="reload()">Atualizar</button></p>
             }
             @case ('paid') {
-              <p class="notice">Pagamento confirmado. Obrigado pela compra!</p>
+              <p class="notice">
+                Pagamento confirmado. Obrigado pela compra!
+                {{ o.deliveryMethod === 'pickup' ? 'As peças já podem ser retiradas na loja.' : 'Avisaremos aqui quando o pedido for enviado.' }}
+              </p>
+            }
+            @case ('shipped') {
+              <p class="notice">
+                Pedido enviado em {{ when(o.shippedAt!) }}.
+                @if (o.trackingCode) {
+                  Código de rastreio: <strong class="tracking">{{ o.trackingCode }}</strong> ({{ o.carrier }}).
+                }
+              </p>
+            }
+            @case ('delivered') {
+              <p class="notice">Pedido entregue em {{ when(o.deliveredAt!) }}. Obrigado pela compra!</p>
+            }
+            @case ('pickedUp') {
+              <p class="notice">Peças retiradas na loja em {{ when(o.deliveredAt!) }}. Obrigado pela compra!</p>
             }
             @case ('needsReview') {
               <p class="notice">Pagamento recebido e em análise pela loja. Ela vai entrar em contato com você.</p>
@@ -96,6 +132,28 @@ export class OrderPage {
   protected readonly state = signal<'loading' | 'notFound' | 'ok'>('loading');
   protected readonly order = signal<StoreOrder | null>(null);
   protected readonly when = (iso: string) => WHEN.format(new Date(iso));
+
+  /** Etapas do pedido para o comprador; cancelado e em análise ficam só com o aviso. */
+  protected steps(o: StoreOrder): OrderStep[] | null {
+    const order: OrderStatus[] =
+      o.deliveryMethod === 'pickup' ? ['pendingPayment', 'paid', 'pickedUp'] : ['pendingPayment', 'paid', 'shipped', 'delivered'];
+    const position = order.indexOf(o.status);
+    if (position < 0) return null;
+    const labels: Partial<Record<OrderStatus, string>> = {
+      pendingPayment: 'Pedido feito',
+      paid: 'Pago',
+      shipped: 'Enviado',
+      delivered: 'Entregue',
+      pickedUp: 'Retirado',
+    };
+    const at: Partial<Record<OrderStatus, string | null>> = {
+      pendingPayment: o.placedAt,
+      shipped: o.shippedAt,
+      delivered: o.deliveredAt,
+      pickedUp: o.deliveredAt,
+    };
+    return order.map((status, i) => ({ label: labels[status]!, done: i <= position, current: i === position, at: i <= position ? (at[status] ?? null) : null }));
+  }
 
   constructor() {
     const ctx = inject(StoreContext);

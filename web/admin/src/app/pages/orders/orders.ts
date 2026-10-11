@@ -1,27 +1,67 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { problemTitle } from '../../core/auth';
-import { DELIVERY_LABELS, ORDER_STATUS_LABELS, OrderPage, OrdersApi, OrderStatus, OrderView, PAYMENT_STATUS_LABELS } from './orders.api';
+import {
+  ACTOR_LABELS,
+  availableActions,
+  CANCELED_BY_LABELS,
+  DELIVERY_LABELS,
+  ORDER_ORIGIN_LABELS,
+  ORDER_STATUS_LABELS,
+  OrderAction,
+  OrderFilters,
+  OrderHistory,
+  OrderOrigin,
+  OrderPage,
+  OrdersApi,
+  OrderStatus,
+  OrderView,
+  PAYMENT_STATUS_LABELS,
+} from './orders.api';
 
 const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' });
 
-/** Pedidos da loja (RF14). O painel unificado de todos os canais, com filtros e ações, é o RF17. */
+const ACTION_LABELS: Record<OrderAction, string> = {
+  aprovar: 'Aprovar pedido',
+  cancelar: 'Cancelar pedido',
+  enviar: 'Marcar como enviado',
+  entregar: 'Marcar como entregue',
+  retirar: 'Marcar como retirado',
+};
+
+/**
+ * Pedidos de todos os canais num lugar só (RF17): filtros guardados na URL, detalhe com histórico e as ações da loja
+ * (aprovar análise, enviar, entregar, retirar, cancelar). Cada ação passa por uma confirmação antes de ir à API.
+ */
 @Component({
   selector: 'app-orders',
   imports: [FormsModule, RouterLink, CurrencyPipe],
   template: `
     <main class="card wide">
-      <div class="header-row">
-        <h1>Pedidos</h1>
-        <select [(ngModel)]="status" (ngModelChange)="load(1)" aria-label="Situação">
-          <option value="">Todas as situações</option>
-          @for (s of statuses; track s) {
-            <option [value]="s">{{ statusLabels[s] }}</option>
+      <h1>Pedidos</h1>
+
+      <div class="filters">
+        <input type="search" placeholder="Nº do pedido, nome, e-mail ou CPF" [(ngModel)]="filters.text" (ngModelChange)="textChanged()" aria-label="Buscar pedidos" />
+        <select [(ngModel)]="filters.origin" (ngModelChange)="load(1)" aria-label="Origem">
+          <option value="">Todas as origens</option>
+          @for (o of origins; track o) {
+            <option [value]="o">{{ originLabels[o] }}</option>
           }
         </select>
+        <label>De <input type="date" [(ngModel)]="filters.from" (ngModelChange)="load(1)" aria-label="Feitos a partir de" /></label>
+        <label>Até <input type="date" [(ngModel)]="filters.to" (ngModelChange)="load(1)" aria-label="Feitos até" /></label>
       </div>
+      <fieldset class="status-filter">
+        <legend>Situação</legend>
+        @for (s of statuses; track s) {
+          <label><input type="checkbox" [checked]="filters.statuses.includes(s)" (change)="toggleStatus(s)" [attr.data-status]="s" /> {{ statusLabels[s] }}</label>
+        }
+        @if (filtered()) {
+          <button type="button" class="link" (click)="clear()">Limpar filtros</button>
+        }
+      </fieldset>
 
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
@@ -33,6 +73,7 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
             <th>Nº</th>
             <th>Data</th>
             <th>Comprador</th>
+            <th>Origem</th>
             <th>Entrega</th>
             <th class="num">Peças</th>
             <th class="num">Total</th>
@@ -45,14 +86,15 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
               <td><button type="button" class="link" (click)="open(order.id)" [attr.aria-expanded]="selected()?.id === order.id">{{ order.number }}</button></td>
               <td>{{ when(order.placedAt) }}</td>
               <td>{{ order.buyerName }}</td>
+              <td>{{ originLabels[order.origin] ?? order.origin }}</td>
               <td>{{ deliveryLabels[order.deliveryMethod] }}</td>
               <td class="num">{{ order.itemCount }}</td>
               <td class="num">{{ order.total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</td>
-              <td><span class="badge" [class.ok]="order.status === 'paid'" [class.warn]="order.status === 'needsReview'">{{ statusLabels[order.status] }}</span></td>
+              <td><span class="badge" [class.ok]="done(order.status)" [class.warn]="order.status === 'needsReview'">{{ statusLabels[order.status] }}</span></td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" class="muted">{{ loading() ? 'Carregando…' : 'Nenhum pedido ainda.' }}</td>
+              <td colspan="8" class="muted">{{ loading() ? 'Carregando…' : filtered() ? 'Nenhum pedido com esses filtros.' : 'Nenhum pedido ainda.' }}</td>
             </tr>
           }
         </tbody>
@@ -71,18 +113,61 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
       @if (selected(); as o) {
         <section class="order-detail" aria-live="polite">
           <h2>Pedido nº {{ o.number }} · {{ statusLabels[o.status] }}</h2>
+          @if (o.externalId) {
+            <p class="muted">{{ originLabels[o.origin] ?? o.origin }} · id {{ o.externalId }}</p>
+          }
           @if (o.status === 'pendingPayment') {
             <p class="muted">Peças reservadas até {{ when(o.paymentDeadline) }}; sem pagamento, o pedido é cancelado e as peças voltam ao estoque.</p>
           }
           @if (o.status === 'canceled') {
-            <p class="muted">Cancelado em {{ when(o.canceledAt!) }}. {{ o.cancelReason }}</p>
+            <p class="muted">Cancelado {{ o.canceledBy ? canceledByLabels[o.canceledBy] : '' }} em {{ when(o.canceledAt!) }}. {{ o.cancelReason }}</p>
           }
           @if (o.status === 'needsReview') {
-            <p class="error" role="status">{{ o.reviewReason }}</p>
+            <p class="warn" role="status">{{ o.reviewReason }}</p>
           }
           @if (o.paidAt) {
             <p class="muted">Pago em {{ when(o.paidAt) }}.</p>
           }
+          @if (o.shippedAt) {
+            <p class="muted">Enviado em {{ when(o.shippedAt) }}{{ o.trackingCode ? ' · rastreio ' + o.trackingCode : ' · sem código de rastreio' }}.</p>
+          }
+          @if (o.deliveredAt) {
+            <p class="muted">{{ o.status === 'pickedUp' ? 'Retirado' : 'Entregue' }} em {{ when(o.deliveredAt) }}.</p>
+          }
+
+          @if (actions(o).length) {
+            <div class="order-actions">
+              @for (a of actions(o); track a) {
+                <button type="button" [class.danger]="a === 'cancelar'" [attr.data-action]="a" (click)="choose(a)" [disabled]="busy()">{{ actionLabels[a] }}</button>
+              }
+            </div>
+          }
+
+          @if (pending(); as a) {
+            <form class="confirm" (ngSubmit)="confirm(o, a)" data-confirm>
+              <p><strong>{{ actionLabels[a] }} nº {{ o.number }}?</strong> {{ explain(o, a) }}</p>
+              @if (a === 'cancelar') {
+                <label>
+                  Motivo (o comprador vê)
+                  <textarea name="motivo" rows="2" maxlength="200" required [(ngModel)]="reason"></textarea>
+                </label>
+              }
+              @if (a === 'enviar') {
+                <label>
+                  Código de rastreio (opcional)
+                  <input name="rastreio" maxlength="60" [(ngModel)]="tracking" />
+                </label>
+              }
+              <div class="order-actions">
+                <button type="submit" [class.danger]="a === 'cancelar'" [disabled]="busy() || (a === 'cancelar' && !reason.trim())">Confirmar</button>
+                <button type="button" class="link" (click)="pending.set(null)" [disabled]="busy()">Voltar</button>
+              </div>
+            </form>
+          }
+          @if (actionError()) {
+            <p class="error" role="alert">{{ actionError() }}</p>
+          }
+
           @if (o.payments.length) {
             <h3>Pagamentos</h3>
             <ul>
@@ -117,6 +202,20 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
               <tr><td colspan="2"><strong>Total</strong></td><td class="num"><strong>{{ o.total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong></td></tr>
             </tbody>
           </table>
+
+          <h3>Histórico</h3>
+          <ol class="history">
+            @for (h of o.history; track $index) {
+              <li>
+                <span class="muted">{{ when(h.at) }}</span>
+                {{ h.from ? statusLabels[h.from] + ' → ' : '' }}<strong>{{ statusLabels[h.to] }}</strong>
+                · {{ who(h) }}
+                @if (h.note) {
+                  <br /><span class="pre">{{ h.note }}</span>
+                }
+              </li>
+            }
+          </ol>
         </section>
       }
     </main>
@@ -124,22 +223,65 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
 })
 export class OrdersPage implements OnInit {
   private readonly api = inject(OrdersApi);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private debounce?: ReturnType<typeof setTimeout>;
 
-  protected readonly statuses: OrderStatus[] = ['pendingPayment', 'paid', 'needsReview', 'canceled'];
+  protected readonly statuses: OrderStatus[] = ['pendingPayment', 'needsReview', 'paid', 'shipped', 'delivered', 'pickedUp', 'canceled'];
+  protected readonly origins: OrderOrigin[] = ['site'];
   protected readonly paymentLabels = PAYMENT_STATUS_LABELS;
   protected readonly statusLabels = ORDER_STATUS_LABELS;
+  protected readonly originLabels: Record<string, string> = ORDER_ORIGIN_LABELS;
   protected readonly deliveryLabels = DELIVERY_LABELS;
-  protected status: OrderStatus | '' = '';
+  protected readonly canceledByLabels = CANCELED_BY_LABELS;
+  protected readonly actionLabels = ACTION_LABELS;
+  protected filters: OrderFilters = { statuses: [], origin: '', from: '', to: '', text: '' };
+  protected reason = '';
+  protected tracking = '';
   protected readonly page = signal<OrderPage | null>(null);
   protected readonly selected = signal<OrderView | null>(null);
+  protected readonly pending = signal<OrderAction | null>(null);
+  protected readonly busy = signal(false);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly actionError = signal<string | null>(null);
   protected readonly when = (iso: string) => WHEN.format(new Date(iso));
   protected readonly cpf = (v: string) => `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6, 9)}-${v.slice(9)}`;
   protected readonly phone = (v: string) => `(${v.slice(0, 2)}) ${v.slice(2, v.length - 4)}-${v.slice(-4)}`;
+  protected readonly done = (s: OrderStatus) => s === 'paid' || s === 'delivered' || s === 'pickedUp';
+  protected readonly actions = (o: OrderView) => availableActions(o.status, o.deliveryMethod);
 
   async ngOnInit(): Promise<void> {
-    await this.load(1);
+    const q = this.route.snapshot.queryParamMap;
+    this.filters = {
+      statuses: (q.get('situacao') ?? '').split(',').filter((s): s is OrderStatus => (this.statuses as string[]).includes(s)),
+      origin: (this.origins as string[]).includes(q.get('origem') ?? '') ? (q.get('origem') as OrderOrigin) : '',
+      from: q.get('de') ?? '',
+      to: q.get('ate') ?? '',
+      text: q.get('busca') ?? '',
+    };
+    await this.load(Number(q.get('pagina')) || 1);
+  }
+
+  protected filtered(): boolean {
+    const f = this.filters;
+    return !!(f.statuses.length || f.origin || f.from || f.to || f.text.trim());
+  }
+
+  protected toggleStatus(status: OrderStatus): void {
+    const set = this.filters.statuses;
+    this.filters.statuses = set.includes(status) ? set.filter((s) => s !== status) : this.statuses.filter((s) => s === status || set.includes(s));
+    void this.load(1);
+  }
+
+  protected textChanged(): void {
+    clearTimeout(this.debounce);
+    this.debounce = setTimeout(() => void this.load(1), 300);
+  }
+
+  protected clear(): void {
+    this.filters = { statuses: [], origin: '', from: '', to: '', text: '' };
+    void this.load(1);
   }
 
   protected pages(p: OrderPage): number {
@@ -147,6 +289,8 @@ export class OrdersPage implements OnInit {
   }
 
   protected async open(id: string): Promise<void> {
+    this.pending.set(null);
+    this.actionError.set(null);
     if (this.selected()?.id === id) {
       this.selected.set(null);
       return;
@@ -158,11 +302,69 @@ export class OrdersPage implements OnInit {
     }
   }
 
+  protected choose(action: OrderAction): void {
+    this.reason = '';
+    this.tracking = '';
+    this.actionError.set(null);
+    this.pending.set(action);
+  }
+
+  protected explain(o: OrderView, action: OrderAction): string {
+    switch (action) {
+      case 'aprovar':
+        return 'As peças são baixadas do estoque agora; se alguma já foi vendida, a aprovação é recusada.';
+      case 'cancelar':
+        return o.status === 'pendingPayment'
+          ? 'As peças reservadas voltam a ficar disponíveis.'
+          : 'As peças voltam ao estoque. O estorno do pagamento, se houver, é feito no gateway.';
+      case 'enviar':
+        return 'O comprador passa a ver o pedido como enviado, com o rastreio, se informado.';
+      case 'entregar':
+        return 'Depois de entregue, o pedido não pode mais ser cancelado pelo painel.';
+      case 'retirar':
+        return 'Confirme que o comprador retirou as peças no balcão.';
+    }
+  }
+
+  protected async confirm(o: OrderView, action: OrderAction): Promise<void> {
+    if (action === 'cancelar' && !this.reason.trim()) return;
+    this.busy.set(true);
+    this.actionError.set(null);
+    try {
+      const body = action === 'cancelar' ? { motivo: this.reason.trim() } : action === 'enviar' ? { rastreio: this.tracking.trim() } : {};
+      const updated = await this.api.act(o.id, action, body);
+      this.selected.set(updated);
+      this.pending.set(null);
+      this.page.update((p) => p && { ...p, items: p.items.map((i) => (i.id === updated.id ? { ...i, status: updated.status } : i)) });
+    } catch (error) {
+      this.actionError.set(problemTitle(error));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected who(h: OrderHistory): string {
+    return h.actor === 'user' && h.userEmail ? h.userEmail : ACTOR_LABELS[h.actor];
+  }
+
   async load(pageNumber: number): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+    const f = this.filters;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      replaceUrl: true,
+      queryParams: {
+        situacao: f.statuses.join(',') || null,
+        origem: f.origin || null,
+        de: f.from || null,
+        ate: f.to || null,
+        busca: f.text.trim() || null,
+        pagina: pageNumber > 1 ? pageNumber : null,
+      },
+    });
     try {
-      this.page.set(await this.api.search(this.status, pageNumber));
+      this.page.set(await this.api.search(f, pageNumber));
     } catch (error) {
       this.error.set(problemTitle(error));
     } finally {

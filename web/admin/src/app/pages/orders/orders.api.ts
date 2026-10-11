@@ -2,14 +2,35 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview';
+export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview' | 'shipped' | 'delivered' | 'pickedUp';
+export type OrderOrigin = 'site';
 export type DeliveryMethod = 'shipping' | 'pickup';
+export type OrderActor = 'buyer' | 'user' | 'payment' | 'system';
+export type CancellationSource = 'paymentExpired' | 'store';
+export type OrderAction = 'aprovar' | 'cancelar' | 'enviar' | 'entregar' | 'retirar';
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pendingPayment: 'Aguardando pagamento',
   paid: 'Pago',
-  canceled: 'Cancelado',
   needsReview: 'Em análise',
+  shipped: 'Enviado',
+  delivered: 'Entregue',
+  pickedUp: 'Retirado',
+  canceled: 'Cancelado',
+};
+
+export const ORDER_ORIGIN_LABELS: Record<OrderOrigin, string> = { site: 'Loja virtual' };
+
+export const ACTOR_LABELS: Record<OrderActor, string> = {
+  buyer: 'Comprador',
+  user: 'Loja',
+  payment: 'Pagamento',
+  system: 'Sistema',
+};
+
+export const CANCELED_BY_LABELS: Record<CancellationSource, string> = {
+  paymentExpired: 'pelo prazo de pagamento',
+  store: 'pela loja',
 };
 
 export const PAYMENT_STATUS_LABELS: Record<string, string> = {
@@ -22,10 +43,34 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
 
 export const DELIVERY_LABELS: Record<DeliveryMethod, string> = { shipping: 'Entrega', pickup: 'Retirada' };
 
+/** Ações que a loja pode fazer em cada situação (as mesmas regras do domínio; a API recusa o resto). */
+export function availableActions(status: OrderStatus, delivery: DeliveryMethod): OrderAction[] {
+  switch (status) {
+    case 'needsReview':
+      return ['aprovar', 'cancelar'];
+    case 'pendingPayment':
+      return ['cancelar'];
+    case 'paid':
+      return delivery === 'shipping' ? ['enviar', 'cancelar'] : ['retirar', 'cancelar'];
+    case 'shipped':
+      return ['entregar', 'cancelar'];
+    default:
+      return [];
+  }
+}
+
+export interface OrderFilters {
+  statuses: OrderStatus[];
+  origin: OrderOrigin | '';
+  from: string;
+  to: string;
+  text: string;
+}
+
 export interface OrderSummary {
   id: string;
   number: number;
-  origin: string;
+  origin: OrderOrigin;
   status: OrderStatus;
   placedAt: string;
   buyerName: string;
@@ -41,9 +86,20 @@ export interface OrderPage {
   pageSize: number;
 }
 
+export interface OrderHistory {
+  at: string;
+  from: OrderStatus | null;
+  to: OrderStatus;
+  actor: OrderActor;
+  userEmail: string | null;
+  note: string | null;
+}
+
 export interface OrderView {
   id: string;
   number: number;
+  origin: OrderOrigin;
+  externalId: string | null;
   status: OrderStatus;
   placedAt: string;
   paymentDeadline: string;
@@ -60,9 +116,14 @@ export interface OrderView {
   total: number;
   canceledAt: string | null;
   cancelReason: string | null;
+  canceledBy: CancellationSource | null;
   paidAt: string | null;
   reviewReason: string | null;
+  trackingCode: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
   payments: { gateway: string; externalId: string; status: string; amount: number; method: string | null; updatedAt: string }[];
+  history: OrderHistory[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -70,13 +131,22 @@ export class OrdersApi {
   private readonly http = inject(HttpClient);
   private readonly base = '/api/painel/pedidos';
 
-  search(status: OrderStatus | '', page = 1, pageSize = 25): Promise<OrderPage> {
+  search(filters: OrderFilters, page = 1, pageSize = 25): Promise<OrderPage> {
     let params = new HttpParams().set('pagina', page).set('tamanho', pageSize);
-    if (status) params = params.set('situacao', status);
+    if (filters.statuses.length) params = params.set('situacao', filters.statuses.join(','));
+    if (filters.origin) params = params.set('origem', filters.origin);
+    if (filters.from) params = params.set('de', filters.from);
+    if (filters.to) params = params.set('ate', filters.to);
+    if (filters.text.trim()) params = params.set('busca', filters.text.trim());
     return firstValueFrom(this.http.get<OrderPage>(this.base, { params }));
   }
 
   get(id: string): Promise<OrderView> {
     return firstValueFrom(this.http.get<OrderView>(`${this.base}/${id}`));
+  }
+
+  /** Executa a ação e devolve o pedido já atualizado (400/404/409 com a mensagem em "title"). */
+  act(id: string, action: OrderAction, body: { motivo?: string; rastreio?: string } = {}): Promise<OrderView> {
+    return firstValueFrom(this.http.post<OrderView>(`${this.base}/${id}/${action}`, body));
   }
 }

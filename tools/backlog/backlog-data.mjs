@@ -150,7 +150,7 @@ export const epics = [
             title: 'Painel de pedidos unificado',
             rf: 'RF17',
             ac: 'Pedidos de todos os canais num painel com origem e filtros; pedido externo único por tenant, canal e id externo.',
-            t: [['API de pedidos com filtros', 6, 'done'], ['Telas de lista e detalhe de pedido', 10, 'doing']],
+            t: [['API de pedidos com filtros', 6, 'done'], ['Telas de lista e detalhe de pedido', 10, 'done']],
           },
           {
             title: 'Venda de balcão',

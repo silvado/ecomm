@@ -408,3 +408,59 @@ label.checkbox {
   gap: 0.5rem;
   align-items: center;
 }
+
+/* Pedidos (RF17) */
+button.danger:not(.link) {
+  background: var(--danger);
+  color: #fff;
+}
+
+.pre {
+  white-space: pre-line;
+}
+
+.filters label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+fieldset.status-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  margin: 0 0 1rem;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+}
+
+.order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 0.75rem 0;
+}
+
+form.confirm {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  gap: 0.6rem;
+
+  p {
+    margin: 0;
+  }
+}
+
+ol.history {
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.4rem;
+}
