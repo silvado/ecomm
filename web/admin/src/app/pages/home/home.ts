@@ -7,7 +7,7 @@ import { AuthStore } from '../../core/auth';
     <main class="card">
       <h1>Olá!</h1>
       <p>Você está no painel da loja <strong>{{ auth.tenant()?.name }}</strong>.</p>
-      <p class="muted">Catálogo, pedidos e integrações chegam nas próximas versões.</p>
+      <p class="muted">Use o menu acima para peças, pedidos e configurações. As integrações com os canais de venda chegam nas próximas versões.</p>
     </main>
   `,
 })
