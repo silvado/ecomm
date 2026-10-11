@@ -27,6 +27,29 @@ public sealed record PlaceOrderResult(PlaceOrderOutcome Outcome, long? Number, d
     public static PlaceOrderResult Unavailable(Guid partId) => new(PlaceOrderOutcome.OutOfStock, null, null, null, partId);
 }
 
+/// <summary>Linha da venda de balcão: o preço praticado pode ser diferente do cadastro (desconto negociado, Q32).</summary>
+public sealed record CounterSaleLine(Guid PartId, int Quantity, decimal UnitPrice);
+
+/// <summary>
+/// Venda de balcão (RF18): baixa todas as peças ou nenhuma e cria o pedido já pago e retirado. O hash do token do
+/// formulário evita lançar a mesma venda duas vezes (duplo clique).
+/// </summary>
+public sealed record RegisterCounterSale(byte[] IdempotencyHash, Guid UserId, CounterCustomer? Customer, CounterPaymentMethod PaymentMethod,
+    IReadOnlyList<CounterSaleLine> Lines);
+
+public enum CounterSaleOutcome
+{
+    Registered,
+    /// <summary>O mesmo formulário já tinha sido registrado: nada novo foi baixado.</summary>
+    AlreadyRegistered,
+    /// <summary>Dado inválido (cliente, preço, quantidade, peça inativa ou inexistente).</summary>
+    Invalid,
+    /// <summary>Alguma peça não tem saldo; nada foi baixado.</summary>
+    OutOfStock,
+}
+
+public sealed record CounterSaleResult(CounterSaleOutcome Outcome, Guid? OrderId = null, long? Number = null, string? Message = null);
+
 /// <summary>Agendada para o fim do prazo de pagamento; sem efeito se o pedido já foi pago ou cancelado.</summary>
 public sealed record ExpireOrder(Guid OrderId);
 

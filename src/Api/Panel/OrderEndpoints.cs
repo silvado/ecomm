@@ -3,6 +3,9 @@ using Ecommerce.Api.Auth;
 using Ecommerce.Application.Orders;
 using Ecommerce.Domain.Identity;
 using Ecommerce.Domain.Orders;
+using Ecommerce.Infrastructure.Orders;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Wolverine;
 
@@ -12,6 +15,9 @@ public sealed record CancelOrderRequest(string? Motivo);
 
 public sealed record ShipOrderRequest(string? Rastreio);
 
+/// <param name="Token">Sorteado pelo painel a cada venda (32 bytes em base64url): enviar de novo não lança outra venda.</param>
+public sealed record CounterSaleRequest(string? Token, IReadOnlyList<CounterSaleLine>? Items, CounterPaymentMethod? PaymentMethod, CounterCustomer? Customer);
+
 /// <summary>Pedidos de todos os canais no painel (RF17): lista com filtros, detalhe e ações da loja. Dono e Operador.</summary>
 public static class OrderEndpoints
 {
@@ -20,7 +26,7 @@ public static class OrderEndpoints
         var orders = panel.MapGroup("/pedidos").RequirePermission(Permission.OrdersManage);
 
         // Valores no formato do JSON (pendingPayment, paid, site...), sem diferenciar maiúsculas; "situacao" aceita vários
-        // separados por vírgula; "de"/"ate" em AAAA-MM-DD (dias da loja); "busca": número, nome, e-mail ou CPF.
+        // separados por vírgula; "de"/"ate" em AAAA-MM-DD (dias da loja); "busca": número, nome, e-mail, CPF ou CNPJ.
         orders.MapGet("/", async Task<Results<Ok<OrderPage>, ProblemHttpResult>> (
             string? situacao, string? origem, string? de, string? ate, string? busca, int? pagina, int? tamanho,
             IOrderQueries queries, CancellationToken ct) =>
@@ -64,6 +70,39 @@ public static class OrderEndpoints
 
         orders.MapPost("/{id:guid}/retirar", (Guid id, HttpContext http, IMessageBus bus, IOrderQueries queries, CancellationToken ct) =>
             ChangeAsync(new ChangeOrder(id, OrderAction.PickUp, http.GetPanelUser().UserId), http, bus, queries, ct));
+        // RF18: venda de balcão — já paga e retirada; aparece na lista de pedidos com origem "counter".
+        panel.MapPost("/balcao", async Task<Results<Created<OrderView>, Ok<OrderView>, ProblemHttpResult>> (
+            CounterSaleRequest request, HttpContext http, IMessageBus bus, IOrderQueries queries, CancellationToken ct) =>
+        {
+            if (StorefrontCheckout.HashOrNull(request.Token) is not { } hash)
+                return AuthEndpoints.Problem(StatusCodes.Status400BadRequest, "Não foi possível identificar esta venda. Recarregue a página.");
+            if (request.PaymentMethod is not { } method) return AuthEndpoints.Problem(StatusCodes.Status400BadRequest, "Escolha a forma de pagamento.");
+
+            var user = http.GetPanelUser();
+            var command = new RegisterCounterSale(hash, user.UserId, request.Customer, method, request.Items ?? []);
+            CounterSaleResult result;
+            try
+            {
+                result = await bus.InvokeForTenantAsync<CounterSaleResult>(user.Access.TenantId.ToString(), command, ct);
+            }
+            catch (DbUpdateException e) when (e.InnerException is PostgresException
+            {
+                SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: OrderHandler.AccessTokenIndex,
+            })
+            {
+                // Mesmo formulário enviado de novo (duplo clique, rede): a venda já existe e é ela que volta.
+                var existing = await queries.FindByAccessHashAsync(hash, ct) ?? throw new InvalidOperationException("Venda do token não encontrada.", e);
+                return TypedResults.Ok((await queries.GetAsync(existing, ct))!);
+            }
+
+            return result.Outcome switch
+            {
+                CounterSaleOutcome.Registered => TypedResults.Created($"/api/painel/pedidos/{result.OrderId}", (await queries.GetAsync(result.OrderId!.Value, ct))!),
+                CounterSaleOutcome.AlreadyRegistered => TypedResults.Ok((await queries.GetAsync(result.OrderId!.Value, ct))!),
+                CounterSaleOutcome.OutOfStock => AuthEndpoints.Problem(StatusCodes.Status409Conflict, result.Message!),
+                _ => AuthEndpoints.Problem(StatusCodes.Status400BadRequest, result.Message!),
+            };
+        }).RequirePermission(Permission.OrdersManage);
     }
 
     /// <summary>Executa a ação pela fila do tenant (transação, estoque e histórico juntos) e devolve o pedido atualizado.</summary>

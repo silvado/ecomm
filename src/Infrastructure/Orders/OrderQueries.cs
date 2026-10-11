@@ -37,11 +37,14 @@ public sealed class OrderQueries(TenantDbContext db, PlatformDbContext platform)
             text = text.Length > OrderSearch.MaxTextLength ? text[..OrderSearch.MaxTextLength] : text;
             var digits = new string(text.Where(char.IsAsciiDigit).ToArray());
             var number = text.TrimStart('#').All(char.IsAsciiDigit) && long.TryParse(text.TrimStart('#'), out var n) ? n : (long?)null;
+            // CNPJ pode ser alfanumérico: compara sem pontuação, em maiúsculas.
+            var document = new string(text.Where(char.IsAsciiLetterOrDigit).ToArray()).ToUpperInvariant();
             var pattern = $"%{Escape(text)}%";
             orders = orders.Where(o => o.Number == number
                 || EF.Functions.ILike(o.BuyerName, pattern, "\\")
                 || EF.Functions.ILike(o.BuyerEmail, pattern, "\\")
-                || (digits.Length >= 3 && o.BuyerCpf.Contains(digits)));
+                || (digits.Length >= 3 && o.BuyerCpf.Contains(digits))
+                || (document.Length >= 3 && o.BuyerCnpj != null && o.BuyerCnpj.Contains(document)));
         }
 
         var total = await orders.CountAsync(ct);
@@ -65,14 +68,17 @@ public sealed class OrderQueries(TenantDbContext db, PlatformDbContext platform)
             : await platform.UserAccounts.AsNoTracking().Where(u => userIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.Email, ct);
 
         return new OrderView(o.Id, o.Number, o.Origin, o.ExternalId, o.Status, o.PlacedAt, o.PaymentDeadline,
-            new OrderBuyerView(o.BuyerName, o.BuyerEmail, o.BuyerPhone, o.BuyerCpf), o.DeliveryMethod, o.Address,
+            new OrderBuyerView(o.BuyerName, o.BuyerEmail, o.BuyerPhone, o.BuyerCpf, o.BuyerCnpj), o.DeliveryMethod, o.Address,
             o.ShippingCarrier, o.ShippingService, o.ShippingDays, o.PickupAddress,
             o.Items.OrderBy(i => i.Title).Select(i => new OrderItemView(i.PartId, i.InternalCode, i.Title, i.UnitPrice, i.Quantity)).ToList(),
             o.ItemsTotal, o.ShippingTotal, o.Total, o.CanceledAt, o.CancelReason, o.CanceledBy, o.PaidAt, o.ReviewReason,
-            o.TrackingCode, o.ShippedAt, o.DeliveredAt, payments,
+            o.TrackingCode, o.ShippedAt, o.DeliveredAt, o.PaymentMethod, payments,
             history.Select(h => new OrderHistoryView(h.At, h.FromStatus, h.ToStatus, h.Actor,
                 h.UserId is { } user ? emails.GetValueOrDefault(user) : null, h.Note)).ToList());
     }
+
+    public Task<Guid?> FindByAccessHashAsync(byte[] hash, CancellationToken ct = default) =>
+        db.CustomerOrders.AsNoTracking().Where(o => o.AccessTokenHash == hash).Select(o => (Guid?)o.Id).SingleOrDefaultAsync(ct);
 
     private static DateTimeOffset StartOfDay(DateOnly day)
     {
