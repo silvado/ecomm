@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 11/10/2026 (RF17: pedidos no painel).
+> Última atualização: 11/10/2026 (RF18: venda de balcão).
 
 ## Sumário
 
@@ -13,9 +13,10 @@
    - 4.2 [Início](#42-início)
    - 4.3 [Peças](#43-peças)
    - 4.4 [Pedidos](#44-pedidos)
-   - 4.5 [Dados da loja](#45-dados-da-loja)
-   - 4.6 [Pagamentos](#46-pagamentos)
-   - 4.7 [Usuários](#47-usuários)
+   - 4.5 [Venda de balcão](#45-venda-de-balcão)
+   - 4.6 [Dados da loja](#46-dados-da-loja)
+   - 4.7 [Pagamentos](#47-pagamentos)
+   - 4.8 [Usuários](#48-usuários)
 5. [Loja virtual (o que o comprador vê)](#5-loja-virtual-o-que-o-comprador-vê)
 6. [Operação da plataforma](#6-operação-da-plataforma)
 7. [Ainda não disponível](#7-ainda-não-disponível)
@@ -29,7 +30,7 @@ A plataforma tem duas partes:
 
 | Parte | Quem usa | Para quê |
 |---|---|---|
-| **Painel da loja** | Dono e operadores da loja | Cadastrar peças, acompanhar e tratar pedidos, configurar a loja, os pagamentos e os usuários |
+| **Painel da loja** | Dono e operadores da loja | Cadastrar peças, lançar vendas de balcão, acompanhar e tratar pedidos, configurar a loja, os pagamentos e os usuários |
 | **Loja virtual** | Comprador | Buscar peças, comprar (entrega ou retirada), pagar e acompanhar o pedido |
 
 O **estoque é único**: a mesma quantidade vale para a loja virtual e, quando chegarem as integrações, para os outros canais. Uma peça reservada num pedido deixa de aparecer como disponível para os outros compradores.
@@ -50,6 +51,7 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 |---|:---:|:---:|
 | Peças | ✔ | ✔ |
 | Pedidos | ✔ | ✔ |
+| Venda de balcão | ✔ | ✔ |
 | Dados da loja | ✔ | — |
 | Pagamentos (chaves dos gateways) | ✔ | — |
 | Usuários | ✔ | — |
@@ -65,7 +67,7 @@ O menu mostra só os módulos que o perfil pode usar.
 2. No **primeiro acesso** (senha provisória), o painel pede para **criar a sua senha**: de 10 a 128 caracteres.
 3. Se você tem acesso a mais de uma loja, escolha a loja na tela **Escolha a loja**.
 
-**Bloqueio por tentativas:** depois de **5 senhas erradas seguidas**, a conta fica bloqueada por **15 minutos**. O Dono pode desbloquear antes em **Usuários** (seção 4.7).
+**Bloqueio por tentativas:** depois de **5 senhas erradas seguidas**, a conta fica bloqueada por **15 minutos**. O Dono pode desbloquear antes em **Usuários** (seção 4.8).
 
 **No topo do painel:** nome da loja e seu perfil; à direita, seu e-mail, **Trocar de loja** (quando há mais de uma), **Trocar senha** e **Sair**.
 
@@ -130,8 +132,8 @@ Tela de boas-vindas com o nome da loja. Os módulos ficam no menu do topo.
 | Cancelado | Pelo prazo de pagamento ou pela loja (com motivo). |
 
 **Encontrar pedidos**
-- **Busca**: número do pedido, nome, e-mail ou CPF do comprador.
-- **Origem**: hoje, só **Loja virtual**. Mercado Livre, OLX e balcão entram aqui quando estiverem disponíveis.
+- **Busca**: número do pedido, nome, e-mail, CPF ou CNPJ do comprador.
+- **Origem**: **Loja virtual** ou **Balcão**. Mercado Livre e OLX entram aqui quando estiverem disponíveis.
 - **Período**: datas **De** e **Até** (dias no horário de Brasília).
 - **Situação**: marque uma ou várias.
 - **Limpar filtros** volta à lista completa.
@@ -154,6 +156,7 @@ Tela de boas-vindas com o nome da loja. Os módulos ficam no menu do topo.
 | Enviado | **Marcar como entregue** | Depois disso, o pedido não pode mais ser cancelado. |
 | Pago, com retirada | **Marcar como retirado** | Confirme que o comprador retirou as peças. |
 | Aguardando pagamento, em análise, pago ou enviado | **Cancelar pedido** | **Motivo obrigatório** (o comprador vê). Peças reservadas são liberadas; peças já baixadas voltam ao estoque. |
+| Venda de balcão (retirado) | **Cancelar pedido** | Para corrigir uma venda lançada errado. Motivo obrigatório; as peças voltam ao estoque. Devolva o dinheiro ao cliente, se for o caso. |
 
 > **Estorno:** o cancelamento **não devolve o dinheiro sozinho**. Faça o estorno no site do gateway (Mercado Pago ou Cielo).
 >
@@ -161,7 +164,27 @@ Tela de boas-vindas com o nome da loja. Os módulos ficam no menu do topo.
 
 Se duas pessoas tentarem a mesma ação ao mesmo tempo, só a primeira vale. A outra recebe uma mensagem e vê o pedido atualizado.
 
-### 4.5 Dados da loja
+### 4.5 Venda de balcão
+
+**Acesso:** menu **Balcão** (Dono e Operador).
+
+Use para registrar a peça vendida no balcão da loja. A venda baixa o estoque na hora, então a peça deixa de aparecer como disponível na loja virtual, e entra na tela **Pedidos** com origem **Balcão**, já como **Retirado**.
+
+**Lançar uma venda**
+1. Em **Peças**, busque por **código interno, título ou OEM** e clique em **Adicionar** na peça vendida. Peças sem estoque disponível não podem ser adicionadas.
+2. Ajuste a **quantidade** e, se houve desconto negociado, o **preço** de cada peça. O preço de tabela aparece abaixo quando é alterado.
+3. Escolha a **forma de pagamento**: dinheiro, Pix, cartão de débito, cartão de crédito ou outra.
+4. **Cliente (opcional)**: nome, CPF ou CNPJ e telefone com DDD. Sem nome, a venda fica como **Consumidor final**. CPF e CNPJ são conferidos.
+5. Clique em **Registrar venda**. A tela mostra o número da venda, com link para ela em **Pedidos**.
+
+**Bom saber**
+- **Todas as peças ou nenhuma:** se alguma peça acabou nesse meio-tempo (por exemplo, vendida na loja virtual), nada é baixado. A mensagem diz qual peça faltou, e a lista mostra o disponível atualizado.
+- **Clique duplo não lança duas vezes:** o mesmo formulário enviado de novo devolve a mesma venda.
+- **Peça reservada não sai no balcão:** unidades presas num pedido da loja virtual aguardando pagamento não contam como disponíveis.
+- **O histórico da venda** registra quem lançou, a forma de pagamento e os preços ajustados ("de R$ 120,00 por R$ 100,00").
+- **Lançou errado?** Em **Pedidos**, abra a venda e use **Cancelar pedido** com o motivo. As peças voltam ao estoque.
+
+### 4.6 Dados da loja
 
 **Acesso:** menu **Dados da loja** (só Dono).
 
@@ -178,7 +201,7 @@ Se duas pessoas tentarem a mesma ação ao mesmo tempo, só a primeira vale. A o
 - **Ocultar peças sem estoque**: sem marcar, elas aparecem como indisponíveis.
 - Clique em **Salvar**. A loja mostra as mudanças em até 1 minuto.
 
-### 4.6 Pagamentos
+### 4.7 Pagamentos
 
 **Acesso:** menu **Pagamentos** (só Dono).
 
@@ -201,7 +224,7 @@ O dinheiro vai **direto para a conta da loja** no gateway. O comprador paga com 
 
 **Desconectar:** pagamentos iniciados naquele gateway deixam de ser confirmados automaticamente.
 
-### 4.7 Usuários
+### 4.8 Usuários
 
 **Acesso:** menu **Usuários** (só Dono).
 
@@ -249,10 +272,10 @@ O dinheiro vai **direto para a conta da loja** no gateway. O comprador paga com 
 Itens previstos que **ainda não estão no sistema**:
 
 - Integrações com Mercado Livre, Instagram (catálogo Meta) e OLX.
-- Venda de balcão e emissão de NF-e.
+- Emissão de NF-e (inclusive da venda de balcão).
 - Frete real (Melhor Envio): hoje o frete é simulado.
 - Estorno automático e aviso por e-mail ao comprador.
-- Devolução depois de entregue.
+- Devolução depois de entregue ou retirado (inclusive no balcão), com opção de não voltar peça avariada ao estoque.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
 
@@ -261,3 +284,4 @@ Itens previstos que **ainda não estão no sistema**:
 | Data | Mudança |
 |---|---|
 | 11/10/2026 | Primeira versão: acesso, perfis, peças, pedidos (RF17), dados da loja, pagamentos, usuários e loja virtual. |
+| 11/10/2026 | Venda de balcão (RF18): nova seção 4.5; origem Balcão, busca por CNPJ e cancelamento da venda de balcão em Pedidos. |
