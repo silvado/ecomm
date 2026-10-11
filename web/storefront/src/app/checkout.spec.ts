@@ -1,4 +1,4 @@
-import { newOrderToken, validCpf } from './checkout';
+import { lastOrderToken, newOrderToken, rememberOrder, validCpf } from './checkout';
 
 describe('checkout', () => {
   it('token tem 32 bytes em base64url, diferente a cada pedido', () => {
@@ -15,5 +15,13 @@ describe('checkout', () => {
     expect(validCpf('123.456.789-90')).toBe(false);
     expect(validCpf('111.111.111-11')).toBe(false);
     expect(validCpf('1234567890')).toBe(false);
+  });
+
+  it('lembra o último pedido para a volta do gateway', () => {
+    localStorage.clear();
+    expect(lastOrderToken()).toBeNull();
+    rememberOrder('abc');
+    rememberOrder('def');
+    expect(lastOrderToken()).toBe('def');
   });
 });

@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { afterNextRender, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -6,7 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CartApi, CartStore, CartView, ShippingQuote } from './cart';
 import { CONDITION_LABELS, partPath, photoUrl } from './catalog';
-import { Buyer, CheckoutApi, CheckoutRequest, newOrderToken, UF, validCpf } from './checkout';
+import { Buyer, CheckoutApi, CheckoutRequest, newOrderToken, rememberOrder, UF, validCpf } from './checkout';
 import { Seo } from './seo';
 import { StoreContext } from './store';
 
@@ -153,6 +153,7 @@ export class CartPage {
   private readonly api = inject(CartApi);
   private readonly checkout = inject(CheckoutApi);
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
   /** Mantido entre tentativas que não criaram pedido (erro de rede, dados inválidos): repetir não duplica. */
   private token: string | null = null;
 
@@ -255,7 +256,14 @@ export class CartPage {
       await firstValueFrom(this.checkout.place(request));
       this.token = null;
       this.cart.clear();
-      await this.router.navigate(['/pedido'], { fragment: request.token });
+      rememberOrder(request.token);
+      // Pedido criado e peças reservadas: segue para o pagamento. Sem pagamento online, mostra o pedido.
+      try {
+        const { redirectUrl } = await firstValueFrom(this.checkout.pay(request.token));
+        this.document.location.assign(redirectUrl);
+      } catch {
+        await this.router.navigate(['/pedido'], { fragment: request.token });
+      }
     } catch (error) {
       this.placeError.set(problemTitle(error) ?? 'Não foi possível enviar o pedido. Confira sua conexão e tente de novo.');
       // Preço, estoque ou frete mudou: recarrega o carrinho e pede nova cotação antes de confirmar.

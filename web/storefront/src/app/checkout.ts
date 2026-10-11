@@ -34,7 +34,7 @@ export interface PlacedOrder {
   paymentDeadline: string;
 }
 
-export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled';
+export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview';
 
 export interface StoreOrder {
   number: number;
@@ -88,5 +88,32 @@ export class CheckoutApi {
   /** Token no corpo, nunca na URL. */
   find(token: string): Observable<StoreOrder> {
     return this.http.post<StoreOrder>('/api/loja/pedidos/consulta', { token });
+  }
+
+  /** Endereço do checkout do gateway da loja (RF15). */
+  pay(token: string): Observable<{ redirectUrl: string }> {
+    return this.http.post<{ redirectUrl: string }>('/api/loja/pedidos/pagamento', { token });
+  }
+}
+
+const LAST_ORDER_KEY = 'ultimo-pedido';
+
+/**
+ * O gateway devolve o comprador para /pedido sem o token (ele não passa pelo gateway): a página usa o último pedido
+ * feito neste navegador. Fica só no localStorage da loja.
+ */
+export function rememberOrder(token: string): void {
+  try {
+    localStorage.setItem(LAST_ORDER_KEY, token);
+  } catch {
+    // Armazenamento bloqueado: o comprador ainda tem o link com o token.
+  }
+}
+
+export function lastOrderToken(): string | null {
+  try {
+    return localStorage.getItem(LAST_ORDER_KEY);
+  } catch {
+    return null;
   }
 }

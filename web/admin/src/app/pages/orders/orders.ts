@@ -3,7 +3,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { problemTitle } from '../../core/auth';
-import { DELIVERY_LABELS, ORDER_STATUS_LABELS, OrderPage, OrdersApi, OrderStatus, OrderView } from './orders.api';
+import { DELIVERY_LABELS, ORDER_STATUS_LABELS, OrderPage, OrdersApi, OrderStatus, OrderView, PAYMENT_STATUS_LABELS } from './orders.api';
 
 const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' });
 
@@ -48,7 +48,7 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
               <td>{{ deliveryLabels[order.deliveryMethod] }}</td>
               <td class="num">{{ order.itemCount }}</td>
               <td class="num">{{ order.total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</td>
-              <td><span class="badge" [class.ok]="order.status === 'paid'">{{ statusLabels[order.status] }}</span></td>
+              <td><span class="badge" [class.ok]="order.status === 'paid'" [class.warn]="order.status === 'needsReview'">{{ statusLabels[order.status] }}</span></td>
             </tr>
           } @empty {
             <tr>
@@ -76,6 +76,20 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
           }
           @if (o.status === 'canceled') {
             <p class="muted">Cancelado em {{ when(o.canceledAt!) }}. {{ o.cancelReason }}</p>
+          }
+          @if (o.status === 'needsReview') {
+            <p class="error" role="status">{{ o.reviewReason }}</p>
+          }
+          @if (o.paidAt) {
+            <p class="muted">Pago em {{ when(o.paidAt) }}.</p>
+          }
+          @if (o.payments.length) {
+            <h3>Pagamentos</h3>
+            <ul>
+              @for (p of o.payments; track p.externalId) {
+                <li>{{ p.gateway }} · {{ paymentLabels[p.status] ?? p.status }} · {{ p.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }} · {{ when(p.updatedAt) }}</li>
+              }
+            </ul>
           }
           <h3>Comprador</h3>
           <p>{{ o.buyer.name }} · CPF {{ cpf(o.buyer.cpf) }}<br />{{ o.buyer.email }} · {{ phone(o.buyer.phone) }}</p>
@@ -111,7 +125,8 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
 export class OrdersPage implements OnInit {
   private readonly api = inject(OrdersApi);
 
-  protected readonly statuses: OrderStatus[] = ['pendingPayment', 'paid', 'canceled'];
+  protected readonly statuses: OrderStatus[] = ['pendingPayment', 'paid', 'needsReview', 'canceled'];
+  protected readonly paymentLabels = PAYMENT_STATUS_LABELS;
   protected readonly statusLabels = ORDER_STATUS_LABELS;
   protected readonly deliveryLabels = DELIVERY_LABELS;
   protected status: OrderStatus | '' = '';
