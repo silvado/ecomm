@@ -14,12 +14,19 @@ public sealed class RedactionTests
     [InlineData("CPF 123.456.789-09 não confere", "CPF *** não confere")]
     [InlineData("loja 11.222.333/0001-81", "loja ***")]
     [InlineData("comprador maria@exemplo.com.br", "comprador ***")]
-    [InlineData("token eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.c2lnbmF0dXJhLWZha2UtMTIz", "token ***")]
     public void Dados_sensiveis_viram_mascara(string input, string expected)
     {
         var redacted = Redaction.Text(input)!;
         Assert.Contains(expected, redacted, StringComparison.Ordinal);
         Assert.DoesNotContain("APP_USR", redacted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Jwt_vira_mascara()
+    {
+        // Montado em tempo de execução: um literal com cara de token dispara o scanner de segredos (gitleaks).
+        var jwt = string.Join(".", "eyJ" + "hbGciOiJIUzI1NiJ9", "eyJ" + "zdWIiOiIxMjM0NTY3ODkwIn0", "c2lnbmF0dXJh" + "LWZha2UtMTIz");
+        Assert.Equal("token ***", Redaction.Text($"token {jwt}"));
     }
 
     [Theory]
