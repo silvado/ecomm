@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 11/10/2026 (RF10: rastreabilidade da peça usada).
+> Última atualização: 12/10/2026 (RF20: devoluções).
 
 ## Sumário
 
@@ -190,6 +190,7 @@ O cadastro do veículo mostra todas as peças ligadas a ele. Um veículo só pod
 | Enviado | Entregue à transportadora (com ou sem código de rastreio). |
 | Entregue | Recebido pelo comprador. |
 | Retirado | O comprador retirou as peças no balcão. |
+| Devolvido | Todas as peças do pedido voltaram (devolução parcial não muda a situação; aparece no detalhe). |
 | Cancelado | Pelo prazo de pagamento ou pela loja (com motivo). |
 
 **Encontrar pedidos**
@@ -217,11 +218,24 @@ O cadastro do veículo mostra todas as peças ligadas a ele. Um veículo só pod
 | Enviado | **Marcar como entregue** | Depois disso, o pedido não pode mais ser cancelado. |
 | Pago, com retirada | **Marcar como retirado** | Confirme que o comprador retirou as peças. |
 | Aguardando pagamento, em análise, pago ou enviado | **Cancelar pedido** | **Motivo obrigatório** (o comprador vê). Peças reservadas são liberadas; peças já baixadas voltam ao estoque. |
-| Venda de balcão (retirado) | **Cancelar pedido** | Para corrigir uma venda lançada errado. Motivo obrigatório; as peças voltam ao estoque. Devolva o dinheiro ao cliente, se for o caso. |
+| Entregue ou retirado | **Registrar devolução** | Veja "Devoluções" abaixo. |
+| Venda de balcão (retirado, sem devolução) | **Cancelar pedido** | Para corrigir uma venda lançada errado. Motivo obrigatório; as peças voltam ao estoque. Devolva o dinheiro ao cliente, se for o caso. |
 
 > **Estorno:** o cancelamento **não devolve o dinheiro sozinho**. Faça o estorno no site do gateway (Mercado Pago ou Cielo).
 >
 > **Pagamento depois do cancelamento:** se o comprador pagar um pedido que a loja cancelou, o pedido vai para **Em análise**, para a loja decidir entre aprovar e cancelar (estornando).
+
+**Devoluções**
+1. Abra o pedido **entregue** ou **retirado**, inclusive vendas de balcão, e clique em **Registrar devolução**. A tela mostra há quantos dias foi a entrega ou retirada (lembrete: 7 dias de arrependimento para compra fora da loja).
+2. Informe **quantas unidades de cada peça** voltaram. Pode ser só parte do pedido e pode haver várias devoluções, nunca acima do que foi vendido.
+3. Para cada peça, escolha se **volta ao estoque**. Peça **avariada** não volta: fica só registrada.
+4. Escolha o **motivo**: defeito/garantia, peça errada, arrependimento ou outro.
+5. Se a loja devolveu dinheiro, informe o **valor do reembolso** e a forma. O valor das peças aparece como sugestão. **Isso só registra:** o estorno é feito no gateway (Mercado Pago ou Cielo) ou no caixa.
+6. Clique em **Registrar devolução**.
+
+As peças que voltam ao estoque ficam disponíveis de novo na hora. Quando **todas** as peças voltam, o pedido fica **Devolvido** e o comprador vê isso na página do pedido. O detalhe mostra a lista de devoluções e o histórico registra cada uma.
+
+> Depois de uma devolução, o pedido **não pode mais ser cancelado**, nem mesmo a venda de balcão. Use novas devoluções.
 
 Se duas pessoas tentarem a mesma ação ao mesmo tempo, só a primeira vale. A outra recebe uma mensagem e vê o pedido atualizado.
 
@@ -338,8 +352,8 @@ Itens previstos que **ainda não estão no sistema**:
 - Compatibilidade com veículos e fotos pela planilha de importação; atualização em massa de peças já cadastradas.
 - Importação dos anúncios existentes do Mercado Livre.
 - Envio automático da rastreabilidade ao banco de dados do Detran; rastreabilidade pela planilha de importação.
-- Estorno automático e aviso por e-mail ao comprador.
-- Devolução depois de entregue ou retirado (inclusive no balcão), com opção de não voltar peça avariada ao estoque.
+- Aviso por e-mail ao comprador.
+- NF-e de devolução e estorno automático do reembolso.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
 
@@ -351,3 +365,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 11/10/2026 | Venda de balcão (RF18): nova seção 4.5; origem Balcão, busca por CNPJ e cancelamento da venda de balcão em Pedidos. |
 | 11/10/2026 | Importação de peças por planilha (RF11), na seção 4.3 Peças. |
 | 11/10/2026 | Veículos doadores, rastreabilidade e modo desmontadora (RF10): seção 4.3.1 e perfis. |
+| 12/10/2026 | Devoluções (RF20): situação Devolvido e passo a passo em 4.4 Pedidos. |

@@ -137,6 +137,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA1: cancelar pedido pago ou registrar devolução devolve as quantidades ao estoque e gera evento (republica/despausa nos canais).
 - CA2: devolução de peça usada permite marcar "não retorna ao estoque" (avaria).
 - CA3: cancelamento de NF-e respeita o prazo legal; fora dele, orienta NF-e de devolução.
+- Decisões (Q35) — parte A, sem NF-e: devolução de pedido **entregue ou retirado** (inclusive balcão), **parcial** por peça e quantidade, podendo haver várias, nunca acima do vendido; cada peça marca se **volta ao estoque** ou é **avariada** (só registrada); motivo (arrependimento, defeito/garantia, peça errada, outro); **reembolso só registrado** (valor e forma — o estorno é feito no gateway ou no caixa); sem prazo travado (a tela mostra há quantos dias foi entregue); pedido fica **Devolvido** quando tudo volta (parcial só no histórico); pedido com devolução não pode mais ser cancelado. A NF-e de devolução (CA3) fica para o RF19.
 
 ## 5. Integrações com canais
 
@@ -298,6 +299,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q32 | Como é a venda de balcão: em que situação nasce, o preço pode mudar, que dados do cliente? | Vira pedido de origem "Balcão" já pago e retirado (baixa na hora); a loja pode cancelar com motivo para corrigir lançamento errado (peças voltam ao estoque). Preço ajustável por item (desconto negociado, registrado no histórico). Cliente opcional: nome, CPF ou CNPJ (validado) e telefone; sem nome, "Consumidor final". | RF18, RF17 |
 | Q33 | Como funciona a importação de peças por planilha? | XLSX e CSV; prévia com relatório de erros e confirmação antes de importar as linhas válidas; código já cadastrado é pulado e avisado (não atualiza a peça); sem compatibilidade com veículos nesta etapa; peças entram como rascunho. | RF11 |
 | Q34 | Como organizar a rastreabilidade da peça usada (RF10)? | Cadastro de veículo doador ligado às peças; placa e chassi completos, só no painel; modo desmontadora desligado por padrão (a loja liga); etiqueta e campos extras na peça. | RF10 |
+| Q35 | Como registrar devoluções (RF20)? | Parcial por peça e quantidade; avariada não volta ao estoque; 'Devolvido' só quando tudo volta; reembolso apenas registrado; sem trava de prazo, mostrando os dias desde a entrega. | RF20 |
 
 ## Fontes
 
