@@ -19,4 +19,10 @@ internal static class JsonColumn
                     (a, b) => JsonSerializer.Serialize(a, Json) == JsonSerializer.Serialize(b, Json),
                     v => JsonSerializer.Serialize(v, Json).GetHashCode(StringComparison.Ordinal),
                     v => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(v, Json), Json)!));
+
+    /// <summary>Record imutável opcional em jsonb (nulo = coluna nula); a igualdade do record basta para o rastreamento.</summary>
+    public static PropertyBuilder<T?> AsOptionalJson<T>(this PropertyBuilder<T?> property) where T : class =>
+        property.HasColumnType("jsonb").HasConversion(
+            v => JsonSerializer.Serialize(v, Json),
+            v => JsonSerializer.Deserialize<T>(v, Json));
 }

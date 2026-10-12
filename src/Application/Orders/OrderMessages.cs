@@ -10,10 +10,11 @@ public sealed record PlaceOrderLine(Guid PartId, string InternalCode, string Tit
 
 /// <summary>
 /// Cria o pedido aguardando pagamento e reserva todas as peças na mesma transação — ou todas, ou nenhuma.
-/// Sem <paramref name="Shipping"/>, é retirada em <paramref name="PickupAddress"/>.
+/// Sem <paramref name="Shipping"/>, é retirada em <paramref name="PickupAddress"/>. <paramref name="AccessToken"/> (o token cru
+/// do link do pedido) só segue para o e-mail de pedido recebido (RF16); o pedido guarda o hash.
 /// </summary>
 public sealed record PlaceOrder(byte[] AccessTokenHash, BuyerDetails Buyer, DeliveryAddress? Address, ShippingChoice? Shipping,
-    string? PickupAddress, IReadOnlyList<PlaceOrderLine> Lines);
+    string? PickupAddress, IReadOnlyList<PlaceOrderLine> Lines, string? AccessToken = null);
 
 public enum PlaceOrderOutcome
 {

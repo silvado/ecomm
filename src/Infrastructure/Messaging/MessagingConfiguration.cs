@@ -1,5 +1,7 @@
 using JasperFx;
+using Ecommerce.Application.Email;
 using Ecommerce.Application.Integrations;
+using Ecommerce.Infrastructure.Email;
 using Ecommerce.Application.Shipping;
 using Ecommerce.Infrastructure.Integrations;
 using Npgsql;
@@ -41,6 +43,8 @@ public static class MessagingConfiguration
         opts.CodeGeneration.AlwaysUseServiceLocationFor<TenantDbContext>();
         opts.CodeGeneration.AlwaysUseServiceLocationFor<IPaymentGatewayResolver>(); // depende do tenant e do cofre
         opts.CodeGeneration.AlwaysUseServiceLocationFor<IIntegrationLog>(); // grava na loja do escopo
+        opts.CodeGeneration.AlwaysUseServiceLocationFor<IEmailSender>(); // servidor e cofre da loja do escopo
+        opts.CodeGeneration.AlwaysUseServiceLocationFor<EmailBranding>();
 
         opts.Policies.AddMiddleware(typeof(TenantMessageMiddleware));
         opts.Policies.UseDurableLocalQueues();
@@ -54,6 +58,7 @@ public static class MessagingConfiguration
             .Or<TimeoutException>()
             .Or<PaymentGatewayException>()
             .Or<ShippingProviderException>()
+            .Or<EmailDeliveryException>()
             .Or<NpgsqlException>(e => e.IsTransient, "PostgreSQL transitório")
             .ScheduleRetry(retryDelays ?? DefaultRetryDelays).WithBoundedJitter(0.2)
             .Then.CustomAction(MessageFailures.RecordAndDeadLetterAsync, "registrar a falha para a loja");

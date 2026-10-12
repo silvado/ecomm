@@ -1,3 +1,4 @@
+using Ecommerce.Application.Email;
 using Ecommerce.Application.Inventory;
 using Ecommerce.Application.Orders;
 using Ecommerce.Domain.Inventory;
@@ -72,6 +73,7 @@ public static class OrderHandler
         db.CustomerOrders.Add(order);
         db.OrderHistory.Add(new OrderHistoryEntry(tenantId, order.Id, null, order.Status, OrderActor.Buyer, null, null, now));
         outgoing.Schedule(new ExpireOrder(order.Id), deadline);
+        outgoing.Add(new NotifyBuyer(order.Id, OrderEmail.Placed, command.AccessToken));
         return (new PlaceOrderResult(PlaceOrderOutcome.Placed, order.Number, order.Total, order.PaymentDeadline, null), outgoing);
     }
 
@@ -102,6 +104,7 @@ public static class OrderHandler
         var reservations = await db.OrderItems.Where(i => i.OrderId == command.OrderId).Select(i => i.ReservationId).ToListAsync(ct);
         foreach (var reservation in reservations)
             outgoing.AddRange(await StockHandler.EndReservationAsync(db, reservation, ReservationStatus.Expired, expiredBefore: now, ct));
+        outgoing.Add(new NotifyBuyer(command.OrderId, OrderEmail.Canceled));
         return outgoing;
     }
 }

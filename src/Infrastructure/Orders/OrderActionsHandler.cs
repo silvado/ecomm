@@ -1,3 +1,4 @@
+using Ecommerce.Application.Email;
 using Ecommerce.Application.Orders;
 using Ecommerce.Domain.Orders;
 using Ecommerce.Infrastructure.Persistence;
@@ -36,17 +37,20 @@ public static class OrderActionsHandler
                     outgoing.AddRange(events);
                     note = order.ReviewReason;
                     order.ApproveReview(now);
+                    outgoing.Add(new NotifyBuyer(order.Id, OrderEmail.Paid));
                     break;
 
                 case OrderAction.Cancel:
                     order.CancelByStore(command.Note ?? string.Empty, now);
                     outgoing.AddRange(await OrderStock.ReturnAllAsync(db, order, command.UserId, now, ct));
                     note = order.CancelReason;
+                    outgoing.Add(new NotifyBuyer(order.Id, OrderEmail.Canceled));
                     break;
 
                 case OrderAction.Ship:
                     order.MarkShipped(command.TrackingCode, now);
                     note = order.TrackingCode is { } code ? $"Rastreio: {code}" : null;
+                    outgoing.Add(new NotifyBuyer(order.Id, OrderEmail.Shipped));
                     break;
 
                 case OrderAction.Deliver:

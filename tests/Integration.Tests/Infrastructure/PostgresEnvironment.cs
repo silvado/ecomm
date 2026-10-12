@@ -54,6 +54,7 @@ public sealed class PostgresEnvironment : IAsyncDisposable
         ["Vault:MasterKeys:v1"] = MasterKeyV1,
         ["Platform:Domain"] = "plataforma.test",
         ["Storage:Provider"] = "memory",
+        ["Email:Platform:Provider"] = "memory",
         ["Shipping:UseFakeProvider"] = "true",
         ["Payments:UseFakeGateway"] = "true",
     };

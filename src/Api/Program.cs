@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Ecommerce.Api.Auth;
+using Ecommerce.Api.Customers;
 using Ecommerce.Api.Diagnostics;
 using Ecommerce.Api.Internal;
 using Ecommerce.Api.Panel;
@@ -62,6 +63,15 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy("webhook", http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
+    // Área do cliente (RF16): pedir link (pode virar e-mail) e abrir sessão (adivinhar link). HIPÓTESE: 10 por minuto por IP,
+    // além do limite de links por e-mail.
+    o.AddPolicy(CustomerEndpoints.RateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+    // Teste de e-mail no painel: envio imediato por usuário (HIPÓTESE: 5 por minuto).
+    o.AddPolicy(EmailEndpoints.EmailTestRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1) }));
     o.AddPolicy(AuthEndpoints.LoginRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
@@ -148,6 +158,7 @@ store.MapPost("/pedidos", async Task<Results<Created<PlacedOrder>, ProblemHttpRe
     };
 }).RequireRateLimiting("pedido");
 store.MapStorePayment();
+store.MapCustomerArea();
 // Acompanhamento pelo link do comprador. Token no corpo (não na URL) para não ir parar em logs de acesso.
 store.MapPost("/pedidos/consulta", async Task<Results<Ok<StoreOrderView>, NotFound>> (OrderLookupRequest request, IStorefrontCheckout checkout, HttpResponse response, CancellationToken ct) =>
 {

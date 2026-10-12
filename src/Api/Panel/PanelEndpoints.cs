@@ -34,6 +34,7 @@ public static class PanelEndpoints
         panel.MapCompatibilityEndpoints();
         panel.MapOrderEndpoints();
         panel.MapPaymentSettings();
+        panel.MapEmailSettings();
         panel.MapGroup("").RequirePermission(Permission.CatalogManage).MapVehicleCatalog();
 
         var users = panel.MapGroup("/usuarios").RequirePermission(Permission.UsersManage);
