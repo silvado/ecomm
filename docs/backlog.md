@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **974** |
 
-Progresso: 306 h de 974 h em tarefas concluídas (31%).
+Progresso: 336 h de 974 h em tarefas concluídas (34%).
 
 Referência: 6 h produtivas/dia ≈ 162 dias úteis ≈ 7,7 meses de uma pessoa.
 
@@ -58,13 +58,13 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 - [x] Página de loja indisponível — 2 h
 - [x] Testes de resolução — 3 h
 
-#### Observabilidade básica — 10 h  `RNF06` · **em andamento**
+#### Observabilidade básica — 10 h  `RNF06` · **concluído**
 
 **Critérios de aceite:** Logs JSON com tenant_id e correlation_id e redação de campos sensíveis; /health/live e /health/ready; métricas de fila expostas.
 
-- [ ] Serilog estruturado com redação — 4 h
+- [x] Serilog estruturado com redação — 4 h
 - [x] Health checks — 2 h
-- [ ] Métricas OpenTelemetry da fila — 4 h
+- [x] Métricas OpenTelemetry da fila — 4 h
 
 #### Cofre de segredos por tenant — 17 h  `RF06` · **em andamento**
 
@@ -141,16 +141,16 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 
 - [x] Evento StockChanged pelo outbox — 4 h
 - [ ] Inbox de eventos externos com chave única — 6 h
-- [ ] Política de retentativa, fila de falhas e alerta — 4 h
-- [ ] Tela de eventos em falha com reprocessamento — 6 h
+- [x] Política de retentativa, fila de falhas e alerta — 4 h
+- [x] Tela de eventos em falha com reprocessamento — 6 h
 
-#### Log de integração consultável — 12 h  `RF29`
+#### Log de integração consultável — 12 h  `RF29` · **concluído**
 
 **Critérios de aceite:** Toda chamada externa registrada sem segredos; consulta por peça e por pedido no painel; retenção de 90 dias.
 
-- [ ] Registro de log de integração — 4 h
-- [ ] Telas de consulta por peça e pedido — 6 h
-- [ ] Job de retenção — 2 h
+- [x] Registro de log de integração — 4 h
+- [x] Telas de consulta por peça e pedido — 6 h
+- [x] Job de retenção — 2 h
 
 ### Loja virtual — 120 h
 
