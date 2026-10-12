@@ -4,6 +4,8 @@ import { Shell } from './layout/shell';
 import { ChangePasswordPage } from './pages/change-password/change-password';
 import { ChooseStorePage } from './pages/choose-store/choose-store';
 import { CounterPage } from './pages/counter/counter';
+import { DonorFormPage } from './pages/donors/donor-form';
+import { DonorsListPage } from './pages/donors/donors-list';
 import { HomePage } from './pages/home/home';
 import { LoginPage } from './pages/login/login';
 import { OrdersPage } from './pages/orders/orders';
@@ -33,6 +35,9 @@ export const routes: Routes = [
       { path: 'pecas/importar', component: PartImportPage, canActivate: [permissionGuard('catalogManage')], title: 'Importar peças' },
       { path: 'pecas/nova', component: PartFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Nova peça' },
       { path: 'pecas/:id', component: PartFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Peça' },
+      { path: 'doadores', component: DonorsListPage, canActivate: [permissionGuard('catalogManage')], title: 'Veículos doadores' },
+      { path: 'doadores/novo', component: DonorFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Novo veículo doador' },
+      { path: 'doadores/:id', component: DonorFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Veículo doador' },
       { path: 'pedidos', component: OrdersPage, canActivate: [permissionGuard('ordersManage')], title: 'Pedidos' },
       { path: 'balcao', component: CounterPage, canActivate: [permissionGuard('ordersManage')], title: 'Venda de balcão' },
       { path: 'pagamentos', component: PaymentsPage, canActivate: [permissionGuard('vaultManage')], title: 'Pagamentos' },

@@ -23,6 +23,106 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "unaccent");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Ecommerce.Domain.Catalog.DonorVehicle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("brand");
+
+                    b.Property<string>("Chassis")
+                        .HasMaxLength(17)
+                        .HasColumnType("character varying(17)")
+                        .HasColumnName("chassis");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("color");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DeregistrationCertificate")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("deregistration_certificate");
+
+                    b.Property<DateOnly?>("EntryDate")
+                        .HasColumnType("date")
+                        .HasColumnName("entry_date");
+
+                    b.Property<string>("EntryInvoiceKey")
+                        .HasMaxLength(44)
+                        .HasColumnType("character varying(44)")
+                        .HasColumnName("entry_invoice_key");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("model");
+
+                    b.Property<int?>("ModelYear")
+                        .HasColumnType("integer")
+                        .HasColumnName("model_year");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("Plate")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("plate");
+
+                    b.Property<string>("Renavam")
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("renavam");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_donor_vehicles");
+
+                    b.HasIndex("TenantId", "Chassis")
+                        .IsUnique()
+                        .HasDatabaseName("ix_donor_vehicles_tenant_id_chassis")
+                        .HasFilter("chassis IS NOT NULL");
+
+                    b.HasIndex("TenantId", "CreatedAt")
+                        .HasDatabaseName("ix_donor_vehicles_tenant_id_created_at");
+
+                    b.HasIndex("TenantId", "Plate")
+                        .IsUnique()
+                        .HasDatabaseName("ix_donor_vehicles_tenant_id_plate")
+                        .HasFilter("plate IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Renavam")
+                        .IsUnique()
+                        .HasDatabaseName("ix_donor_vehicles_tenant_id_renavam")
+                        .HasFilter("renavam IS NOT NULL");
+
+                    b.ToTable("donor_vehicles", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_donor_vehicles_identified", "plate IS NOT NULL OR chassis IS NOT NULL");
+                        });
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Catalog.Part", b =>
                 {
                     b.Property<Guid>("Id")
@@ -40,11 +140,22 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("CustomFields")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("custom_fields")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(5000)
                         .HasColumnType("character varying(5000)")
                         .HasColumnName("description");
+
+                    b.Property<Guid?>("DonorVehicleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("donor_vehicle_id");
 
                     b.Property<int?>("HeightCm")
                         .HasColumnType("integer")
@@ -81,6 +192,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(120)")
                         .HasColumnName("title");
 
+                    b.Property<string>("TraceabilityTag")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("traceability_tag");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -96,9 +212,17 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_parts");
 
+                    b.HasIndex("DonorVehicleId")
+                        .HasDatabaseName("ix_parts_donor_vehicle_id");
+
                     b.HasIndex("TenantId", "InternalCode")
                         .IsUnique()
                         .HasDatabaseName("ix_parts_tenant_id_internal_code");
+
+                    b.HasIndex("TenantId", "TraceabilityTag")
+                        .IsUnique()
+                        .HasDatabaseName("ix_parts_tenant_id_traceability_tag")
+                        .HasFilter("traceability_tag IS NOT NULL");
 
                     b.HasIndex("TenantId", "Status", "UpdatedAt")
                         .HasDatabaseName("ix_parts_tenant_id_status_updated_at");
@@ -184,8 +308,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Errors")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
-                        .HasColumnName("errors");
+                        .HasColumnName("errors")
+                        .HasDefaultValueSql("'[]'::jsonb");
 
                     b.Property<int>("ExistingCodesAtPreview")
                         .HasColumnType("integer")
@@ -211,13 +337,17 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Rows")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
-                        .HasColumnName("rows");
+                        .HasColumnName("rows")
+                        .HasDefaultValueSql("'[]'::jsonb");
 
                     b.Property<string>("Skipped")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
-                        .HasColumnName("skipped");
+                        .HasColumnName("skipped")
+                        .HasDefaultValueSql("'[]'::jsonb");
 
                     b.Property<DateTimeOffset?>("StartedAt")
                         .HasColumnType("timestamp with time zone")
@@ -470,6 +600,12 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
+                    b.Property<bool>("DismantlerMode")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("dismantler_mode");
+
                     b.Property<bool>("HideOutOfStock")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -495,6 +631,13 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.Property<int>("ReservationMinutes")
                         .HasColumnType("integer")
                         .HasColumnName("reservation_minutes");
+
+                    b.Property<string>("TraceabilityFields")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("traceability_fields")
+                        .HasDefaultValueSql("'[]'::jsonb");
 
                     b.HasKey("TenantId")
                         .HasName("pk_store_settings");
@@ -1232,6 +1375,15 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_vehicle_versions_years", "year_to IS NULL OR year_to >= year_from");
                         });
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Catalog.Part", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Catalog.DonorVehicle", null)
+                        .WithMany()
+                        .HasForeignKey("DonorVehicleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_parts_donor_vehicles_donor_vehicle_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Catalog.PartCompatibility", b =>

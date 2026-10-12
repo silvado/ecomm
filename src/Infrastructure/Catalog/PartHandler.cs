@@ -96,7 +96,11 @@ public static class PartHandler
         {
             switch (command.Status)
             {
-                case PartStatus.Active: part.Activate(clock.GetUtcNow()); break;
+                case PartStatus.Active:
+                    // RF10 CA2: no modo desmontadora, peça usada só vai à venda com a origem completa.
+                    if (await MissingForSaleAsync(db, part, part.DonorVehicleId, ct) is { Count: > 0 } missing) return Invalid(Traceability.Message(missing));
+                    part.Activate(clock.GetUtcNow());
+                    break;
                 case PartStatus.Inactive: part.Deactivate(clock.GetUtcNow()); break;
                 default: return Invalid("Uma peça não volta para rascunho.");
             }
@@ -106,6 +110,51 @@ public static class PartHandler
             return Invalid(e.Message);
         }
         return PartCommandResult.Ok(part.Id);
+    }
+
+    public const string TraceabilityTagIndex = "ix_parts_tenant_id_traceability_tag";
+    public const string TagTakenMessage = "Esta etiqueta de rastreabilidade já está em outra peça da loja.";
+
+    /// <summary>
+    /// Origem da peça (RF10). O veículo precisa ser da loja (o filtro e o RLS escondem os das outras) e os campos, os que a
+    /// loja configurou. Peça à venda no modo desmontadora não pode ficar sem o que a lei exige.
+    /// </summary>
+    public static async Task<PartCommandResult> Handle(SetPartTraceability command, TenantDbContext db, TimeProvider clock, CancellationToken ct)
+    {
+        var part = await db.Parts.SingleOrDefaultAsync(p => p.Id == command.PartId, ct);
+        if (part is null) return PartCommandResult.Fail(PartCommandOutcome.NotFound);
+        if (command.DonorVehicleId is { } donorId && !await db.DonorVehicles.AnyAsync(d => d.Id == donorId, ct))
+            return Invalid("Veículo doador não encontrado.");
+
+        var settings = await db.StoreSettings.AsNoTracking().SingleOrDefaultAsync(ct);
+        var keys = (settings?.TraceabilityFields ?? []).Select(f => f.Key).ToHashSet(StringComparer.Ordinal);
+        if (command.CustomFields?.Keys.FirstOrDefault(k => !keys.Contains(k)) is { } unknown)
+            return Invalid($"Campo de rastreabilidade desconhecido: {unknown}. Atualize a página.");
+
+        try { part.SetTraceability(command.DonorVehicleId, command.Tag, command.CustomFields, clock.GetUtcNow()); }
+        catch (ArgumentException e) { return Invalid(Message(e)); }
+
+        // As conferências abaixo olham a peça já alterada; recusada, a alteração é descartada (a transação do Wolverine
+        // salvaria o que ficou rastreado).
+        if (part.TraceabilityTag is { } tag && await db.Parts.AnyAsync(p => p.TraceabilityTag == tag && p.Id != part.Id, ct))
+            return Discard(db, PartCommandResult.Fail(PartCommandOutcome.CodeTaken, TagTakenMessage));
+        if (part.Status == PartStatus.Active && await MissingForSaleAsync(db, part, part.DonorVehicleId, ct) is { Count: > 0 } missing)
+            return Discard(db, Invalid($"{Traceability.Message(missing)} Para tirar esses dados, inative a peça antes."));
+        return PartCommandResult.Ok(part.Id);
+    }
+
+    private static PartCommandResult Discard(TenantDbContext db, PartCommandResult result)
+    {
+        db.ChangeTracker.Clear();
+        return result;
+    }
+
+    private static async Task<IReadOnlyList<string>> MissingForSaleAsync(TenantDbContext db, Part part, Guid? donorId, CancellationToken ct)
+    {
+        var settings = await db.StoreSettings.AsNoTracking().SingleOrDefaultAsync(ct);
+        if (settings is not { DismantlerMode: true }) return [];
+        var donor = donorId is { } id ? await db.DonorVehicles.AsNoTracking().SingleOrDefaultAsync(d => d.Id == id, ct) : null;
+        return Traceability.MissingForSale(true, settings.TraceabilityFields, part, donor);
     }
 
     public const string CodeTakenMessage = "Já existe uma peça com este código interno.";

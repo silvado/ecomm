@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **974** |
 
-Progresso: 290 h de 974 h em tarefas concluídas (30%).
+Progresso: 300 h de 974 h em tarefas concluídas (31%).
 
 Referência: 6 h produtivas/dia ≈ 162 dias úteis ≈ 7,7 meses de uma pessoa.
 
@@ -110,12 +110,12 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 - [x] Seleção de compatibilidades no formulário — 8 h
 - [x] Filtro de busca por veículo — 4 h
 
-#### Rastreabilidade de peça usada — 10 h  `RF10`
+#### Rastreabilidade de peça usada — 10 h  `RF10` · **concluído**
 
 **Critérios de aceite:** Campos de origem e NF de entrada; campos extras configuráveis; modo desmontagem torna-os obrigatórios para publicar; dados do doador nunca expostos na loja ou canais.
 
-- [ ] Modelo e regras de rastreabilidade — 6 h
-- [ ] Telas e configuração de campos extras — 4 h
+- [x] Modelo e regras de rastreabilidade — 6 h
+- [x] Telas e configuração de campos extras — 4 h
 
 #### Importação de peças por planilha — 18 h  `RF11` · **concluído**
 

@@ -18,13 +18,17 @@ public sealed record PartSummary(
     Guid Id, string InternalCode, string Title, PartCondition Condition, decimal Price, PartStatus Status,
     StockView Stock, bool HasShippingDimensions, DateTimeOffset UpdatedAt, Guid? CoverPhotoId);
 
+/// <summary>Origem da peça (RF10) — só no painel. <see cref="MissingForSale"/>: o que o modo desmontadora ainda exige.</summary>
+public sealed record PartTraceabilityView(
+    Guid? DonorVehicleId, string? DonorVehicleLabel, string? Tag, IReadOnlyDictionary<string, string> CustomFields, IReadOnlyList<string> MissingForSale);
+
 public sealed record PartView(
     Guid Id, string InternalCode, string Title, string Description, PartCondition Condition, decimal Price,
     int? LengthCm, int? WidthCm, int? HeightCm, int? WeightG, IReadOnlyList<string> OemCodes,
     PartStatus Status, StockView Stock, bool HasShippingDimensions, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt,
-    IReadOnlyList<PhotoView> Photos, IReadOnlyList<CompatibilityView> Compatibilities);
+    IReadOnlyList<PhotoView> Photos, IReadOnlyList<CompatibilityView> Compatibilities, PartTraceabilityView Traceability);
 
-/// <param name="Search">Trecho do título ou do código interno, ou um código OEM (com ou sem espaços e hífens).</param>
+/// <param name="Search">Trecho do título ou do código interno, um código OEM (com ou sem espaços e hífens) ou a etiqueta de rastreabilidade.</param>
 public sealed record PartSearch(string? Search, PartStatus? Status, int Page = 1, int PageSize = 25, VehicleFilter? Vehicle = null)
 {
     public const int MaxPageSize = 100;

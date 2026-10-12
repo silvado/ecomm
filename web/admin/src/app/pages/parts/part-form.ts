@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { problemTitle } from '../../core/auth';
 import { CONDITION_LABELS, parseOemCodes, PartCondition, PartRequest, PartsApi, PartView, STATUS_LABELS } from './parts.api';
 import { Compatibilities } from './compatibilities';
+import { PartTraceability } from './part-traceability';
 import { PhotoThumb } from './photo-thumb';
 
 /** Mesmos limites do domínio (Part). */
@@ -16,7 +17,7 @@ const LIMITS = { code: 60, title: 120, description: 5000, dimensionCm: 1000, wei
 
 @Component({
   selector: 'app-part-form',
-  imports: [ReactiveFormsModule, RouterLink, PhotoThumb, Compatibilities],
+  imports: [ReactiveFormsModule, RouterLink, PhotoThumb, Compatibilities, PartTraceability],
   template: `
     <main class="card">
       <p><a routerLink="/pecas">← Peças</a></p>
@@ -71,6 +72,8 @@ const LIMITS = { code: 60, title: 120, description: 5000, dimensionCm: 1000, wei
         </section>
 
         <app-compatibilities [partId]="p.id" [compatibilities]="p.compatibilities" (changed)="part.set($event)" />
+
+        <app-part-traceability [part]="p" (changed)="part.set($event)" />
       }
 
       <form [formGroup]="form" (ngSubmit)="save()">

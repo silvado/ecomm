@@ -26,6 +26,11 @@ internal sealed class PartConfiguration : IEntityTypeConfiguration<Part>
         builder.Navigation(p => p.Photos).HasField("_photos").UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.HasMany(p => p.Compatibilities).WithOne().HasForeignKey(c => c.PartId).OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(p => p.Compatibilities).UsePropertyAccessMode(PropertyAccessMode.Field);
+        // RF10: origem da peça (só no painel). Etiqueta única na loja; o veículo doador não some enquanto tiver peças.
+        builder.Property(p => p.TraceabilityTag).HasMaxLength(Part.TraceabilityTagMaxLength);
+        builder.HasIndex(p => new { p.TenantId, p.TraceabilityTag }).IsUnique().HasFilter("traceability_tag IS NOT NULL");
+        builder.HasOne<DonorVehicle>().WithMany().HasForeignKey(p => p.DonorVehicleId).OnDelete(DeleteBehavior.Restrict);
+        builder.Property(p => p.CustomFields).AsJson("'{}'::jsonb");
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("ck_parts_price_positive", "price > 0");

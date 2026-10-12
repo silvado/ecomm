@@ -97,6 +97,40 @@ public sealed class Part : ITenantOwned
 
     public IReadOnlyCollection<PartCompatibility> Compatibilities => _compatibilities;
 
+    public const int TraceabilityTagMaxLength = 40;
+    public const int CustomFieldMaxLength = 200;
+
+    /// <summary>Veículo de onde a peça saiu (RF10). Dado interno: nunca vai para a vitrine nem para os canais.</summary>
+    public Guid? DonorVehicleId { get; private set; }
+
+    /// <summary>Número da etiqueta de rastreabilidade (Lei 12.977 / CONTRAN 611), único na loja.</summary>
+    public string? TraceabilityTag { get; private set; }
+
+    /// <summary>Campos extras de rastreabilidade que a loja configurou (chave do campo → valor).</summary>
+    public Dictionary<string, string> CustomFields { get; private set; } = [];
+
+    /// <summary>
+    /// Origem da peça (RF10). O chamador confere que o veículo é da mesma loja e que as chaves são de campos configurados;
+    /// aqui só normaliza (etiqueta maiúscula sem espaços nas pontas, campos vazios descartados).
+    /// </summary>
+    public void SetTraceability(Guid? donorVehicleId, string? tag, IReadOnlyDictionary<string, string?>? customFields, DateTimeOffset now)
+    {
+        var normalizedTag = string.IsNullOrWhiteSpace(tag) ? null : tag.Trim().ToUpperInvariant();
+        if (normalizedTag is { Length: > TraceabilityTagMaxLength } || (normalizedTag?.Any(char.IsControl) ?? false))
+            throw new ArgumentException($"Etiqueta de rastreabilidade com no máximo {TraceabilityTagMaxLength} caracteres.", nameof(tag));
+        var fields = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (key, value) in customFields ?? new Dictionary<string, string?>())
+        {
+            var text = value?.Trim() ?? string.Empty;
+            if (text.Length > CustomFieldMaxLength) throw new ArgumentException($"Campo de rastreabilidade com no máximo {CustomFieldMaxLength} caracteres.", nameof(customFields));
+            if (text.Length > 0) fields[key] = text;
+        }
+        DonorVehicleId = donorVehicleId;
+        TraceabilityTag = normalizedTag;
+        CustomFields = fields;
+        UpdatedAt = now;
+    }
+
     /// <summary>
     /// RF09 CA1. Anos opcionais restringem dentro da faixa da versão; a mesma versão com a mesma faixa não se repete.
     /// Versão descontinuada não recebe compatibilidades novas.

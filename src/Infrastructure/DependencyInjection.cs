@@ -89,6 +89,7 @@ public static class DependencyInjection
         services.AddScoped<IPaymentWebhook, PaymentWebhook>();
         services.AddScoped<IPartPhotos, PartPhotoService>();
         services.AddScoped<IPartImports, PartImportService>();
+        services.AddScoped<IDonorVehicles, DonorVehicleService>();
         services.AddScoped<VehicleImporter>();
         services.AddScoped<IVehicleCatalog, VehicleCatalog>();
         services.AddScoped<IPartCompatibilities, PartCompatibilityService>();

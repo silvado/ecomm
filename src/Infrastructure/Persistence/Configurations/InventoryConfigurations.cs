@@ -57,5 +57,7 @@ internal sealed class StoreSettingsConfiguration : IEntityTypeConfiguration<Stor
         builder.Property(s => s.OriginPostalCode).HasMaxLength(8);
         builder.Property(s => s.PickupEnabled).HasDefaultValue(false);
         builder.Property(s => s.PickupAddress).HasMaxLength(StoreSettings.PickupAddressMaxLength);
+        builder.Property(s => s.DismantlerMode).HasDefaultValue(false);
+        builder.Property(s => s.TraceabilityFields).AsJson("'[]'::jsonb");
     }
 }

@@ -21,8 +21,10 @@ public sealed class PartQueries(TenantDbContext db) : IPartQueries
             var text = search.Search.Trim();
             var like = CatalogFilters.Contains(text);
             var oem = CatalogFilters.OemOrEmpty(text);
+            var tag = text.ToUpperInvariant();
             parts = parts.Where(p => EF.Functions.ILike(p.Title, like, "\\")
                 || EF.Functions.ILike(p.InternalCode, like, "\\")
+                || p.TraceabilityTag == tag
                 || (oem != "" && p.OemCodes.Any(c => c.Code == oem)));
         }
 
@@ -57,6 +59,15 @@ public sealed class PartQueries(TenantDbContext db) : IPartQueries
         return new PartView(part.Id, part.InternalCode, part.Title, part.Description, part.Condition, part.Price,
             part.LengthCm, part.WidthCm, part.HeightCm, part.WeightG, part.OemCodes.Select(c => c.Code).Order().ToList(),
             part.Status, stock, part.HasShippingDimensions, part.CreatedAt, part.UpdatedAt,
-            part.Photos.Select(f => new PhotoView(f.Id, f.Position)).ToList(), compatibilities);
+            part.Photos.Select(f => new PhotoView(f.Id, f.Position)).ToList(), compatibilities, await TraceabilityAsync(part, ct));
+    }
+
+    /// <summary>Origem da peça e o que o modo desmontadora ainda exige para ela ir à venda (RF10).</summary>
+    private async Task<PartTraceabilityView> TraceabilityAsync(Part part, CancellationToken ct)
+    {
+        var donor = part.DonorVehicleId is { } donorId ? await db.DonorVehicles.AsNoTracking().SingleOrDefaultAsync(d => d.Id == donorId, ct) : null;
+        var settings = await db.StoreSettings.AsNoTracking().SingleOrDefaultAsync(ct);
+        var missing = Traceability.MissingForSale(settings?.DismantlerMode ?? false, settings?.TraceabilityFields ?? [], part, donor);
+        return new PartTraceabilityView(part.DonorVehicleId, donor?.Label, part.TraceabilityTag, part.CustomFields, missing);
     }
 }

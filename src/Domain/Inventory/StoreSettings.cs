@@ -48,6 +48,18 @@ public sealed class StoreSettings : ITenantOwned
         PickupAddress = address;
     }
 
+    /// <summary>Empresa de desmontagem (Lei 12.977, RF10 CA2): rastreabilidade obrigatória para pôr peça usada à venda.</summary>
+    public bool DismantlerMode { get; private set; }
+
+    /// <summary>Campos extras de rastreabilidade das peças (RF10 CA1).</summary>
+    public List<Catalog.TraceabilityField> TraceabilityFields { get; private set; } = [];
+
+    public void ConfigureTraceability(bool dismantlerMode, IReadOnlyList<Catalog.TraceabilityField> fields)
+    {
+        TraceabilityFields = Catalog.Traceability.NormalizeFields(fields).ToList();
+        DismantlerMode = dismantlerMode;
+    }
+
     public void SetReservationMinutes(int minutes)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(minutes, 5);
