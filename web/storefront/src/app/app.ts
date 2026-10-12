@@ -30,6 +30,7 @@ import { StoreContext } from './store';
             </a>
             <nav>
               <a routerLink="/busca">Buscar peças</a>
+              <a routerLink="/meus-pedidos">Meus pedidos</a>
               <a routerLink="/carrinho" class="cart-link">Carrinho @if (cart.count()) { <span class="badge">{{ cart.count() }}</span> }</a>
             </nav>
           </header>
