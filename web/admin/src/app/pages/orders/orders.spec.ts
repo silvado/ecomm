@@ -25,7 +25,7 @@ describe('OrdersPage', () => {
     service: 'PAC',
     deliveryDays: 5,
     pickupAddress: null,
-    items: [{ partId: 'p1', internalCode: 'K-1', title: 'Farol', unitPrice: 120, quantity: 1 }],
+    items: [{ partId: 'p1', internalCode: 'K-1', title: 'Farol', unitPrice: 120, quantity: 1, returnedQuantity: 0 }],
     itemsTotal: 120,
     shippingTotal: 20,
     total: 140,
@@ -38,6 +38,8 @@ describe('OrdersPage', () => {
     shippedAt: null,
     deliveredAt: null,
     paymentMethod: null,
+    returnedAt: null,
+    returns: [],
     payments: [],
     history: [
       { at: '2026-10-11T12:00:00Z', from: null, to: 'pendingPayment', actor: 'buyer', userEmail: null, note: null },
@@ -86,8 +88,11 @@ describe('OrdersPage', () => {
     expect(availableActions('paid', 'pickup')).toEqual(['retirar', 'cancelar']);
     expect(availableActions('shipped', 'shipping')).toEqual(['entregar', 'cancelar']);
     expect(availableActions('pendingPayment', 'pickup')).toEqual(['cancelar']);
-    for (const s of ['delivered', 'pickedUp', 'canceled'] as const) expect(availableActions(s, 'shipping')).toEqual([]);
-    expect(availableActions('pickedUp', 'pickup', 'counter')).toEqual(['cancelar']);
+    expect(availableActions('delivered', 'shipping')).toEqual(['devolver']);
+    expect(availableActions('pickedUp', 'pickup')).toEqual(['devolver']);
+    for (const s of ['returned', 'canceled'] as const) expect(availableActions(s, 'shipping')).toEqual([]);
+    expect(availableActions('pickedUp', 'pickup', 'counter')).toEqual(['devolver', 'cancelar']);
+    expect(availableActions('pickedUp', 'pickup', 'counter', true)).toEqual(['devolver']);
     expect(availableActions('canceled', 'pickup', 'counter')).toEqual([]);
   });
 
