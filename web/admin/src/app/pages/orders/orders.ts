@@ -2,6 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { IntegrationLog } from '../integrations/integration-log';
 import { OrderReturnForm } from './order-return';
 import { problemTitle } from '../../core/auth';
 import {
@@ -42,7 +43,7 @@ const ACTION_LABELS: Record<OrderAction, string> = {
  */
 @Component({
   selector: 'app-orders',
-  imports: [FormsModule, RouterLink, CurrencyPipe, OrderReturnForm],
+  imports: [FormsModule, RouterLink, CurrencyPipe, OrderReturnForm, IntegrationLog],
   template: `
     <main class="card wide">
       <h1>Pedidos</h1>
@@ -239,6 +240,12 @@ const ACTION_LABELS: Record<OrderAction, string> = {
                 </li>
               }
             </ul>
+          }
+
+          @defer (on viewport) {
+            <app-integration-log [orderId]="o.id" />
+          } @placeholder {
+            <p class="muted">Integrações…</p>
           }
 
           <h3>Histórico</h3>

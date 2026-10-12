@@ -7,6 +7,7 @@ import { CounterPage } from './pages/counter/counter';
 import { DonorFormPage } from './pages/donors/donor-form';
 import { DonorsListPage } from './pages/donors/donors-list';
 import { HomePage } from './pages/home/home';
+import { IntegrationsPage } from './pages/integrations/integrations';
 import { LoginPage } from './pages/login/login';
 import { OrdersPage } from './pages/orders/orders';
 import { PartFormPage } from './pages/parts/part-form';
@@ -40,6 +41,7 @@ export const routes: Routes = [
       { path: 'doadores/:id', component: DonorFormPage, canActivate: [permissionGuard('catalogManage')], title: 'Veículo doador' },
       { path: 'pedidos', component: OrdersPage, canActivate: [permissionGuard('ordersManage')], title: 'Pedidos' },
       { path: 'balcao', component: CounterPage, canActivate: [permissionGuard('ordersManage')], title: 'Venda de balcão' },
+      { path: 'integracoes', component: IntegrationsPage, canActivate: [permissionGuard('ordersManage')], title: 'Integrações' },
       { path: 'pagamentos', component: PaymentsPage, canActivate: [permissionGuard('vaultManage')], title: 'Pagamentos' },
       { path: 'loja', component: StorePage, canActivate: [permissionGuard('storeManage')], title: 'Dados da loja' },
       { path: 'usuarios', component: UsersPage, canActivate: [permissionGuard('usersManage')], title: 'Usuários' },

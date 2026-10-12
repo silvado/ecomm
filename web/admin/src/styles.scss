@@ -483,3 +483,12 @@ ul.choices {
 .traceability {
   margin-bottom: 1.5rem;
 }
+
+
+/* Integrações (RF28) */
+.alert-bar {
+  margin: 0;
+  padding: 0.6rem 1.5rem;
+  background: var(--warn-bg);
+  border-bottom: 1px solid var(--border);
+}
