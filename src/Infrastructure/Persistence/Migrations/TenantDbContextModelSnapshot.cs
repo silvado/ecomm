@@ -750,6 +750,12 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("external_id");
 
+                    b.Property<bool>("HasReturns")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("has_returns");
+
                     b.Property<decimal>("ItemsTotal")
                         .HasPrecision(12, 2)
                         .HasColumnType("numeric(12,2)")
@@ -786,6 +792,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("PlacedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("placed_at");
+
+                    b.Property<DateTimeOffset?>("ReturnedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("returned_at");
 
                     b.Property<string>("ReviewReason")
                         .HasMaxLength(300)
@@ -1004,6 +1014,71 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.ToTable("order_items", null, t =>
                         {
                             t.HasCheckConstraint("ck_order_items_positive", "quantity > 0 AND unit_price > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Orders.OrderReturn", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<string>("Lines")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("lines")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("reason");
+
+                    b.Property<decimal?>("RefundAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("refund_amount");
+
+                    b.Property<string>("RefundMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("refund_method");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_order_returns");
+
+                    b.HasIndex("OrderId")
+                        .HasDatabaseName("ix_order_returns_order_id");
+
+                    b.HasIndex("TenantId", "OrderId", "At")
+                        .HasDatabaseName("ix_order_returns_tenant_id_order_id_at");
+
+                    b.ToTable("order_returns", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_order_returns_refund", "refund_amount IS NULL OR refund_amount >= 0");
                         });
                 });
 
@@ -1485,6 +1560,16 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_order_items_stock_reservations_reservation_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Orders.OrderReturn", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Orders.CustomerOrder", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_order_returns_customer_orders_order_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Payments.Payment", b =>

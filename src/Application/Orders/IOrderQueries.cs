@@ -7,7 +7,12 @@ public sealed record OrderSummary(
     Guid Id, long Number, OrderOrigin Origin, OrderStatus Status, DateTimeOffset PlacedAt, string BuyerName,
     DeliveryMethod DeliveryMethod, int ItemCount, decimal Total);
 
-public sealed record OrderItemView(Guid PartId, string InternalCode, string Title, decimal UnitPrice, int Quantity);
+/// <param name="ReturnedQuantity">Quanto desta peça já voltou em devoluções (RF20).</param>
+public sealed record OrderItemView(Guid PartId, string InternalCode, string Title, decimal UnitPrice, int Quantity, int ReturnedQuantity);
+
+/// <summary>Devolução registrada (RF20): peças, se voltaram ao estoque, motivo e reembolso informado.</summary>
+public sealed record OrderReturnView(DateTimeOffset At, ReturnReason Reason, string? Note, decimal? RefundAmount, RefundMethod? RefundMethod,
+    string? UserEmail, IReadOnlyList<OrderReturnLine> Lines);
 
 /// <summary>Na venda de balcão, e-mail, telefone e CPF podem vir vazios e o documento pode ser CNPJ.</summary>
 public sealed record OrderBuyerView(string Name, string Email, string Phone, string Cpf, string? Cnpj);
@@ -23,7 +28,7 @@ public sealed record OrderView(
     string? PickupAddress, IReadOnlyList<OrderItemView> Items, decimal ItemsTotal, decimal ShippingTotal, decimal Total,
     DateTimeOffset? CanceledAt, string? CancelReason, CancellationSource? CanceledBy, DateTimeOffset? PaidAt, string? ReviewReason,
     string? TrackingCode, DateTimeOffset? ShippedAt, DateTimeOffset? DeliveredAt, CounterPaymentMethod? PaymentMethod,
-    IReadOnlyList<OrderPaymentView> Payments, IReadOnlyList<OrderHistoryView> History);
+    IReadOnlyList<OrderPaymentView> Payments, IReadOnlyList<OrderHistoryView> History, DateTimeOffset? ReturnedAt, IReadOnlyList<OrderReturnView> Returns);
 
 /// <summary>
 /// Filtros do painel unificado (RF17 CA1). <paramref name="From"/>/<paramref name="To"/>: dias (inclusive) no fuso da loja

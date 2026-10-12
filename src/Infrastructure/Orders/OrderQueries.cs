@@ -62,7 +62,8 @@ public sealed class OrderQueries(TenantDbContext db, PlatformDbContext platform)
         var payments = await db.Payments.AsNoTracking().Where(p => p.OrderId == orderId).OrderBy(p => p.CreatedAt)
             .Select(p => new OrderPaymentView(p.Gateway, p.ExternalId, p.Status, p.Amount, p.Method, p.UpdatedAt)).ToListAsync(ct);
         var history = await db.OrderHistory.AsNoTracking().Where(h => h.OrderId == orderId).OrderBy(h => h.At).ThenBy(h => h.Id).ToListAsync(ct);
-        var userIds = history.Where(h => h.UserId is not null).Select(h => h.UserId!.Value).Distinct().ToList();
+        var returns = await db.OrderReturns.AsNoTracking().Where(r => r.OrderId == orderId).OrderBy(r => r.At).ToListAsync(ct);
+        var userIds = history.Where(h => h.UserId is not null).Select(h => h.UserId!.Value).Concat(returns.Select(r => r.UserId)).Distinct().ToList();
         var emails = userIds.Count == 0
             ? []
             : await platform.UserAccounts.AsNoTracking().Where(u => userIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.Email, ct);
@@ -70,11 +71,14 @@ public sealed class OrderQueries(TenantDbContext db, PlatformDbContext platform)
         return new OrderView(o.Id, o.Number, o.Origin, o.ExternalId, o.Status, o.PlacedAt, o.PaymentDeadline,
             new OrderBuyerView(o.BuyerName, o.BuyerEmail, o.BuyerPhone, o.BuyerCpf, o.BuyerCnpj), o.DeliveryMethod, o.Address,
             o.ShippingCarrier, o.ShippingService, o.ShippingDays, o.PickupAddress,
-            o.Items.OrderBy(i => i.Title).Select(i => new OrderItemView(i.PartId, i.InternalCode, i.Title, i.UnitPrice, i.Quantity)).ToList(),
+            o.Items.OrderBy(i => i.Title).Select(i => new OrderItemView(i.PartId, i.InternalCode, i.Title, i.UnitPrice, i.Quantity,
+                Domain.Orders.CustomerOrder.ReturnedQuantity(returns, i.PartId))).ToList(),
             o.ItemsTotal, o.ShippingTotal, o.Total, o.CanceledAt, o.CancelReason, o.CanceledBy, o.PaidAt, o.ReviewReason,
             o.TrackingCode, o.ShippedAt, o.DeliveredAt, o.PaymentMethod, payments,
             history.Select(h => new OrderHistoryView(h.At, h.FromStatus, h.ToStatus, h.Actor,
-                h.UserId is { } user ? emails.GetValueOrDefault(user) : null, h.Note)).ToList());
+                h.UserId is { } user ? emails.GetValueOrDefault(user) : null, h.Note)).ToList(),
+            o.ReturnedAt,
+            returns.Select(r => new OrderReturnView(r.At, r.Reason, r.Note, r.RefundAmount, r.RefundMethod, emails.GetValueOrDefault(r.UserId), r.Lines)).ToList());
     }
 
     public Task<Guid?> FindByAccessHashAsync(byte[] hash, CancellationToken ct = default) =>

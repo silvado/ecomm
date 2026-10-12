@@ -41,6 +41,8 @@ internal sealed class CustomerOrderConfiguration : IEntityTypeConfiguration<Cust
         builder.Property(o => o.ReviewReason).HasMaxLength(300);
         builder.Property(o => o.TrackingCode).HasMaxLength(CustomerOrder.TrackingCodeMaxLength);
         builder.Property(o => o.ExternalId).HasMaxLength(CustomerOrder.ExternalIdMaxLength);
+        builder.Property(o => o.HasReturns).HasDefaultValue(false);
+        builder.Ignore(o => o.AcceptsReturn);
         builder.Ignore(o => o.Address);
         builder.HasMany(o => o.Items).WithOne().HasForeignKey(i => i.OrderId).OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(o => o.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -94,6 +96,22 @@ internal sealed class OrderHistoryConfiguration : IEntityTypeConfiguration<Order
     }
 }
 
+internal sealed class OrderReturnConfiguration : IEntityTypeConfiguration<OrderReturn>
+{
+    public void Configure(EntityTypeBuilder<OrderReturn> builder)
+    {
+        builder.ToTable("order_returns", t => t.HasCheckConstraint("ck_order_returns_refund", "refund_amount IS NULL OR refund_amount >= 0"));
+        builder.HasKey(r => r.Id);
+        builder.Property(r => r.Id).ValueGeneratedNever();
+        builder.HasOne<CustomerOrder>().WithMany().HasForeignKey(r => r.OrderId).OnDelete(DeleteBehavior.Restrict);
+        builder.Property(r => r.Lines).AsJson("'[]'::jsonb");
+        builder.Property(r => r.Reason).HasConversion<string>().HasMaxLength(20);
+        builder.Property(r => r.RefundMethod).HasConversion<string>().HasMaxLength(20);
+        builder.Property(r => r.RefundAmount).HasPrecision(12, 2);
+        builder.Property(r => r.Note).HasMaxLength(OrderReturn.NoteMaxLength);
+        builder.HasIndex(r => new { r.TenantId, r.OrderId, r.At });
+    }
+}
 internal sealed class OrderCounterConfiguration : IEntityTypeConfiguration<OrderCounter>
 {
     public void Configure(EntityTypeBuilder<OrderCounter> builder) => builder.HasKey(c => c.TenantId);

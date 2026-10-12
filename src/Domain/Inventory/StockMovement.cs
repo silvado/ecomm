@@ -14,6 +14,8 @@ public enum StockMovementReason
     Adjustment,
     /// <summary>Pedido pago cancelado pela loja: a peça baixada volta ao estoque (RF17).</summary>
     OrderCanceled,
+    /// <summary>Peça devolvida pelo cliente que volta ao estoque (RF20).</summary>
+    OrderReturned,
 }
 
 /// <summary>Histórico de alterações do saldo físico (<see cref="Stock.OnHand"/>).</summary>

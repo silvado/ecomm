@@ -36,6 +36,8 @@ public enum OrderStatus
     Delivered,
     /// <summary>Retirado pelo comprador na loja.</summary>
     PickedUp,
+    /// <summary>Todas as peças voltaram (RF20); devolução parcial mantém a situação anterior.</summary>
+    Returned,
 }
 
 /// <summary>Quem cancelou: o prazo (sem pagamento) ou a loja. Pagamento que chega depois só reativa o cancelado pelo prazo.</summary>
@@ -358,8 +360,58 @@ public sealed class CustomerOrder : ITenantOwned
     /// pode ser cancelada para corrigir um lançamento errado (RF18); devolução de verdade é o RF20.
     /// </summary>
     public bool CanBeCanceledByStore =>
-        Status is OrderStatus.PendingPayment or OrderStatus.NeedsReview or OrderStatus.Paid or OrderStatus.Shipped
-        || (Origin == OrderOrigin.Counter && Status == OrderStatus.PickedUp);
+        !HasReturns
+        && (Status is OrderStatus.PendingPayment or OrderStatus.NeedsReview or OrderStatus.Paid or OrderStatus.Shipped
+            || (Origin == OrderOrigin.Counter && Status == OrderStatus.PickedUp));
+
+    /// <summary>Já teve devolução (RF20): não pode mais ser cancelado (as peças voltariam duas vezes).</summary>
+    public bool HasReturns { get; private set; }
+
+    public DateTimeOffset? ReturnedAt { get; private set; }
+
+    /// <summary>Entregue ou retirado (e não devolvido por inteiro): aceita devolução.</summary>
+    public bool AcceptsReturn => Status is OrderStatus.Delivered or OrderStatus.PickedUp;
+
+    /// <summary>
+    /// Devolução de peças (RF20, Q35): parcial ou total, nunca acima do que foi vendido menos o já devolvido. Quando tudo
+    /// volta, o pedido fica "Devolvido". Estoque: o chamador devolve as linhas com <see cref="OrderReturnLine.Restock"/>.
+    /// </summary>
+    public OrderReturn RegisterReturn(IReadOnlyList<ReturnRequestLine> request, IReadOnlyList<OrderReturn> previous, ReturnReason reason,
+        string? note, decimal? refundAmount, RefundMethod? refundMethod, Guid userId, DateTimeOffset now)
+    {
+        Require(AcceptsReturn, "não está entregue ou retirado");
+        if (request.Count == 0 || request.All(l => l.Quantity == 0)) throw new ArgumentException("Escolha as peças devolvidas.", nameof(request));
+        if (request.Select(l => l.PartId).Distinct().Count() != request.Count) throw new ArgumentException("Peça repetida na devolução.", nameof(request));
+        if (!Enum.IsDefined(reason)) throw new ArgumentException("Escolha o motivo da devolução.", nameof(reason));
+        if (refundMethod is { } method && !Enum.IsDefined(method)) throw new ArgumentException("Forma de reembolso inválida.", nameof(refundMethod));
+        if (refundAmount is { } amount && (amount < 0 || amount > Total || decimal.Round(amount, 2) != amount))
+            throw new ArgumentException($"Reembolso entre R$ 0,00 e o total do pedido, com até 2 casas decimais.", nameof(refundAmount));
+        var text = Collapse(note);
+        if (text.Length > OrderReturn.NoteMaxLength) throw new ArgumentException($"Observação com no máximo {OrderReturn.NoteMaxLength} caracteres.", nameof(note));
+
+        var lines = new List<OrderReturnLine>();
+        foreach (var line in request.Where(l => l.Quantity != 0))
+        {
+            var item = _items.SingleOrDefault(i => i.PartId == line.PartId) ?? throw new ArgumentException("Peça não está no pedido.", nameof(request));
+            var available = item.Quantity - ReturnedQuantity(previous, item.PartId);
+            if (line.Quantity < 0 || line.Quantity > available)
+                throw new ArgumentException($"{item.InternalCode}: só {available} unidade(s) podem ser devolvidas.", nameof(request));
+            lines.Add(new OrderReturnLine(item.PartId, item.InternalCode, item.Title, line.Quantity, line.Restock));
+        }
+
+        var registered = new OrderReturn(this, lines, reason, text.Length == 0 ? null : text, refundAmount, refundAmount is null ? null : refundMethod, userId, now);
+        HasReturns = true;
+        var all = previous.Append(registered).ToList();
+        if (_items.All(i => ReturnedQuantity(all, i.PartId) == i.Quantity))
+        {
+            Status = OrderStatus.Returned;
+            ReturnedAt = now;
+        }
+        return registered;
+    }
+
+    public static int ReturnedQuantity(IEnumerable<OrderReturn> returns, Guid partId) =>
+        returns.SelectMany(r => r.Lines).Where(l => l.PartId == partId).Sum(l => l.Quantity);
 
     /// <summary>Cancelamento pela loja, com motivo. Peças: o chamador libera as reservas ou devolve ao estoque o que foi baixado.</summary>
     public void CancelByStore(string reason, DateTimeOffset now)
