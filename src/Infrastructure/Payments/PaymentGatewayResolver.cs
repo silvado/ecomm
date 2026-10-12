@@ -1,8 +1,10 @@
 using System.Text;
+using Ecommerce.Application.Integrations;
 using Ecommerce.Application.Payments;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Application.Vault;
 using Ecommerce.Domain.Vault;
+using Ecommerce.Infrastructure.Integrations;
 using Microsoft.Extensions.Options;
 
 namespace Ecommerce.Infrastructure.Payments;
@@ -34,17 +36,21 @@ public static class PaymentAccounts
 /// senão nenhum (a loja não recebe pagamento online). Pelo nome (webhook), qualquer um conectado responde.
 /// </summary>
 public sealed class PaymentGatewayResolver(
-    ISecretVault vault, IHttpClientFactory httpClients, IOptions<PaymentOptions> options, ITenantContext tenant, TimeProvider clock) : IPaymentGatewayResolver
+    ISecretVault vault, IHttpClientFactory httpClients, IOptions<PaymentOptions> options, ITenantContext tenant, TimeProvider clock,
+    IIntegrationLog integrationLog) : IPaymentGatewayResolver
 {
     public const string HttpClientName = "pagamentos";
     public const string MercadoPagoAccessTokenName = "mercado-pago:access-token";
     public const string MercadoPagoWebhookSecretName = "mercado-pago:webhook-secret";
 
+    // Toda chamada ao gateway passa pelo log de integração (RF29).
     public async Task<IPaymentGateway?> ResolveAsync(CancellationToken ct = default) =>
-        await ActiveAsync(ct) is { } name ? await ConnectedAsync(name, ct) : Fake();
+        Logged(await ActiveAsync(ct) is { } name ? await ConnectedAsync(name, ct) : Fake());
 
     public async Task<IPaymentGateway?> ResolveAsync(string name, CancellationToken ct = default) =>
-        name == FakePaymentGateway.GatewayName ? Fake() : await ConnectedAsync(name, ct);
+        Logged(name == FakePaymentGateway.GatewayName ? Fake() : await ConnectedAsync(name, ct));
+
+    private LoggedPaymentGateway? Logged(IPaymentGateway? gateway) => gateway is null ? null : new LoggedPaymentGateway(gateway, integrationLog);
 
     /// <summary>O gateway conectado com credenciais salvas por último (só metadados; nada é decifrado).</summary>
     public async Task<string?> ActiveAsync(CancellationToken ct = default)

@@ -1,3 +1,4 @@
+using Ecommerce.Domain.Integrations;
 using System.Linq.Expressions;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Domain.Catalog;
@@ -38,6 +39,8 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<OrderCounter> OrderCounters => Set<OrderCounter>();
     public DbSet<OrderHistoryEntry> OrderHistory => Set<OrderHistoryEntry>();
     public DbSet<OrderReturn> OrderReturns => Set<OrderReturn>();
+    public DbSet<IntegrationLogEntry> IntegrationLogs => Set<IntegrationLogEntry>();
+    public DbSet<MessageFailure> MessageFailures => Set<MessageFailure>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<ExternalEvent> ExternalEvents => Set<ExternalEvent>();
     public DbSet<StoreSettings> StoreSettings => Set<StoreSettings>();

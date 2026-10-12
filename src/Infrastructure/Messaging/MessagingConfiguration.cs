@@ -1,6 +1,11 @@
 using JasperFx;
+using Ecommerce.Application.Integrations;
+using Ecommerce.Application.Shipping;
+using Ecommerce.Infrastructure.Integrations;
+using Npgsql;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
+using Wolverine.ErrorHandling;
 using Ecommerce.Application.Payments;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure.Persistence;
@@ -16,9 +21,15 @@ public static class MessagingConfiguration
 {
     public const string Schema = "wolverine";
 
+    /// <summary>ADR-0002 / RF28 CA1: novas tentativas de mensagem com falha transitória.</summary>
+    public static readonly TimeSpan[] DefaultRetryDelays =
+        [TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(30)];
+
     /// <param name="connectionString">Conexão do app_user (sem DDL).</param>
     /// <param name="buildStorage">true só para o papel de migração: cria/atualiza as tabelas do Wolverine.</param>
-    public static WolverineOptions ConfigureMessaging(this WolverineOptions opts, string connectionString, bool buildStorage = false)
+    /// <param name="retryDelays">Intervalos das novas tentativas (padrão <see cref="DefaultRetryDelays"/>; testes usam menores).</param>
+    public static WolverineOptions ConfigureMessaging(this WolverineOptions opts, string connectionString, bool buildStorage = false,
+        TimeSpan[]? retryDelays = null)
     {
         opts.PersistMessagesWithPostgresql(connectionString, Schema);
         opts.Discovery.IncludeAssembly(typeof(MessagingConfiguration).Assembly); // handlers de negócio (ex.: estoque)
@@ -29,10 +40,24 @@ public static class MessagingConfiguration
         opts.CodeGeneration.AlwaysUseServiceLocationFor<ITenantContext>();
         opts.CodeGeneration.AlwaysUseServiceLocationFor<TenantDbContext>();
         opts.CodeGeneration.AlwaysUseServiceLocationFor<IPaymentGatewayResolver>(); // depende do tenant e do cofre
+        opts.CodeGeneration.AlwaysUseServiceLocationFor<IIntegrationLog>(); // grava na loja do escopo
 
         opts.Policies.AddMiddleware(typeof(TenantMessageMiddleware));
         opts.Policies.UseDurableLocalQueues();
         opts.Policies.AutoApplyTransactions();
+
+        // RF28: falha transitória (serviço externo fora do ar, tempo esgotado, banco indisponível) tenta de novo com
+        // intervalos crescentes e variação aleatória (jitter, para não chegar todo mundo junto); esgotadas as tentativas, ou
+        // em erro que não é transitório, a falha é registrada para a loja e a mensagem vai para a fila de falhas.
+        // Só vale para mensagens da fila: em chamadas diretas (InvokeAsync) o erro volta na hora para quem chamou.
+        opts.OnException<HttpRequestException>()
+            .Or<TimeoutException>()
+            .Or<PaymentGatewayException>()
+            .Or<ShippingProviderException>()
+            .Or<NpgsqlException>(e => e.IsTransient, "PostgreSQL transitório")
+            .ScheduleRetry(retryDelays ?? DefaultRetryDelays).WithBoundedJitter(0.2)
+            .Then.CustomAction(MessageFailures.RecordAndDeadLetterAsync, "registrar a falha para a loja");
+        opts.OnAnyException().CustomAction(MessageFailures.RecordAndDeadLetterAsync, "registrar a falha para a loja");
         opts.AutoBuildMessageStorageOnStartup = buildStorage ? AutoCreate.CreateOrUpdate : AutoCreate.None;
         return opts;
     }

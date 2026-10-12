@@ -1,3 +1,4 @@
+using Ecommerce.Application.Integrations;
 using System.Globalization;
 using Ecommerce.Application.Inventory;
 using Ecommerce.Application.Payments;
@@ -39,7 +40,7 @@ public static class PaymentHandler
     }
 
     public static async Task<OutgoingMessages> Handle(ProcessPaymentNotification command, TenantDbContext db, IPaymentGatewayResolver gateways,
-        TimeProvider clock, CancellationToken ct)
+        IIntegrationLog integrationLog, TimeProvider clock, CancellationToken ct)
     {
         var outgoing = new OutgoingMessages();
         var notification = await db.ExternalEvents.SingleOrDefaultAsync(e => e.Id == command.EventId, ct);
@@ -59,6 +60,9 @@ public static class PaymentHandler
             notification.Finish(ExternalEventStatus.Ignored, now);
             return outgoing;
         }
+
+        // A consulta ao gateway foi registrada antes de se saber o pedido: liga ao pedido no log de integração (RF29).
+        await integrationLog.LinkOrderAsync(orderId.Value, ct);
 
         // Pedido travado: ações do painel e o prazo sobre ele esperam (e vice-versa) — ver OrderStock.LockAsync.
         await OrderStock.LockAsync(db, orderId.Value, ct);

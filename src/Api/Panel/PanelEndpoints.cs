@@ -30,6 +30,7 @@ public static class PanelEndpoints
         panel.MapPartPhotoEndpoints();
         panel.MapPartImportEndpoints();
         panel.MapTraceabilityEndpoints();
+        panel.MapIntegrationEndpoints();
         panel.MapCompatibilityEndpoints();
         panel.MapOrderEndpoints();
         panel.MapPaymentSettings();
