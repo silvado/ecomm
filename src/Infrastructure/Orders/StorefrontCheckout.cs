@@ -76,7 +76,7 @@ public sealed partial class StorefrontCheckout(TenantDbContext db, IStorefrontCa
         var ids = view.Lines.Select(l => l.PartId).ToList();
         var codes = await db.Parts.AsNoTracking().Where(p => ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.InternalCode, ct);
         var command = new PlaceOrder(hash, buyer, address, shipping, pickup,
-            view.Lines.Select(l => new PlaceOrderLine(l.PartId, codes[l.PartId], l.Title, l.UnitPrice, l.Quantity)).ToList());
+            view.Lines.Select(l => new PlaceOrderLine(l.PartId, codes[l.PartId], l.Title, l.UnitPrice, l.Quantity)).ToList(), request.Token);
 
         PlaceOrderResult result;
         try
@@ -101,11 +101,14 @@ public sealed partial class StorefrontCheckout(TenantDbContext db, IStorefrontCa
     {
         if (HashOrNull(token) is not { } hash) return null;
         var order = await db.CustomerOrders.AsNoTracking().Include(o => o.Items).SingleOrDefaultAsync(o => o.AccessTokenHash == hash, ct);
-        return order is null ? null : new StoreOrderView(order.Number, order.Status, order.PlacedAt, order.PaymentDeadline, order.BuyerName,
+        return order is null ? null : ToView(order);
+    }
+
+    /// <summary>O pedido como o comprador o vê (sem CPF, telefone nem dados internos).</summary>
+    public static StoreOrderView ToView(CustomerOrder order) => new(order.Number, order.Status, order.PlacedAt, order.PaymentDeadline, order.BuyerName,
             order.DeliveryMethod, order.Address, order.ShippingCarrier, order.ShippingService, order.ShippingDays, order.PickupAddress,
             order.Items.Select(i => new StoreOrderItemView(i.PartId, i.Title, i.UnitPrice, i.Quantity)).ToList(),
             order.ItemsTotal, order.ShippingTotal, order.Total, order.CancelReason, order.TrackingCode, order.ShippedAt, order.DeliveredAt);
-    }
 
     private string TenantId => (tenant.TenantId ?? throw new InvalidOperationException("Checkout sem loja no escopo.")).ToString();
 

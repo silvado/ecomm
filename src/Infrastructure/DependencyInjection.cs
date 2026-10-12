@@ -3,7 +3,11 @@ using Ecommerce.Infrastructure.Integrations;
 using Ecommerce.Application.Integrations;
 using Ecommerce.Infrastructure.Catalog.Import;
 using Ecommerce.Application.Catalog;
+using Ecommerce.Application.Customers;
+using Ecommerce.Application.Email;
 using Ecommerce.Application.Identity;
+using Ecommerce.Infrastructure.Customers;
+using Ecommerce.Infrastructure.Email;
 using Ecommerce.Infrastructure.Catalog;
 using Ecommerce.Application.Orders;
 using Ecommerce.Application.Payments;
@@ -99,6 +103,21 @@ public static class DependencyInjection
         services.AddScoped<QueueMetrics>();
         services.AddScoped<VehicleImporter>();
         services.AddScoped<IVehicleCatalog, VehicleCatalog>();
+
+        // E-mail da loja ao comprador (RF16, Q38): SMTP da loja ou da plataforma; "memory" guarda as mensagens (testes).
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.Section));
+        if (string.Equals(configuration[$"{EmailOptions.Section}:Provider"], "memory", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<InMemoryEmailOutbox>();
+            services.AddScoped<IEmailSender, InMemoryEmailSender>();
+        }
+        else
+        {
+            services.AddScoped<IEmailSender, SmtpEmailSender>();
+        }
+        services.AddScoped<EmailBranding>();
+        services.AddScoped<IStoreEmailSettings, StoreEmailSettingsService>();
+        services.AddScoped<ICustomerArea, CustomerAreaService>();
         services.AddScoped<IPartCompatibilities, PartCompatibilityService>();
 
         services.Configure<VaultOptions>(configuration.GetSection(VaultOptions.Section));

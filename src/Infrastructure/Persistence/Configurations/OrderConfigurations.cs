@@ -51,6 +51,8 @@ internal sealed class CustomerOrderConfiguration : IEntityTypeConfiguration<Cust
         // Idempotência do checkout: o mesmo token (envio repetido) não cria outro pedido.
         builder.HasIndex(o => new { o.TenantId, o.AccessTokenHash }).IsUnique();
         builder.HasIndex(o => new { o.TenantId, o.PlacedAt });
+        // Área do cliente (RF16): pedidos do e-mail do comprador.
+        builder.HasIndex(o => new { o.TenantId, o.BuyerEmail, o.PlacedAt }).HasFilter("buyer_email <> ''");
         // RF17 CA2: pedido de canal externo é único por loja, canal e id no canal.
         builder.HasIndex(o => new { o.TenantId, o.Origin, o.ExternalId }).IsUnique().HasFilter("external_id IS NOT NULL");
         builder.ToTable(t =>

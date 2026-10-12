@@ -114,6 +114,9 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 ### RF16 — Área do cliente final · E1
 - CA1: lista de pedidos com status e rastreio; acesso por login ou link mágico enviado por e-mail.
 - CA2: cliente final só vê pedidos do próprio e-mail **e** do tenant da loja acessada.
+- E-mail (Q38): dois tipos. **Da plataforma** (convite e recuperação de senha do painel, alerta de falha) sai do domínio da plataforma, custo da plataforma. **Da loja ao comprador** (confirmação de pedido, link de acompanhamento, acesso à área do cliente) sai do **SMTP da própria loja** quando configurado no setup (Google Workspace, Microsoft 365 ou outro; credenciais no cofre) e, sem configuração, do **remetente padrão da plataforma** ("Loja X <nao-responda@…>", resposta para o e-mail da loja), incluído na assinatura. Provedor do remetente padrão a escolher (Amazon SES região São Paulo ou Resend); tudo por SMTP atrás de `IEmailSender`.
+- Decidido (Q39): acesso **só por link no e-mail**, sem senha. O comprador informa o e-mail em "Meus pedidos"; a resposta é sempre a mesma (não revela quem comprou) e o link só sai se o e-mail tem pedidos da loja virtual nesta loja. Link de uso único, válido por 15 minutos; abre uma sessão de **30 dias** naquele navegador (cookie HttpOnly), encerrável em "Sair". Pedidos de balcão não aparecem (não têm e-mail). E-mails ao comprador, pela fila com novas tentativas e log de integração: **link de acesso, pedido recebido (com o link secreto do pedido), pagamento confirmado, pedido enviado (com rastreio) e pedido cancelado**. Configuração do e-mail de envio em Dados da loja, só para o Dono (a senha do SMTP fica no cofre), com envio de teste.
+- **HIPÓTESE:** até 10 pedidos de link/abertura de sessão por minuto por IP e até 5 links por e-mail por hora em cada loja. Pelo "Meus pedidos", pedido aguardando pagamento não tem botão de pagar: o comprador paga pelo link do e-mail "Pedido recebido".
 
 ## 4. Pedidos e fiscal
 
@@ -132,6 +135,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA2: rejeição mostra o motivo da SEFAZ e permite corrigir e reenviar.
 - CA3: dados fiscais por peça (NCM, CFOP, CST/CSOSN, origem) configuráveis com padrão por tenant.
 - CA4: **HIPÓTESE:** emissão manual (botão) na E1; automática após pagamento como opção posterior.
+- Decisões (Q37): o custo da NF-e é da loja (ela é a emitente, com CNPJ e certificado próprios). **"Traga sua conta"**: a loja conecta a conta que já tem num provedor suportado (primeiro: Focus NFe), com credenciais no cofre (RF06), como nos gateways de pagamento. Emissor não suportado (ERP, emissor próprio): **modo "emissão externa"** — a loja emite fora e informa a chave de 44 dígitos ou anexa o XML no pedido. Plano com "NF-e incluída" (conta da plataforma com vários CNPJs, custo repassado na assinatura) fica como opção futura.
 
 ### RF20 — Cancelamento e devolução · E1
 - CA1: cancelar pedido pago ou registrar devolução devolve as quantidades ao estoque e gera evento (republica/despausa nos canais).
@@ -303,6 +307,9 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q34 | Como organizar a rastreabilidade da peça usada (RF10)? | Cadastro de veículo doador ligado às peças; placa e chassi completos, só no painel; modo desmontadora desligado por padrão (a loja liga); etiqueta e campos extras na peça. | RF10 |
 | Q35 | Como registrar devoluções (RF20)? | Parcial por peça e quantidade; avariada não volta ao estoque; 'Devolvido' só quando tudo volta; reembolso apenas registrado; sem trava de prazo, mostrando os dias desde a entrega. | RF20 |
 | Q36 | Como alertar falhas de integração e quem as vê (RF28/RF29/RNF06)? | Faixa no painel + log crítico (e-mail depois); Dono e Operador veem o log e reprocessam; métricas da fila num endpoint interno (sem Prometheus por ora). | RF28, RF29, RNF06 |
+| Q37 | Quem paga a NF-e e como a loja que já emite usa a plataforma? | Custo da loja; "traga sua conta" com provedor suportado (Focus NFe primeiro) e modo "emissão externa" (chave/XML informados) para os demais; "NF-e incluída" no plano fica para depois. | RF19, RF20 |
+| Q38 | De onde saem os e-mails e quem paga? | Da plataforma: domínio e custo da plataforma. Da loja ao comprador: SMTP da loja (Workspace, 365, outro) se configurado; senão remetente padrão da plataforma, incluído na assinatura. Provedor padrão a escolher (SES São Paulo ou Resend), via SMTP. | RF16, RF33, RF07 |
+| Q39 | Como o comprador entra na área do cliente e que e-mails recebe? | Só por link no e-mail (sem senha); sessão de 30 dias; e-mails: link de acesso, pedido recebido, pagamento confirmado, pedido enviado (com rastreio) e pedido cancelado. | RF16 |
 
 ## Fontes
 

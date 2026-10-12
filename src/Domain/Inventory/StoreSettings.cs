@@ -60,6 +60,19 @@ public sealed class StoreSettings : ITenantOwned
         DismantlerMode = dismantlerMode;
     }
 
+    /// <summary>E-mail de contato da loja: resposta dos e-mails enviados pelo remetente da plataforma (Q38).</summary>
+    public string? ContactEmail { get; private set; }
+
+    /// <summary>SMTP da própria loja; nulo = remetente padrão da plataforma. A senha fica no cofre.</summary>
+    public Email.SmtpServer? Smtp { get; private set; }
+
+    public void ConfigureEmail(string? contactEmail, Email.SmtpServer? smtp)
+    {
+        var contact = Email.StoreEmailRules.NormalizeAddress(contactEmail, "E-mail de contato");
+        Smtp = smtp is null ? null : Email.StoreEmailRules.Normalize(smtp);
+        ContactEmail = contact;
+    }
+
     public void SetReservationMinutes(int minutes)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(minutes, 5);

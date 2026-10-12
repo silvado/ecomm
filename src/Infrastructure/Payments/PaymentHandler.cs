@@ -1,3 +1,4 @@
+using Ecommerce.Application.Email;
 using Ecommerce.Application.Integrations;
 using System.Globalization;
 using Ecommerce.Application.Inventory;
@@ -107,6 +108,7 @@ public static class PaymentHandler
             return [];
         }
         order.MarkPaid(now);
+        events.Add(new NotifyBuyer(order.Id, OrderEmail.Paid));
         return events;
     }
 }

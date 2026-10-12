@@ -11,7 +11,8 @@ namespace Ecommerce.Infrastructure.Integrations;
 
 /// <summary>
 /// Retenção do log de integração (RF29 CA2): uma vez por dia apaga, loja a loja (o RLS só deixa ver uma por vez), o que
-/// passou de 90 dias, e também as falhas já reprocessadas há mais de 90 dias. Roda só no Worker.
+/// passou de 90 dias, e também as falhas já reprocessadas há mais de 90 dias, os links de acesso do comprador e as
+/// sessões vencidas. Roda só no Worker.
 /// </summary>
 public sealed partial class IntegrationLogRetention(IServiceScopeFactory scopes, TimeProvider clock, ILogger<IntegrationLogRetention> logger) : BackgroundService
 {
@@ -53,6 +54,10 @@ public sealed partial class IntegrationLogRetention(IServiceScopeFactory scopes,
                 var db = scope.ServiceProvider.GetRequiredService<TenantDbContext>();
                 removed += await db.IntegrationLogs.Where(l => l.At < limit).ExecuteDeleteAsync(ct);
                 removed += await db.MessageFailures.Where(f => f.Status == MessageFailureStatus.Replayed && f.ReplayedAt < limit).ExecuteDeleteAsync(ct);
+                // Área do cliente (RF16): links e sessões vencidos não servem para nada (o limite de links olha só a última hora).
+                var dayAgo = clock.GetUtcNow().AddDays(-1);
+                removed += await db.CustomerAccessLinks.Where(l => l.CreatedAt < dayAgo).ExecuteDeleteAsync(ct);
+                removed += await db.CustomerSessions.Where(s => s.ExpiresAt < dayAgo || s.EndedAt < dayAgo).ExecuteDeleteAsync(ct);
             }
             catch (Exception e) when (e is DbUpdateException or Npgsql.NpgsqlException or InvalidOperationException)
             {

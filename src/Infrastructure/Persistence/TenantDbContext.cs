@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Domain.Catalog;
 using Ecommerce.Domain.Common;
+using Ecommerce.Domain.Customers;
 using Ecommerce.Domain.Inventory;
 using Ecommerce.Domain.Orders;
 using Ecommerce.Domain.Payments;
@@ -39,6 +40,8 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<OrderCounter> OrderCounters => Set<OrderCounter>();
     public DbSet<OrderHistoryEntry> OrderHistory => Set<OrderHistoryEntry>();
     public DbSet<OrderReturn> OrderReturns => Set<OrderReturn>();
+    public DbSet<CustomerAccessLink> CustomerAccessLinks => Set<CustomerAccessLink>();
+    public DbSet<CustomerSession> CustomerSessions => Set<CustomerSession>();
     public DbSet<IntegrationLogEntry> IntegrationLogs => Set<IntegrationLogEntry>();
     public DbSet<MessageFailure> MessageFailures => Set<MessageFailure>();
     public DbSet<Payment> Payments => Set<Payment>();

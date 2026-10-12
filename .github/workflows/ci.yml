@@ -26,6 +26,7 @@ jobs:
       # O Docker Hub limita pulls anônimos por IP, e o IP do runner é compartilhado: imagens vêm de fora dele ou do cache.
       TEST_POSTGRES_IMAGE: public.ecr.aws/docker/library/postgres:17-alpine
       TEST_SEAWEEDFS_IMAGE: chrislusf/seaweedfs:4.47
+      TEST_MAILPIT_IMAGE: axllent/mailpit:v1.27.0
       TESTCONTAINERS_RYUK_DISABLED: 'true'   # runner descartável: não precisa do container de limpeza
       HAS_DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN != '' }}
     steps:
@@ -40,20 +41,23 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      # O SeaweedFS só é publicado no Docker Hub: depois do primeiro pull, fica no cache do Actions.
+      # SeaweedFS e Mailpit vêm do Docker Hub: depois do primeiro pull, ficam no cache do Actions.
       - uses: actions/cache@v4
         with:
           path: ~/docker-images
-          key: docker-${{ env.TEST_SEAWEEDFS_IMAGE }}
+          key: docker-${{ env.TEST_SEAWEEDFS_IMAGE }}-${{ env.TEST_MAILPIT_IMAGE }}
       # Baixa cada imagem uma vez só, antes dos testes (que sobem containers em paralelo).
       - name: Imagens dos testes de integração
         run: |
           mkdir -p ~/docker-images
-          if [ -f ~/docker-images/seaweedfs.tar ]; then docker load -q -i ~/docker-images/seaweedfs.tar
-          else
-            for attempt in 1 2 3; do docker pull -q "$TEST_SEAWEEDFS_IMAGE" && break; sleep $((attempt * 20)); done
-            docker save -o ~/docker-images/seaweedfs.tar "$TEST_SEAWEEDFS_IMAGE"
-          fi
+          for pair in "seaweedfs:$TEST_SEAWEEDFS_IMAGE" "mailpit:$TEST_MAILPIT_IMAGE"; do
+            name="${pair%%:*}"; image="${pair#*:}"
+            if [ -f ~/docker-images/$name.tar ]; then docker load -q -i ~/docker-images/$name.tar
+            else
+              for attempt in 1 2 3; do docker pull -q "$image" && break; sleep $((attempt * 20)); done
+              docker save -o ~/docker-images/$name.tar "$image"
+            fi
+          done
           for attempt in 1 2 3; do docker pull -q "$TEST_POSTGRES_IMAGE" && break; sleep $((attempt * 20)); done
       - run: dotnet test --no-build -c Release --logger trx --results-directory TestResults
       - uses: actions/upload-artifact@v5

@@ -450,6 +450,100 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Customers.CustomerAccessLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("bytea")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_access_links");
+
+                    b.HasIndex("TenantId", "TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_customer_access_links_tenant_id_token_hash");
+
+                    b.HasIndex("TenantId", "Email", "CreatedAt")
+                        .HasDatabaseName("ix_customer_access_links_tenant_id_email_created_at");
+
+                    b.ToTable("customer_access_links", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Customers.CustomerSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("bytea")
+                        .HasColumnName("token_hash");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_sessions");
+
+                    b.HasIndex("TenantId", "ExpiresAt")
+                        .HasDatabaseName("ix_customer_sessions_tenant_id_expires_at");
+
+                    b.HasIndex("TenantId", "TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_customer_sessions_tenant_id_token_hash");
+
+                    b.ToTable("customer_sessions", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Integrations.IntegrationLogEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -751,6 +845,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
+                    b.Property<string>("ContactEmail")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("contact_email");
+
                     b.Property<bool>("DismantlerMode")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -782,6 +881,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.Property<int>("ReservationMinutes")
                         .HasColumnType("integer")
                         .HasColumnName("reservation_minutes");
+
+                    b.Property<string>("Smtp")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("smtp");
 
                     b.Property<string>("TraceabilityFields")
                         .IsRequired()
@@ -1014,6 +1117,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TenantId", "PlacedAt")
                         .HasDatabaseName("ix_customer_orders_tenant_id_placed_at");
+
+                    b.HasIndex("TenantId", "BuyerEmail", "PlacedAt")
+                        .HasDatabaseName("ix_customer_orders_tenant_id_buyer_email_placed_at")
+                        .HasFilter("buyer_email <> ''");
 
                     b.HasIndex("TenantId", "Origin", "ExternalId")
                         .IsUnique()

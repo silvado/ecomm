@@ -1,7 +1,8 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { problemTitle } from '../../core/auth';
+import { AuthStore, problemTitle } from '../../core/auth';
+import { EmailSettingsSection } from './email-settings';
 import { contrastRatio, isHexColor, MIN_COMPONENT_CONTRAST, MIN_TEXT_CONTRAST, readableOn } from '../../shared/contrast';
 import { StoreApi, StoreProfile } from './store.api';
 import { TraceabilitySettingsSection } from './traceability-settings';
@@ -13,7 +14,7 @@ const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 
 @Component({
   selector: 'app-store',
-  imports: [ReactiveFormsModule, TraceabilitySettingsSection],
+  imports: [ReactiveFormsModule, TraceabilitySettingsSection, EmailSettingsSection],
   template: `
     <main class="card">
       <h1>Dados da loja</h1>
@@ -124,11 +125,15 @@ const LOGO_MAX_BYTES = 2 * 1024 * 1024;
       </form>
 
       <app-traceability-settings />
+      @if (auth.can('vaultManage')) {
+        <app-email-settings />
+      }
     </main>
   `,
 })
 export class StorePage implements OnInit, OnDestroy {
   private readonly api = inject(StoreApi);
+  protected readonly auth = inject(AuthStore);
 
   protected readonly colorFields = [
     { name: 'primaryColor', label: 'Principal (cabeçalho, botões, links)' },

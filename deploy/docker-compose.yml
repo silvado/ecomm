@@ -31,6 +31,12 @@ services:
     ports: ["8333:8333", "23646:23646"]   # API S3; painel de administração
     volumes: [s3data:/data]
 
+  # E-mail de dev (RF16, Q38): servidor SMTP que não entrega nada, só guarda. Caixa em http://localhost:8025.
+  # Docs: https://mailpit.axllent.org/docs/
+  mailpit:
+    image: axllent/mailpit:v1.27.0
+    ports: ["127.0.0.1:8025:8025"]
+
   # Passo de deploy: migrações + tabelas do Wolverine, como app_migrator. API e Worker só sobem depois dele.
   migrator:
     build: { context: .., dockerfile: src/Migrator/Dockerfile }
@@ -64,7 +70,12 @@ services:
       Shipping__MelhorEnvio__BaseUrl: https://sandbox.melhorenvio.com.br
       Shipping__MelhorEnvio__UserAgent: ${MELHOR_ENVIO_USER_AGENT:-}
       Network__Internal__0: 172.16.0.0/12   # rede padrão do Docker: Caddy e storefront são proxies confiáveis
-    depends_on: { migrator: { condition: service_completed_successfully }, s3: { condition: service_started } }
+      # Remetente padrão da plataforma (Q38): em dev, o Mailpit.
+      Email__Platform__Host: mailpit
+      Email__Platform__Port: "1025"
+      Email__Platform__Security: None
+      Email__Platform__FromAddress: nao-responda@${PLATFORM_DOMAIN:-localhost}
+    depends_on: { migrator: { condition: service_completed_successfully }, s3: { condition: service_started }, mailpit: { condition: service_started } }
     ports: ["8080:8080"]
 
   worker:
@@ -77,7 +88,13 @@ services:
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
       Vault__CurrentMasterKeyVersion: v1
       Vault__MasterKeys__v1: ${VAULT_MASTER_KEY_V1:?defina no .env}
-    depends_on: { migrator: { condition: service_completed_successfully } }
+      # E-mails ao comprador saem pela fila (qualquer processo pode enviar): mesma configuração da API.
+      Platform__Domain: ${PLATFORM_DOMAIN:-localhost}
+      Email__Platform__Host: mailpit
+      Email__Platform__Port: "1025"
+      Email__Platform__Security: None
+      Email__Platform__FromAddress: nao-responda@${PLATFORM_DOMAIN:-localhost}
+    depends_on: { migrator: { condition: service_completed_successfully }, mailpit: { condition: service_started } }
 
   storefront:
     build: { context: ../web/storefront }

@@ -1,5 +1,6 @@
 using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Common;
+using Ecommerce.Application.Email;
 using Ecommerce.Application.Orders;
 using Ecommerce.Application.Payments;
 using Ecommerce.Domain.Integrations;
@@ -26,6 +27,8 @@ public static partial class MessageFailures
         [typeof(ExpireOrder)] = "Cancelar pedido sem pagamento no prazo",
         [typeof(StartPartImport)] = "Iniciar importação de peças",
         [typeof(ProcessPartImport)] = "Importar peças da planilha (lote)",
+        [typeof(NotifyBuyer)] = "Enviar e-mail do pedido ao comprador",
+        [typeof(SendCustomerAccessLink)] = "Enviar link de acesso aos pedidos",
     };
 
     public static string Describe(object? message) =>

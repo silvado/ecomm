@@ -295,6 +295,24 @@ A loja conversa com serviços externos: gateway de pagamento (Mercado Pago ou Ci
 - **Ocultar peças sem estoque**: sem marcar, elas aparecem como indisponíveis.
 - Clique em **Salvar**. A loja mostra as mudanças em até 1 minuto.
 
+**E-mail de envio** (fim da página, só o Dono)
+
+A loja manda e-mails automáticos ao comprador:
+- o link de acesso a **Meus pedidos**;
+- os avisos de **pedido recebido**, **pagamento confirmado**, **pedido enviado** (com o rastreio) e **pedido cancelado**.
+
+Venda de balcão não gera e-mail.
+- **E-mail de contato da loja**: as respostas dos compradores vão para ele.
+- Sem outra configuração, os e-mails saem do **remetente da plataforma** (mostrado na tela), com o nome da loja. Não tem custo extra.
+- Para enviar pelo **e-mail da própria loja** (Google Workspace, Microsoft 365 ou outro), marque a opção e preencha:
+  - servidor, porta e segurança;
+  - usuário e senha;
+  - nome e e-mail do remetente.
+
+  No Google Workspace: servidor smtp.gmail.com, porta 587, STARTTLS e uma **senha de app** (não a senha normal da conta). A senha fica guardada cifrada e não aparece de novo. Para mantê-la, deixe o campo em branco ao salvar.
+- **Enviar e-mail de teste**: envia na hora e mostra o erro do servidor, se houver.
+- Se o servidor de e-mail falhar, o sistema tenta de novo sozinho. As tentativas aparecem em **Integrações**.
+
 ### 4.7 Pagamentos
 
 **Acesso:** menu **Pagamentos** (só Dono).
@@ -343,7 +361,7 @@ O dinheiro vai **direto para a conta da loja** no gateway. O comprador paga com 
 2. No **Carrinho**, informe o **CEP** e clique em **Calcular frete**. Depois, escolha uma opção de entrega ou a **retirada no balcão**, quando a loja oferece.
 3. Clique em **Finalizar compra** e preencha nome, e-mail, telefone, CPF e, na entrega, o endereço.
 4. Clique em **Confirmar pedido**. Se preço, estoque ou frete mudaram, a loja avisa e pede para rever.
-5. O comprador vai para a **página do pedido**. **Guarde o endereço dessa página: é por ele que se acompanha o pedido.**
+5. O comprador vai para a **página do pedido** e recebe o e-mail **Pedido recebido**, que traz o link dessa página.
 
 **Pagar:** na página do pedido, **Pagar agora** abre a página do gateway. As peças ficam reservadas até o prazo mostrado.
 
@@ -351,6 +369,21 @@ O dinheiro vai **direto para a conta da loja** no gateway. O comprador paga com 
 - Etapas: **Pedido feito → Pago → Enviado → Entregue**, ou **Pedido feito → Pago → Retirado** na retirada.
 - Com o pedido enviado, aparece o **código de rastreio**.
 - Pedido cancelado mostra o motivo. Pedido em análise mostra que a loja vai entrar em contato.
+- A cada mudança importante (pago, enviado, cancelado), o comprador recebe um e-mail.
+
+**Meus pedidos** (link no topo da loja)
+
+Não precisa de senha.
+1. O comprador informa o e-mail usado nas compras.
+2. Se houver pedidos com esse e-mail **nesta loja**, ele recebe um link. O link vale **15 minutos** e serve **uma vez só**. A tela é sempre a mesma, para não revelar quem comprou.
+3. Ao abrir o link, ele vê a lista de pedidos (situação, data, total) e o detalhe de cada um.
+4. O acesso fica guardado naquele navegador por **30 dias**. Para encerrar antes, use **Sair**.
+
+Pedido aguardando pagamento: por **Meus pedidos** não há botão de pagar. O comprador paga pelo botão do e-mail **Pedido recebido**.
+
+Limites para evitar abuso:
+- até 5 links por e-mail por hora;
+- até 10 pedidos de link por minuto do mesmo computador.
 
 **Trocas e devoluções:** página com o texto da loja.
 
@@ -371,7 +404,8 @@ Itens previstos que **ainda não estão no sistema**:
 - Compatibilidade com veículos e fotos pela planilha de importação; atualização em massa de peças já cadastradas.
 - Importação dos anúncios existentes do Mercado Livre.
 - Envio automático da rastreabilidade ao banco de dados do Detran; rastreabilidade pela planilha de importação.
-- Aviso por e-mail ao comprador e alerta de falha de integração por e-mail (hoje o alerta é a faixa no painel).
+- Alerta de falha de integração por e-mail (hoje o alerta é a faixa no painel).
+- Remetente da plataforma em produção (provedor ainda a escolher). Em teste, os e-mails ficam numa caixa interna e não chegam ao comprador.
 - NF-e de devolução e estorno automático do reembolso.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
@@ -386,3 +420,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 11/10/2026 | Veículos doadores, rastreabilidade e modo desmontadora (RF10): seção 4.3.1 e perfis. |
 | 12/10/2026 | Devoluções (RF20): situação Devolvido e passo a passo em 4.4 Pedidos. |
 | 12/10/2026 | Integrações (RF28/RF29): seção 4.5.1, faixa de alerta de falhas e perfis. |
+| 12/10/2026 | Área do cliente e e-mails ao comprador (RF16): **Meus pedidos** na loja virtual e **E-mail de envio** em 4.6 Dados da loja. |
