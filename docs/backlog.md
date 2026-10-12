@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **974** |
 
-Progresso: 300 h de 974 h em tarefas concluídas (31%).
+Progresso: 306 h de 974 h em tarefas concluídas (31%).
 
 Referência: 6 h produtivas/dia ≈ 162 dias úteis ≈ 7,7 meses de uma pessoa.
 
@@ -211,12 +211,12 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 - [ ] Configuração fiscal de tenant e peça — 6 h
 - [ ] Tela de emissão e acompanhamento — 6 h
 
-#### Cancelamento e devolução — 10 h  `RF20`
+#### Cancelamento e devolução — 10 h  `RF20` · **em andamento**
 
 **Critérios de aceite:** Cancelamento ou devolução retorna quantidades ao estoque e gera evento; opção de não retornar peça avariada; cancelamento de NF-e respeita prazo legal.
 
-- [ ] Casos de uso de cancelamento e devolução — 6 h
-- [ ] Telas e integração com NF-e de devolução — 4 h
+- [x] Casos de uso de cancelamento e devolução — 6 h
+- [ ] Telas e integração com NF-e de devolução — 4 h *(em andamento)*
 
 ### Operação em produção — 20 h
 
