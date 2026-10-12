@@ -1,3 +1,6 @@
+using Ecommerce.Infrastructure.Messaging;
+using Ecommerce.Infrastructure.Integrations;
+using Ecommerce.Application.Integrations;
 using Ecommerce.Infrastructure.Catalog.Import;
 using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Identity;
@@ -90,6 +93,10 @@ public static class DependencyInjection
         services.AddScoped<IPartPhotos, PartPhotoService>();
         services.AddScoped<IPartImports, PartImportService>();
         services.AddScoped<IDonorVehicles, DonorVehicleService>();
+        // RF28/RF29: log de integração (grava em escopo próprio), falhas e métricas da fila.
+        services.AddScoped<IIntegrationLog, IntegrationLog>();
+        services.AddScoped<IIntegrationQueries, IntegrationQueries>();
+        services.AddScoped<QueueMetrics>();
         services.AddScoped<VehicleImporter>();
         services.AddScoped<IVehicleCatalog, VehicleCatalog>();
         services.AddScoped<IPartCompatibilities, PartCompatibilityService>();

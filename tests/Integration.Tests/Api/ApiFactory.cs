@@ -64,6 +64,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             builder.UseSetting(key, value);
         builder.UseSetting("Network:Internal:0", ProxyNetwork);
         builder.UseSetting("Auth:SigningKey", SigningKey);
+        // RF28: novas tentativas curtas nos testes (em produção, 10 s a 30 min).
+        builder.UseSetting("Messaging:RetryDelaysSeconds:0", "0.2");
+        builder.UseSetting("Messaging:RetryDelaysSeconds:1", "0.2");
         builder.ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Trace).AddProvider(Logs));
         builder.ConfigureServices(services =>
         {

@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 12/10/2026 (RF20: devoluções).
+> Última atualização: 12/10/2026 (RF28/RF29: integrações e falhas).
 
 ## Sumário
 
@@ -15,6 +15,7 @@
    - 4.3.1 [Veículos doadores e rastreabilidade](#431-veículos-doadores-e-rastreabilidade)
    - 4.4 [Pedidos](#44-pedidos)
    - 4.5 [Venda de balcão](#45-venda-de-balcão)
+   - 4.5.1 [Integrações](#451-integrações)
    - 4.6 [Dados da loja](#46-dados-da-loja)
    - 4.7 [Pagamentos](#47-pagamentos)
    - 4.8 [Usuários](#48-usuários)
@@ -55,6 +56,7 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Configurar rastreabilidade (modo desmontadora, campos extras) | ✔ | — |
 | Pedidos | ✔ | ✔ |
 | Venda de balcão | ✔ | ✔ |
+| Integrações (log e reprocessar falhas) | ✔ | ✔ |
 | Dados da loja | ✔ | — |
 | Pagamentos (chaves dos gateways) | ✔ | — |
 | Usuários | ✔ | — |
@@ -259,6 +261,23 @@ Use para registrar a peça vendida no balcão da loja. A venda baixa o estoque n
 - **O histórico da venda** registra quem lançou, a forma de pagamento e os preços ajustados ("de R$ 120,00 por R$ 100,00").
 - **Lançou errado?** Em **Pedidos**, abra a venda e use **Cancelar pedido** com o motivo. As peças voltam ao estoque.
 
+### 4.5.1 Integrações
+
+**Acesso:** menu **Integrações** (Dono e Operador). O detalhe de cada **pedido** e de cada **peça** também mostra as chamadas ligadas a ele, na seção "Integrações".
+
+A loja conversa com serviços externos: gateway de pagamento (Mercado Pago ou Cielo), frete e, depois, canais de venda. Esta tela mostra cada uma dessas conversas e o que deu errado.
+
+**Falhas pendentes**
+- Quando um serviço fica fora do ar, o sistema **tenta de novo sozinho**: depois de 10 s, 30 s, 2 min, 10 min e 30 min.
+- Se mesmo assim não der certo, aparece uma **falha pendente**, com o que estava sendo feito (por exemplo, "Confirmar pagamento no gateway"), o motivo e o número de tentativas.
+- Enquanto houver falha pendente, o topo do painel mostra uma faixa amarela: **"N integrações falharam e precisam de atenção"**.
+- Depois que o serviço voltar, clique em **Reprocessar**. Em alguns segundos o processamento roda de novo; se falhar outra vez, aparece uma nova falha.
+
+**Log de chamadas**
+- Toda chamada fica registrada: quando, serviço, operação (criar cobrança, consultar pagamento, cotar frete…), se deu certo, o pedido, o motivo do erro e a duração.
+- Filtre por serviço, situação (deram certo / falharam) e período. O log guarda **90 dias**.
+- Senhas, tokens, CPF e e-mails **nunca** aparecem no log.
+
 ### 4.6 Dados da loja
 
 **Acesso:** menu **Dados da loja** (só Dono).
@@ -352,7 +371,7 @@ Itens previstos que **ainda não estão no sistema**:
 - Compatibilidade com veículos e fotos pela planilha de importação; atualização em massa de peças já cadastradas.
 - Importação dos anúncios existentes do Mercado Livre.
 - Envio automático da rastreabilidade ao banco de dados do Detran; rastreabilidade pela planilha de importação.
-- Aviso por e-mail ao comprador.
+- Aviso por e-mail ao comprador e alerta de falha de integração por e-mail (hoje o alerta é a faixa no painel).
 - NF-e de devolução e estorno automático do reembolso.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
@@ -366,3 +385,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 11/10/2026 | Importação de peças por planilha (RF11), na seção 4.3 Peças. |
 | 11/10/2026 | Veículos doadores, rastreabilidade e modo desmontadora (RF10): seção 4.3.1 e perfis. |
 | 12/10/2026 | Devoluções (RF20): situação Devolvido e passo a passo em 4.4 Pedidos. |
+| 12/10/2026 | Integrações (RF28/RF29): seção 4.5.1, faixa de alerta de falhas e perfis. |

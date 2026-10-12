@@ -1,3 +1,4 @@
+using Ecommerce.Application.Common;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure.Tenancy;
 
@@ -25,6 +26,7 @@ public sealed class StoreTenantFilter(ITenantCatalog catalog, TenantScope scope)
                 type: StoreProblemTypes.StoreUnavailable);
 
         scope.Set(tenant.Id);
+        Correlation.TenantId = tenant.Id;
         http.Items[typeof(TenantDescriptor)] = tenant;
         return await next(context);
     }

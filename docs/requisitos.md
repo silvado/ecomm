@@ -184,10 +184,12 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 - CA1: falhas transitórias são retentadas com backoff exponencial com jitter (ex.: 10 s, 30 s, 2 min, 10 min, 30 min).
 - CA2: após N falhas seguidas (padrão 5) o evento vai para "falhas" e gera alerta ao tenant e à plataforma.
 - CA3: eventos em falha podem ser reprocessados pelo painel.
+- Decisões (Q36): política da ADR-0002 implementada (10 s, 30 s, 2 min, 10 min e 30 min, com jitter; erro não transitório vai direto para a fila de falhas); a falha é registrada para a loja, com motivo sem segredos; **alerta = faixa no painel + log crítico** (e-mail quando houver provedor — Q12); Dono e Operador veem e reprocessam.
 
 ### RF29 — Log de integração · E1
 - CA1: cada chamada a canal registra tenant, canal, operação, peça/pedido, status, duração, resumo de erro (sem segredos), correlação.
 - CA2: consultável por peça e por pedido no painel; retenção 90 dias.
+- Implementação: pagamento (criar cobrança, validar aviso, consultar pagamento) e frete (cotar) passam por decoradores que registram cada chamada fora da transação do negócio; consulta de pagamento feita antes de se saber o pedido é ligada a ele pela correlação. Os canais da E2 usam o mesmo mecanismo.
 
 ## 7. IA
 
@@ -300,6 +302,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q33 | Como funciona a importação de peças por planilha? | XLSX e CSV; prévia com relatório de erros e confirmação antes de importar as linhas válidas; código já cadastrado é pulado e avisado (não atualiza a peça); sem compatibilidade com veículos nesta etapa; peças entram como rascunho. | RF11 |
 | Q34 | Como organizar a rastreabilidade da peça usada (RF10)? | Cadastro de veículo doador ligado às peças; placa e chassi completos, só no painel; modo desmontadora desligado por padrão (a loja liga); etiqueta e campos extras na peça. | RF10 |
 | Q35 | Como registrar devoluções (RF20)? | Parcial por peça e quantidade; avariada não volta ao estoque; 'Devolvido' só quando tudo volta; reembolso apenas registrado; sem trava de prazo, mostrando os dias desde a entrega. | RF20 |
+| Q36 | Como alertar falhas de integração e quem as vê (RF28/RF29/RNF06)? | Faixa no painel + log crítico (e-mail depois); Dono e Operador veem o log e reprocessam; métricas da fila num endpoint interno (sem Prometheus por ora). | RF28, RF29, RNF06 |
 
 ## Fontes
 

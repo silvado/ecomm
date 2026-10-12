@@ -14,6 +14,13 @@ public sealed class MercadoPagoStub : HttpMessageHandler
     public const string CheckoutUrl = "https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=";
 
     private readonly ConcurrentDictionary<string, string> _payments = new();
+    private readonly ConcurrentDictionary<string, int> _failures = new();
+
+    /// <summary>A consulta deste pagamento responde 503 enquanto houver falhas (gateway fora do ar — RF28).</summary>
+    public void FailPayment(long id, int times) => _failures[id.ToString(System.Globalization.CultureInfo.InvariantCulture)] = times;
+
+    /// <summary>Quantas consultas ao pagamento chegaram.</summary>
+    public ConcurrentDictionary<string, int> Lookups { get; } = new();
 
     /// <summary>Corpo de cada preferência criada, com o token que veio no Authorization.</summary>
     public ConcurrentQueue<(string? Token, string Body)> Preferences { get; } = new();
@@ -31,6 +38,13 @@ public sealed class MercadoPagoStub : HttpMessageHandler
             Preferences.Enqueue((request.Headers.Authorization?.Parameter, await request.Content!.ReadAsStringAsync(cancellationToken)));
             var id = Guid.NewGuid().ToString("N");
             return Json(HttpStatusCode.Created, $$"""{ "id": "{{id}}", "init_point": "{{CheckoutUrl}}{{id}}" }""");
+        }
+        if (request.Method == HttpMethod.Get && path.StartsWith("/v1/payments/", StringComparison.Ordinal))
+        {
+            var key = path["/v1/payments/".Length..];
+            Lookups.AddOrUpdate(key, 1, (_, n) => n + 1);
+            if (_failures.TryGetValue(key, out var remaining) && remaining > 0 && _failures.TryUpdate(key, remaining - 1, remaining))
+                return Json(HttpStatusCode.ServiceUnavailable, """{ "message": "Service unavailable", "status": 503 }""");
         }
         if (request.Method == HttpMethod.Get && path.StartsWith("/v1/payments/", StringComparison.Ordinal)
             && _payments.TryGetValue(path["/v1/payments/".Length..], out var payment))
