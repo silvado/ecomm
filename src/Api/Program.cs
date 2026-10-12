@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Ecommerce.Api.Auth;
+using Ecommerce.Api.Diagnostics;
 using Ecommerce.Api.Internal;
 using Ecommerce.Api.Panel;
 using Ecommerce.Api.Payments;
@@ -12,19 +13,26 @@ using Ecommerce.Application.Shipping;
 using Ecommerce.Application.Store;
 using Ecommerce.Application.Tenancy;
 using Ecommerce.Infrastructure;
+using Ecommerce.Infrastructure.Logging;
 using Ecommerce.Infrastructure.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.HttpOverrides;
+using Serilog;
+using Serilog.Events;
 using Wolverine;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Logs JSON com tenant, correlação e redação de dados sensíveis (RNF06).
+builder.Services.AddSerilog((services, logger) => logger.ConfigureEcommerce(builder.Configuration), writeToProviders: true);
 
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks();
-builder.UseWolverine(opts => opts.ConfigureMessaging(builder.Configuration.GetConnectionString("Tenants")!));
+builder.UseWolverine(opts => opts.ConfigureMessaging(builder.Configuration.GetConnectionString("Tenants")!,
+    retryDelays: MessagingSettings.RetryDelays(builder.Configuration)));
 
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
 
@@ -70,6 +78,11 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 var app = builder.Build();
 
+app.UseCorrelation();
+app.UseSerilogRequestLogging(o => o.GetLevel = (http, _, error) =>
+    error is not null || http.Response.StatusCode >= 500 ? LogEventLevel.Error
+    : http.Request.Path.StartsWithSegments("/health") ? LogEventLevel.Verbose
+    : LogEventLevel.Information);
 app.UseInternalEndpointGuard();
 app.UseForwardedHeaders();
 app.UseRateLimiter();
@@ -169,6 +182,9 @@ internalApi.MapGet("/tls/ask", async (string domain, ITenantCatalog catalog, Can
     var tenant = await catalog.FindByHostAsync(domain, ct);
     return tenant is { IsStorefrontAvailable: true } ? Results.Ok() : Results.NotFound();
 });
+
+// RNF06: fila em números para o monitoramento da VPS (só rede interna).
+internalApi.MapGet("/metricas", async (QueueMetrics metrics, CancellationToken ct) => TypedResults.Ok(await metrics.ReadAsync(ct)));
 
 app.Run();
 

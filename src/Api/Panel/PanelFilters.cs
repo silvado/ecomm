@@ -1,3 +1,4 @@
+using Ecommerce.Application.Common;
 using Ecommerce.Api.Auth;
 using Ecommerce.Application.Identity;
 using Ecommerce.Domain.Identity;
@@ -35,6 +36,7 @@ public sealed class PanelTenantFilter(IMembershipLookup memberships, TenantScope
             return AuthEndpoints.Problem(StatusCodes.Status403Forbidden, "Você não tem acesso a esta loja.");
 
         scope.Set(tenantId);
+        Correlation.TenantId = tenantId;
         http.Items[typeof(PanelUser)] = new PanelUser(userId, access);
         return await next(context);
     }
