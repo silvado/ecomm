@@ -34,7 +34,7 @@ export interface PlacedOrder {
   paymentDeadline: string;
 }
 
-export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview' | 'shipped' | 'delivered' | 'pickedUp';
+export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview' | 'shipped' | 'delivered' | 'pickedUp' | 'returned';
 
 export interface StoreOrder {
   number: number;

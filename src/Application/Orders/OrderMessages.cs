@@ -50,6 +50,12 @@ public enum CounterSaleOutcome
 
 public sealed record CounterSaleResult(CounterSaleOutcome Outcome, Guid? OrderId = null, long? Number = null, string? Message = null);
 
+/// <summary>
+/// Devolução de peças de um pedido entregue ou retirado (RF20). <paramref name="RefundAmount"/> e
+/// <paramref name="RefundMethod"/> só registram o que a loja devolveu ao cliente (o estorno é feito fora).
+/// </summary>
+public sealed record ReturnOrderItems(Guid OrderId, Guid UserId, IReadOnlyList<ReturnRequestLine> Lines, ReturnReason Reason, string? Note,
+    decimal? RefundAmount, RefundMethod? RefundMethod);
 /// <summary>Agendada para o fim do prazo de pagamento; sem efeito se o pedido já foi pago ou cancelado.</summary>
 public sealed record ExpireOrder(Guid OrderId);
 

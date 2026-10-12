@@ -168,7 +168,7 @@ export const epics = [
             title: 'Cancelamento e devolução',
             rf: 'RF20',
             ac: 'Cancelamento ou devolução retorna quantidades ao estoque e gera evento; opção de não retornar peça avariada; cancelamento de NF-e respeita prazo legal.',
-            t: [['Casos de uso de cancelamento e devolução', 6], ['Telas e integração com NF-e de devolução', 4]],
+            t: [['Casos de uso de cancelamento e devolução', 6, 'done'], ['Telas e integração com NF-e de devolução', 4, 'doing']],
           },
         ],
       },

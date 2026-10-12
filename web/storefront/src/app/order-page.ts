@@ -75,6 +75,9 @@ interface OrderStep {
             @case ('delivered') {
               <p class="notice">Pedido entregue em {{ when(o.deliveredAt!) }}. Obrigado pela compra!</p>
             }
+            @case ('returned') {
+              <p class="notice">Pedido devolvido. Em caso de dúvida sobre o reembolso, fale com a loja.</p>
+            }
             @case ('pickedUp') {
               <p class="notice">Peças retiradas na loja em {{ when(o.deliveredAt!) }}. Obrigado pela compra!</p>
             }

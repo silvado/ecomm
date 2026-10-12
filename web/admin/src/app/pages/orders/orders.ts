@@ -2,6 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { OrderReturnForm } from './order-return';
 import { problemTitle } from '../../core/auth';
 import {
   ACTOR_LABELS,
@@ -20,6 +21,8 @@ import {
   OrderView,
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
+  REFUND_METHOD_LABELS,
+  RETURN_REASON_LABELS,
 } from './orders.api';
 
 const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' });
@@ -30,6 +33,7 @@ const ACTION_LABELS: Record<OrderAction, string> = {
   enviar: 'Marcar como enviado',
   entregar: 'Marcar como entregue',
   retirar: 'Marcar como retirado',
+  devolver: 'Registrar devolução',
 };
 
 /**
@@ -38,7 +42,7 @@ const ACTION_LABELS: Record<OrderAction, string> = {
  */
 @Component({
   selector: 'app-orders',
-  imports: [FormsModule, RouterLink, CurrencyPipe],
+  imports: [FormsModule, RouterLink, CurrencyPipe, OrderReturnForm],
   template: `
     <main class="card wide">
       <h1>Pedidos</h1>
@@ -132,6 +136,9 @@ const ACTION_LABELS: Record<OrderAction, string> = {
           @if (o.shippedAt) {
             <p class="muted">Enviado em {{ when(o.shippedAt) }}{{ o.trackingCode ? ' · rastreio ' + o.trackingCode : ' · sem código de rastreio' }}.</p>
           }
+          @if (o.returnedAt) {
+            <p class="muted">Devolvido por inteiro em {{ when(o.returnedAt) }}.</p>
+          }
           @if (o.deliveredAt && o.origin !== 'counter') {
             <p class="muted">{{ o.status === 'pickedUp' ? 'Retirado' : 'Entregue' }} em {{ when(o.deliveredAt) }}.</p>
           }
@@ -144,7 +151,9 @@ const ACTION_LABELS: Record<OrderAction, string> = {
             </div>
           }
 
-          @if (pending(); as a) {
+          @if (pending() === 'devolver') {
+            <app-order-return [order]="o" (done)="returned($event)" (closed)="pending.set(null)" />
+          } @else if (pending(); as a) {
             <form class="confirm" (ngSubmit)="confirm(o, a)" data-confirm>
               <p><strong>{{ actionLabels[a] }} nº {{ o.number }}?</strong> {{ explain(o, a) }}</p>
               @if (a === 'cancelar') {
@@ -206,13 +215,31 @@ const ACTION_LABELS: Record<OrderAction, string> = {
                 <tr>
                   <td><a [routerLink]="['/pecas', item.partId]">{{ item.internalCode }}</a></td>
                   <td>{{ item.title }}</td>
-                  <td class="num">{{ item.quantity }} × {{ item.unitPrice | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</td>
+                  <td class="num">{{ item.quantity }} × {{ item.unitPrice | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}@if (item.returnedQuantity) {<br /><small class="muted">{{ item.returnedQuantity }} devolvida(s)</small>}</td>
                 </tr>
               }
               <tr><td colspan="2">Frete</td><td class="num">{{ o.shippingTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</td></tr>
               <tr><td colspan="2"><strong>Total</strong></td><td class="num"><strong>{{ o.total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong></td></tr>
             </tbody>
           </table>
+
+          @if (o.returns.length) {
+            <h3>Devoluções</h3>
+            <ul data-returns>
+              @for (r of o.returns; track $index) {
+                <li>
+                  {{ when(r.at) }} · {{ returnReasonLabels[r.reason] }} ·
+                  @for (l of r.lines; track l.partId; let last = $last) {
+                    {{ l.quantity }}× {{ l.internalCode }} ({{ l.restock ? 'voltou ao estoque' : 'avariada' }}){{ last ? '' : ', ' }}
+                  }
+                  @if (r.refundAmount != null) {
+                    · reembolso {{ r.refundAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}{{ r.refundMethod ? ' (' + refundMethodLabels[r.refundMethod] + ')' : '' }}
+                  }
+                  · {{ r.userEmail ?? 'Loja' }}{{ r.note ? ' · ' + r.note : '' }}
+                </li>
+              }
+            </ul>
+          }
 
           <h3>Histórico</h3>
           <ol class="history">
@@ -238,7 +265,7 @@ export class OrdersPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private debounce?: ReturnType<typeof setTimeout>;
 
-  protected readonly statuses: OrderStatus[] = ['pendingPayment', 'needsReview', 'paid', 'shipped', 'delivered', 'pickedUp', 'canceled'];
+  protected readonly statuses: OrderStatus[] = ['pendingPayment', 'needsReview', 'paid', 'shipped', 'delivered', 'pickedUp', 'returned', 'canceled'];
   protected readonly origins: OrderOrigin[] = ['site', 'counter'];
   protected readonly paymentLabels = PAYMENT_STATUS_LABELS;
   protected readonly statusLabels = ORDER_STATUS_LABELS;
@@ -247,6 +274,8 @@ export class OrdersPage implements OnInit {
   protected readonly canceledByLabels = CANCELED_BY_LABELS;
   protected readonly actionLabels = ACTION_LABELS;
   protected readonly paymentMethodLabels = PAYMENT_METHOD_LABELS;
+  protected readonly returnReasonLabels = RETURN_REASON_LABELS;
+  protected readonly refundMethodLabels = REFUND_METHOD_LABELS;
   protected filters: OrderFilters = { statuses: [], origin: '', from: '', to: '', text: '' };
   protected reason = '';
   protected tracking = '';
@@ -261,7 +290,7 @@ export class OrdersPage implements OnInit {
   protected readonly cpf = (v: string) => `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6, 9)}-${v.slice(9)}`;
   protected readonly phone = (v: string) => `(${v.slice(0, 2)}) ${v.slice(2, v.length - 4)}-${v.slice(-4)}`;
   protected readonly done = (s: OrderStatus) => s === 'paid' || s === 'delivered' || s === 'pickedUp';
-  protected readonly actions = (o: OrderView) => availableActions(o.status, o.deliveryMethod, o.origin);
+  protected readonly actions = (o: OrderView) => availableActions(o.status, o.deliveryMethod, o.origin, o.returns.length > 0);
   protected readonly cnpj = (v: string) => (v.length === 14 ? `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5, 8)}/${v.slice(8, 12)}-${v.slice(12)}` : v);
   protected readonly contact = (o: OrderView) => [o.buyer.email, o.buyer.phone ? this.phone(o.buyer.phone) : ''].filter((v) => v).join(' · ');
   protected readonly document = (o: OrderView) => (o.buyer.cnpj ? ' · CNPJ ' + this.cnpj(o.buyer.cnpj) : o.buyer.cpf ? ' · CPF ' + this.cpf(o.buyer.cpf) : '');
@@ -339,6 +368,8 @@ export class OrdersPage implements OnInit {
         return 'Depois de entregue, o pedido não pode mais ser cancelado pelo painel.';
       case 'retirar':
         return 'Confirme que o comprador retirou as peças no balcão.';
+      case 'devolver':
+        return '';
     }
   }
 
@@ -357,6 +388,13 @@ export class OrdersPage implements OnInit {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Devolução registrada: mostra o pedido atualizado e a nova situação na lista. */
+  protected returned(updated: OrderView): void {
+    this.selected.set(updated);
+    this.pending.set(null);
+    this.page.update((p) => p && { ...p, items: p.items.map((i) => (i.id === updated.id ? { ...i, status: updated.status } : i)) });
   }
 
   protected who(h: OrderHistory): string {

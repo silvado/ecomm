@@ -2,13 +2,15 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview' | 'shipped' | 'delivered' | 'pickedUp';
+export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview' | 'shipped' | 'delivered' | 'pickedUp' | 'returned';
+export type ReturnReason = 'regret' | 'defect' | 'wrongPart' | 'other';
+export type RefundMethod = 'gateway' | 'pix' | 'cash' | 'storeCredit' | 'other';
 export type OrderOrigin = 'site' | 'counter';
 export type CounterPaymentMethod = 'cash' | 'pix' | 'debitCard' | 'creditCard' | 'other';
 export type DeliveryMethod = 'shipping' | 'pickup';
 export type OrderActor = 'buyer' | 'user' | 'payment' | 'system';
 export type CancellationSource = 'paymentExpired' | 'store';
-export type OrderAction = 'aprovar' | 'cancelar' | 'enviar' | 'entregar' | 'retirar';
+export type OrderAction = 'aprovar' | 'cancelar' | 'enviar' | 'entregar' | 'retirar' | 'devolver';
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pendingPayment: 'Aguardando pagamento',
@@ -17,7 +19,23 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   shipped: 'Enviado',
   delivered: 'Entregue',
   pickedUp: 'Retirado',
+  returned: 'Devolvido',
   canceled: 'Cancelado',
+};
+
+export const RETURN_REASON_LABELS: Record<ReturnReason, string> = {
+  regret: 'Arrependimento',
+  defect: 'Defeito / garantia',
+  wrongPart: 'Peça errada ou não serviu',
+  other: 'Outro motivo',
+};
+
+export const REFUND_METHOD_LABELS: Record<RefundMethod, string> = {
+  gateway: 'Estorno no gateway (cartão/Pix do site)',
+  pix: 'Pix',
+  cash: 'Dinheiro',
+  storeCredit: 'Crédito na loja',
+  other: 'Outra',
 };
 
 export const ORDER_ORIGIN_LABELS: Record<OrderOrigin, string> = { site: 'Loja virtual', counter: 'Balcão' };
@@ -53,7 +71,7 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
 export const DELIVERY_LABELS: Record<DeliveryMethod, string> = { shipping: 'Entrega', pickup: 'Retirada' };
 
 /** Ações que a loja pode fazer em cada situação (as mesmas regras do domínio; a API recusa o resto). */
-export function availableActions(status: OrderStatus, delivery: DeliveryMethod, origin: OrderOrigin = 'site'): OrderAction[] {
+export function availableActions(status: OrderStatus, delivery: DeliveryMethod, origin: OrderOrigin = 'site', hasReturns = false): OrderAction[] {
   switch (status) {
     case 'needsReview':
       return ['aprovar', 'cancelar'];
@@ -63,9 +81,11 @@ export function availableActions(status: OrderStatus, delivery: DeliveryMethod, 
       return delivery === 'shipping' ? ['enviar', 'cancelar'] : ['retirar', 'cancelar'];
     case 'shipped':
       return ['entregar', 'cancelar'];
+    case 'delivered':
+      return ['devolver'];
     case 'pickedUp':
-      // Venda de balcão nasce retirada: cancelar corrige um lançamento errado (RF18).
-      return origin === 'counter' ? ['cancelar'] : [];
+      // Venda de balcão nasce retirada: cancelar corrige um lançamento errado (RF18), enquanto não houver devolução (RF20).
+      return origin === 'counter' && !hasReturns ? ['devolver', 'cancelar'] : ['devolver'];
     default:
       return [];
   }
@@ -123,7 +143,7 @@ export interface OrderView {
   service: string | null;
   deliveryDays: number | null;
   pickupAddress: string | null;
-  items: { partId: string; internalCode: string; title: string; unitPrice: number; quantity: number }[];
+  items: { partId: string; internalCode: string; title: string; unitPrice: number; quantity: number; returnedQuantity: number }[];
   itemsTotal: number;
   shippingTotal: number;
   total: number;
@@ -138,6 +158,26 @@ export interface OrderView {
   paymentMethod: CounterPaymentMethod | null;
   payments: { gateway: string; externalId: string; status: string; amount: number; method: string | null; updatedAt: string }[];
   history: OrderHistory[];
+  returnedAt: string | null;
+  returns: OrderReturn[];
+}
+
+export interface OrderReturn {
+  at: string;
+  reason: ReturnReason;
+  note: string | null;
+  refundAmount: number | null;
+  refundMethod: RefundMethod | null;
+  userEmail: string | null;
+  lines: { partId: string; internalCode: string; title: string; quantity: number; restock: boolean }[];
+}
+
+export interface ReturnRequest {
+  items: { partId: string; quantity: number; restock: boolean }[];
+  reason: ReturnReason;
+  note: string | null;
+  refundAmount: number | null;
+  refundMethod: RefundMethod | null;
 }
 
 export interface CounterSaleRequest {
@@ -169,6 +209,11 @@ export class OrdersApi {
   /** Venda de balcão (RF18): devolve o pedido criado; o mesmo token enviado de novo devolve a mesma venda. */
   sell(request: CounterSaleRequest): Promise<OrderView> {
     return firstValueFrom(this.http.post<OrderView>('/api/painel/balcao', request));
+  }
+
+  /** Devolução (RF20): parcial ou total; devolve o pedido atualizado. */
+  returnItems(id: string, request: ReturnRequest): Promise<OrderView> {
+    return firstValueFrom(this.http.post<OrderView>(`${this.base}/${id}/devolucoes`, request));
   }
 
   /** Executa a ação e devolve o pedido já atualizado (400/404/409 com a mensagem em "title"). */

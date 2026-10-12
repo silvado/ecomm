@@ -272,6 +272,7 @@ erDiagram
     CUSTOMER_ORDER ||--o{ FISCAL_DOCUMENT : ""
     CUSTOMER_ORDER ||--o{ STOCK_RESERVATION : ""
     CUSTOMER_ORDER ||--o{ ORDER_HISTORY : ""
+    CUSTOMER_ORDER ||--o{ ORDER_RETURN : "devoluções (RF20)"
 
     CUSTOMER {
         uuid id PK
@@ -298,7 +299,7 @@ erDiagram
         string delivery_address "colunas delivery_* — só na entrega"
         string shipping_service "id, transportadora, serviço, prazo cotados"
         string pickup_address "cópia do endereço de retirada"
-        string status "pending_payment|paid|needs_review|shipped|delivered|picked_up|canceled (invoiced/returned: RF19 e devoluções)"
+        string status "pending_payment|paid|needs_review|shipped|delivered|picked_up|returned|canceled (invoiced: RF19)"
         numeric items_total
         numeric shipping_total
         numeric total "CHECK = items_total + shipping_total"
@@ -312,8 +313,21 @@ erDiagram
         timestamptz canceled_at
         string canceled_by "payment_expired|store — pagamento atrasado só reativa o cancelado pelo prazo"
         string cancel_reason "motivo (obrigatório quando a loja cancela)"
+        bool has_returns "teve devolução: não cancela mais"
+        timestamptz returned_at "tudo devolvido (status returned)"
     }
-    ORDER_HISTORY {
+    ORDER_RETURN {
+        uuid id PK
+        uuid tenant_id "RLS — devolução (RF20)"
+        uuid order_id FK
+        jsonb lines "peça, código, título, quantidade, volta ao estoque? (avariada = não)"
+        string reason "regret|defect|wrong_part|other"
+        string note
+        numeric refund_amount "informativo: o estorno é feito fora"
+        string refund_method "gateway|pix|cash|store_credit|other"
+        uuid user_id
+        timestamptz at
+    }    ORDER_HISTORY {
         uuid id PK
         uuid tenant_id "RLS"
         uuid order_id FK

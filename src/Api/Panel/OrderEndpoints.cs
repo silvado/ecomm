@@ -15,6 +15,9 @@ public sealed record CancelOrderRequest(string? Motivo);
 
 public sealed record ShipOrderRequest(string? Rastreio);
 
+/// <summary>Devolução (RF20): peças e quantidades, se voltam ao estoque, motivo e o reembolso que a loja fez (informativo).</summary>
+public sealed record ReturnOrderRequest(IReadOnlyList<ReturnRequestLine>? Items, ReturnReason? Reason, string? Note, decimal? RefundAmount, RefundMethod? RefundMethod);
+
 /// <param name="Token">Sorteado pelo painel a cada venda (32 bytes em base64url): enviar de novo não lança outra venda.</param>
 public sealed record CounterSaleRequest(string? Token, IReadOnlyList<CounterSaleLine>? Items, CounterPaymentMethod? PaymentMethod, CounterCustomer? Customer);
 
@@ -70,6 +73,17 @@ public static class OrderEndpoints
 
         orders.MapPost("/{id:guid}/retirar", (Guid id, HttpContext http, IMessageBus bus, IOrderQueries queries, CancellationToken ct) =>
             ChangeAsync(new ChangeOrder(id, OrderAction.PickUp, http.GetPanelUser().UserId), http, bus, queries, ct));
+
+        // RF20: devolução de pedido entregue ou retirado (parcial ou total), com o pedido travado durante a operação.
+        orders.MapPost("/{id:guid}/devolucoes", async Task<Results<Ok<OrderView>, ProblemHttpResult>> (
+            Guid id, ReturnOrderRequest request, HttpContext http, IMessageBus bus, IOrderQueries queries, CancellationToken ct) =>
+        {
+            if (request.Reason is not { } reason) return AuthEndpoints.Problem(StatusCodes.Status400BadRequest, "Escolha o motivo da devolução.");
+            var user = http.GetPanelUser();
+            var result = await bus.InvokeForTenantAsync<ChangeOrderResult>(user.Access.TenantId.ToString(),
+                new ReturnOrderItems(id, user.UserId, request.Items ?? [], reason, request.Note, request.RefundAmount, request.RefundMethod), ct);
+            return await Respond(result, id, queries, ct);
+        });
         // RF18: venda de balcão — já paga e retirada; aparece na lista de pedidos com origem "counter".
         panel.MapPost("/balcao", async Task<Results<Created<OrderView>, Ok<OrderView>, ProblemHttpResult>> (
             CounterSaleRequest request, HttpContext http, IMessageBus bus, IOrderQueries queries, CancellationToken ct) =>
@@ -111,9 +125,14 @@ public static class OrderEndpoints
     {
         var tenantId = http.GetPanelUser().Access.TenantId.ToString();
         var result = await bus.InvokeForTenantAsync<ChangeOrderResult>(tenantId, command, ct);
+        return await Respond(result, command.OrderId, queries, ct);
+    }
+
+    private static async Task<Results<Ok<OrderView>, ProblemHttpResult>> Respond(ChangeOrderResult result, Guid orderId, IOrderQueries queries, CancellationToken ct)
+    {
         return result.Outcome switch
         {
-            ChangeOrderOutcome.Done => TypedResults.Ok((await queries.GetAsync(command.OrderId, ct))!),
+            ChangeOrderOutcome.Done => TypedResults.Ok((await queries.GetAsync(orderId, ct))!),
             ChangeOrderOutcome.NotFound => AuthEndpoints.Problem(StatusCodes.Status404NotFound, result.Message!),
             ChangeOrderOutcome.Invalid => AuthEndpoints.Problem(StatusCodes.Status400BadRequest, result.Message!),
             _ => AuthEndpoints.Problem(StatusCodes.Status409Conflict, result.Message!),
