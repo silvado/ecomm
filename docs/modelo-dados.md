@@ -316,7 +316,34 @@ erDiagram
         bool has_returns "teve devolução: não cancela mais"
         timestamptz returned_at "tudo devolvido (status returned)"
     }
-    ORDER_RETURN {
+    INTEGRATION_LOG {
+        uuid id PK
+        uuid tenant_id "RLS — chamada externa (RF29); retenção 90 dias"
+        timestamptz at
+        string channel "mercado-pago|cielo|melhor-envio|fake (canais na E2)"
+        string operation "criar cobrança|validar aviso de pagamento|consultar pagamento|cotar frete"
+        bool success
+        int duration_ms
+        string error_summary "redigido: sem tokens, CPF, e-mail"
+        string reference "id no serviço externo"
+        uuid order_id "ligado depois pela correlação, se preciso"
+        uuid part_id
+        string correlation_id
+    }
+    MESSAGE_FAILURE {
+        uuid id PK
+        uuid tenant_id "RLS — processamento em segundo plano que esgotou as tentativas (RF28)"
+        uuid envelope_id "id na wolverine_dead_letters (reprocessar)"
+        string message_type
+        string description "ex.: Confirmar pagamento no gateway"
+        int attempts
+        string error_type
+        string error_summary "redigido"
+        string status "pending|replayed"
+        timestamptz failed_at
+        timestamptz replayed_at
+        uuid replayed_by
+    }    ORDER_RETURN {
         uuid id PK
         uuid tenant_id "RLS — devolução (RF20)"
         uuid order_id FK

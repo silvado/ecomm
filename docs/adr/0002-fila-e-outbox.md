@@ -68,3 +68,13 @@ PBI "Spike: Wolverine + EF Core + RLS". Testes em `tests/Integration.Tests/Messa
 - Handler que toca dados de tenant recebe `TenantDbContext`/`ITenantContext` por parâmetro; nunca cria escopo próprio.
 - Toda publicação de evento de tenant usa `DeliveryOptions { TenantId = ... }` (ou herda do envelope em mensagens em cascata).
 - Novos serviços scoped que dependam do tenant devem entrar em `AlwaysUseServiceLocationFor`.
+
+## Política de erro implementada (2026-10-12, RF28/RF29)
+
+Conferido no Wolverine 6.48: [Error Handling](https://wolverinefx.net/guide/handlers/error-handling.html), [Dead Letter Storage](https://wolverinefx.net/guide/durability/dead-letter-storage.html) e a API pública da DLL (`IEnvelopeLifecycle.MoveToDeadLetterQueueAsync`, `IWolverineRuntime.Storage.DeadLetters`, `MarkDeadLetterEnvelopesAsReplayableAsync`, `WithBoundedJitter`).
+
+- **Transitórias** (`HttpRequestException`, `TimeoutException`, `PaymentGatewayException`, `ShippingProviderException`, `NpgsqlException.IsTransient`): `ScheduleRetry(10 s, 30 s, 2 min, 10 min, 30 min).WithBoundedJitter(0.2)` e depois a ação final. **Qualquer outra exceção** vai direto para a ação final. Intervalos configuráveis em `Messaging:RetryDelaysSeconds` (os testes usam 0,2 s).
+- **Ação final** (`MessageFailures.RecordAndDeadLetterAsync`): grava `message_failures` (tabela da loja, com RLS, motivo redigido e o id da mensagem), registra log crítico (alerta da plataforma) e move a mensagem para `wolverine.wolverine_dead_letters`. O id da falha é o mesmo do envelope, o que permite **reprocessar** pelo painel (`replayable = true`, lido pelo agente de durabilidade).
+- **Só vale para mensagens da fila.** Em `InvokeAsync`, o Wolverine aplica sozinho apenas `Retry`/`RetryWithCooldown`; agendar e a ação final não rodam, e o erro volta para quem chamou. É o comportamento que a API espera, por exemplo para a chave única da venda de balcão.
+- **Correlação:** a requisição HTTP define `IMessageContext.CorrelationId`, e as mensagens em cascata herdam esse valor. O middleware de tenant copia a correlação do envelope para o contexto de diagnóstico (logs e log de integração).
+- **Métricas da fila:** `GET /internal/metricas`, só na rede interna. Mostra pendentes, agendadas e falhas a partir das tabelas do Wolverine. A tabela de entrada não guarda a chegada, então a idade só existe para agendadas e falhas. A métrica de idade p95 da RNF03 fica para quando houver OpenTelemetry/Prometheus na VPS.
