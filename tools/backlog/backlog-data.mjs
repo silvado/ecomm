@@ -139,7 +139,7 @@ export const epics = [
             title: 'Área do cliente final',
             rf: 'RF16',
             ac: 'Acesso por login ou link mágico; cliente vê só os próprios pedidos daquele tenant, com status e rastreio.',
-            t: [['Link mágico por e-mail', 6], ['Lista e detalhe de pedidos', 6]],
+            t: [['Link mágico por e-mail', 6, 'done'], ['Lista e detalhe de pedidos', 6, 'done']],
           },
         ],
       },

@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **974** |
 
-Progresso: 336 h de 974 h em tarefas concluídas (34%).
+Progresso: 348 h de 974 h em tarefas concluídas (36%).
 
 Referência: 6 h produtivas/dia ≈ 162 dias úteis ≈ 7,7 meses de uma pessoa.
 
@@ -180,12 +180,12 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 - [ ] Adapter Cielo E-commerce — 16 h *(em andamento)*
 - [x] Webhooks de pagamento com validação e idempotência — 6 h
 
-#### Área do cliente final — 12 h  `RF16`
+#### Área do cliente final — 12 h  `RF16` · **concluído**
 
 **Critérios de aceite:** Acesso por login ou link mágico; cliente vê só os próprios pedidos daquele tenant, com status e rastreio.
 
-- [ ] Link mágico por e-mail — 6 h
-- [ ] Lista e detalhe de pedidos — 6 h
+- [x] Link mágico por e-mail — 6 h
+- [x] Lista e detalhe de pedidos — 6 h
 
 ### Pedidos e fiscal — 70 h
 

@@ -284,6 +284,22 @@ erDiagram
         jsonb addresses
         timestamptz anonymized_at "LGPD"
     }
+    CUSTOMER_ACCESS_LINK {
+        uuid id PK
+        uuid tenant_id "RLS"
+        string email "RF16: e-mail do comprador (minúsculo)"
+        bytea token_hash "UK (tenant_id, hash) — SHA-256; o token só vai no e-mail"
+        timestamptz expires_at "15 min"
+        timestamptz used_at "uso único (UPDATE condicional)"
+    }
+    CUSTOMER_SESSION {
+        uuid id PK
+        uuid tenant_id "RLS"
+        string email "vê os pedidos do site com este e-mail"
+        bytea token_hash "UK (tenant_id, hash) — cookie HttpOnly"
+        timestamptz expires_at "30 dias"
+        timestamptz ended_at "Sair"
+    }
     CUSTOMER_ORDER {
         uuid id PK
         uuid tenant_id "RLS"
@@ -495,6 +511,8 @@ erDiagram
         jsonb payment "gateway escolhido"
         bool dismantler_mode "RF10: modo desmontadora (Lei 12.977)"
         jsonb traceability_fields "campos extras: chave, rótulo, obrigatório"
+        string contact_email "Q38: resposta dos e-mails do remetente da plataforma"
+        jsonb smtp "Q38: SMTP da loja (servidor, porta, segurança, usuário, remetente); senha no cofre (smtp:password); nulo = remetente da plataforma"
     }
     ACCESS_LOG {
         uuid id PK
