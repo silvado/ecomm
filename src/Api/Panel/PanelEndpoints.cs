@@ -73,6 +73,18 @@ public static class PanelEndpoints
 
         // RF01: dados, aparência e textos da loja.
         var store = panel.MapGroup("/loja").RequirePermission(Permission.StoreManage);
+        // Loja personalizada (RF40): mudar a aparência é recusado aqui, não só escondido no painel.
+        store.AddEndpointFilter(async (context, next) =>
+        {
+            try
+            {
+                return await next(context);
+            }
+            catch (AppearanceLockedException)
+            {
+                return AuthEndpoints.Problem(StatusCodes.Status409Conflict, AppearanceLockedException.Text);
+            }
+        });
 
         store.MapGet("/", async (IStoreProfileService profiles, CancellationToken ct) => TypedResults.Ok(await profiles.GetAsync(ct)));
 

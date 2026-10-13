@@ -37,6 +37,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             b.Property(t => t.Status).HasConversion<string>().HasMaxLength(20);
             b.Property(t => t.DatabaseKey).HasMaxLength(60).IsRequired();
             b.Property(t => t.PlanCode).HasMaxLength(30).IsRequired().HasDefaultValue(Plan.Essential);
+            b.Ignore(t => t.IsCustomStorefront);
             b.HasOne<Plan>().WithMany().HasForeignKey(t => t.PlanCode).HasPrincipalKey(p => p.Code).OnDelete(DeleteBehavior.Restrict);
             b.HasMany(t => t.Domains).WithOne().HasForeignKey(d => d.TenantId).OnDelete(DeleteBehavior.Cascade);
             b.Navigation(t => t.Domains).UsePropertyAccessMode(PropertyAccessMode.Field);

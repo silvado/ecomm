@@ -10,7 +10,17 @@ public sealed record StoreTexts(string About, string ReturnPolicy, string Footer
 /// <summary>Dados da loja vistos pelo Dono no painel (RF01).</summary>
 public sealed record StoreProfile(
     string Slug, string Cnpj, string LegalName, string TradeName,
-    StoreTheme Theme, StoreTexts Texts, IReadOnlyList<ContrastWarning> Warnings, Guid? LogoId, bool HideOutOfStock, StoreShipping Shipping);
+    StoreTheme Theme, StoreTexts Texts, IReadOnlyList<ContrastWarning> Warnings, Guid? LogoId, bool HideOutOfStock, StoreShipping Shipping,
+    bool CustomStorefront = false);
+
+/// <summary>
+/// Loja personalizada (RF40): a aparência (logo, nome, cores, textos) é cuidada pela equipe da plataforma e não muda pelo
+/// painel. Frete, retirada e estoque continuam com o Dono.
+/// </summary>
+public sealed class AppearanceLockedException() : InvalidOperationException(Text)
+{
+    public const string Text ="Loja personalizada: a aparência (logo, nome, cores e textos) é cuidada pela equipe da plataforma. Peça a mudança ao suporte.";
+}
 
 /// <summary>Frete da loja (RF14): CEP de onde saem as entregas e retirada no balcão.</summary>
 public sealed record StoreShipping(string? OriginPostalCode, bool PickupEnabled, string? PickupAddress);
