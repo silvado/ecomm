@@ -63,6 +63,7 @@ public static class MessagingConfiguration
             .Or<ShippingProviderException>()
             .Or<EmailDeliveryException>()
             .Or<Application.Fiscal.FiscalProviderException>()
+            .Or<Application.Channels.ChannelConnectorException>()
             .Or<NpgsqlException>(e => e.IsTransient, "PostgreSQL transitório")
             .ScheduleRetry(retryDelays ?? DefaultRetryDelays).WithBoundedJitter(0.2)
             .Then.CustomAction(MessageFailures.RecordAndDeadLetterAsync, "registrar a falha para a loja");
