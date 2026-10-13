@@ -326,6 +326,11 @@ A loja conversa com serviços externos: gateway de pagamento (Mercado Pago ou Ci
 - **Ocultar peças sem estoque**: sem marcar, elas aparecem como indisponíveis.
 - Clique em **Salvar**. A loja mostra as mudanças em até 1 minuto.
 
+**Loja personalizada** (site feito sob medida, contratado à parte)
+- A página mostra o selo **Loja personalizada**.
+- O visual foi feito pela equipe da plataforma: **logo, nome, cores e textos** (sobre, trocas e devoluções, rodapé) aparecem só para consulta. Para mudar, fale com o suporte.
+- Continuam com a loja: entrega e retirada, ocultar peças sem estoque, rastreabilidade, nota fiscal, e-mail de envio e todo o resto do painel (peças, preços, estoque, pedidos, pagamentos).
+
 **Nota fiscal (NF-e)**
 
 Defina com o contador da loja. O CNPJ emitente é o da loja.
@@ -437,6 +442,7 @@ Limites para evitar abuso:
 *Feito pela equipe da plataforma, não pela loja.*
 
 - **Criar uma loja e o Dono**: comando `criar-loja` do migrador (ver `CLAUDE.md`, seção Comandos). A senha provisória do Dono aparece na saída do comando e deve ser repassada a ele, que cria a própria senha no primeiro acesso.
+- **Loja personalizada** (RF40): comando `loja-personalizada --slug <slug> --ligar` (ou `--desligar`) do migrador, depois de fechado o orçamento. Ligada, o Dono não muda mais a aparência pelo painel; desligada, volta a mudar.
 - **Tabela de veículos** (marcas, modelos e versões usados na compatibilidade): comando `importar-veiculos` do migrador.
 
 ## 7. Ainda não disponível
@@ -468,3 +474,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 12/10/2026 | Integrações (RF28/RF29): seção 4.5.1, faixa de alerta de falhas e perfis. |
 | 12/10/2026 | Área do cliente e e-mails ao comprador (RF16): **Meus pedidos** na loja virtual e **E-mail de envio** em 4.6 Dados da loja. |
 | 12/10/2026 | NF-e (RF19 parte A): nota fiscal no pedido (4.4), dados fiscais da peça (4.3.1), configuração em 4.6 e perfis. |
+| 12/10/2026 | Loja personalizada (RF40): selo e aparência travada em 4.6 Dados da loja; comando de operação em 6. |

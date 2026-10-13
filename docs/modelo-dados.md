@@ -36,6 +36,7 @@ erDiagram
         string trade_name
         string status "onboarding|active|read_only|suspended|closing|closed"
         string database_key "conexão do banco de dados do tenant"
+        timestamptz custom_storefront_since "RF40: loja personalizada desde; nulo = Dono edita a aparência"
         timestamptz created_at
     }
     TENANT_DOMAIN {
