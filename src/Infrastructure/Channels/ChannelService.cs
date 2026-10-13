@@ -15,7 +15,7 @@ namespace Ecommerce.Infrastructure.Channels;
 /// entram no RF21; por ora só o canal simulado usa conectar e publicar.
 /// </summary>
 public sealed class ChannelService(TenantDbContext db, PlatformDbContext platform, IChannelConnectorResolver connectors, IIntegrationLog log,
-    TimeProvider clock) : IChannelQueries
+    PlanDirectory plans, TimeProvider clock) : IChannelQueries
 {
     public async Task<IReadOnlyList<ListingView>> ListingsForPartAsync(Guid partId, CancellationToken ct = default) =>
         await (from l in db.ChannelListings.AsNoTracking()
@@ -35,6 +35,12 @@ public sealed class ChannelService(TenantDbContext db, PlatformDbContext platfor
         var tenantId = db.RequireTenantId();
         var existing = await db.ChannelConnections.SingleOrDefaultAsync(c => c.Channel == channel && c.ExternalAccountId == externalAccountId, ct);
         if (existing is not null) return existing;
+        // RF37: o canal precisa estar no plano (o simulado, só de dev, não entra na conta).
+        if (channel != Integrations.FakeChannelProcessor.ChannelName)
+        {
+            var plan = await plans.ForTenantAsync(tenantId, ct);
+            if (!plan.Has(PlanFeature.ForChannel(channel))) throw new InvalidOperationException(PlanDirectory.FeatureMessage(plan, $"o canal {channel}"));
+        }
 
         var now = clock.GetUtcNow();
         var account = new ChannelAccount(tenantId, channel, externalAccountId, now);

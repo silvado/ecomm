@@ -87,7 +87,8 @@ public static class PartHandler
         return (PartCommandResult.Ok(part.Id), outgoing);
     }
 
-    public static async Task<(PartCommandResult, OutgoingMessages)> Handle(ChangePartStatus command, TenantDbContext db, TimeProvider clock, CancellationToken ct)
+    public static async Task<(PartCommandResult, OutgoingMessages)> Handle(ChangePartStatus command, TenantDbContext db, Platform.PlanDirectory plans,
+        TimeProvider clock, CancellationToken ct)
     {
         var outgoing = new OutgoingMessages();
         var part = await db.Parts.Include(p => p.Photos).SingleOrDefaultAsync(p => p.Id == command.PartId, ct);
@@ -101,6 +102,7 @@ public static class PartHandler
                 case PartStatus.Active:
                     // RF10 CA2: no modo desmontadora, peça usada só vai à venda com a origem completa.
                     if (await MissingForSaleAsync(db, part, part.DonorVehicleId, ct) is { Count: > 0 } missing) return (Invalid(Traceability.Message(missing)), outgoing);
+                    if (before != PartStatus.Active && await ActivePartsLimitAsync(db, plans, ct) is { } limitMessage) return (Invalid(limitMessage), outgoing);
                     part.Activate(clock.GetUtcNow());
                     break;
                 case PartStatus.Inactive: part.Deactivate(clock.GetUtcNow()); break;
@@ -120,6 +122,19 @@ public static class PartHandler
         return (PartCommandResult.Ok(part.Id), outgoing);
     }
 
+    /// <summary>
+    /// RF37: peças ativas no limite do plano. A trava por loja (até o fim da transação) faz duas ativações simultâneas
+    /// contarem uma depois da outra. Nulo = pode ativar.
+    /// </summary>
+    private static async Task<string?> ActivePartsLimitAsync(TenantDbContext db, Platform.PlanDirectory plans, CancellationToken ct)
+    {
+        var tenantId = db.RequireTenantId();
+        var plan = await plans.ForTenantAsync(tenantId, ct);
+        if (plan.Limit(Domain.Platform.PlanLimit.ActiveParts) is not { } limit) return null;
+        await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended('active_parts:' || {tenantId.ToString()}, 0))", ct);
+        var active = await db.Parts.CountAsync(p => p.Status == PartStatus.Active, ct);
+        return active >= limit ? Platform.PlanDirectory.LimitMessage(plan, "peças ativas", limit) : null;
+    }
     public const string TraceabilityTagIndex = "ix_parts_tenant_id_traceability_tag";
     public const string TagTakenMessage = "Esta etiqueta de rastreabilidade já está em outra peça da loja.";
 

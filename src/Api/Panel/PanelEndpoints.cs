@@ -117,6 +117,10 @@ public static class PanelEndpoints
 
         // RF06 CA3: só metadados (tipo, últimos 4 caracteres, validade).
         panel.MapVaultEndpoints();
+
+        // RF37: plano da loja e uso dos limites (cartão "Seu plano", só o Dono).
+        panel.MapGet("/plano", async (Application.Platform.IPlanUsage plans, CancellationToken ct) => TypedResults.Ok(await plans.CurrentAsync(ct)))
+            .RequirePermission(Permission.StoreManage);
     }
 
     /// <summary>

@@ -240,6 +240,111 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Platform.PlanFeature", b =>
+                {
+                    b.Property<string>("PlanCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("plan_code");
+
+                    b.Property<string>("Feature")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("feature");
+
+                    b.HasKey("PlanCode", "Feature")
+                        .HasName("pk_plan_features");
+
+                    b.ToTable("plan_features", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            PlanCode = "essencial",
+                            Feature = "channel:mercado-livre"
+                        },
+                        new
+                        {
+                            PlanCode = "essencial",
+                            Feature = "ai:part_from_photos"
+                        },
+                        new
+                        {
+                            PlanCode = "profissional",
+                            Feature = "channel:mercado-livre"
+                        },
+                        new
+                        {
+                            PlanCode = "profissional",
+                            Feature = "ai:part_from_photos"
+                        },
+                        new
+                        {
+                            PlanCode = "profissional",
+                            Feature = "channel:meta"
+                        },
+                        new
+                        {
+                            PlanCode = "profissional",
+                            Feature = "custom_domain"
+                        },
+                        new
+                        {
+                            PlanCode = "profissional",
+                            Feature = "ai:buyer_answers"
+                        },
+                        new
+                        {
+                            PlanCode = "profissional",
+                            Feature = "ai:price_suggestion"
+                        },
+                        new
+                        {
+                            PlanCode = "profissional",
+                            Feature = "ai:daily_summary"
+                        },
+                        new
+                        {
+                            PlanCode = "completo",
+                            Feature = "channel:mercado-livre"
+                        },
+                        new
+                        {
+                            PlanCode = "completo",
+                            Feature = "ai:part_from_photos"
+                        },
+                        new
+                        {
+                            PlanCode = "completo",
+                            Feature = "channel:meta"
+                        },
+                        new
+                        {
+                            PlanCode = "completo",
+                            Feature = "custom_domain"
+                        },
+                        new
+                        {
+                            PlanCode = "completo",
+                            Feature = "ai:buyer_answers"
+                        },
+                        new
+                        {
+                            PlanCode = "completo",
+                            Feature = "ai:price_suggestion"
+                        },
+                        new
+                        {
+                            PlanCode = "completo",
+                            Feature = "ai:daily_summary"
+                        },
+                        new
+                        {
+                            PlanCode = "completo",
+                            Feature = "channel:olx"
+                        });
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Platform.PlanLimit", b =>
                 {
                     b.Property<string>("PlanCode")
@@ -278,6 +383,36 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                             PlanCode = "completo",
                             Key = "users",
                             Value = 10
+                        },
+                        new
+                        {
+                            PlanCode = "essencial",
+                            Key = "active_parts",
+                            Value = 500
+                        },
+                        new
+                        {
+                            PlanCode = "profissional",
+                            Key = "active_parts",
+                            Value = 3000
+                        },
+                        new
+                        {
+                            PlanCode = "essencial",
+                            Key = "ai_listings_month",
+                            Value = 50
+                        },
+                        new
+                        {
+                            PlanCode = "profissional",
+                            Key = "ai_listings_month",
+                            Value = 300
+                        },
+                        new
+                        {
+                            PlanCode = "completo",
+                            Key = "ai_listings_month",
+                            Value = 1000
                         });
                 });
 
@@ -536,6 +671,17 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_channel_accounts_tenants_tenant_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Platform.PlanFeature", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Platform.Plan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanCode")
+                        .HasPrincipalKey("Code")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_plan_features_plans_plan_code");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Platform.PlanLimit", b =>
