@@ -152,8 +152,8 @@ Feature,,OLX,,,,,E3,28,
 Product Backlog Item,,,Integração OLX via hub,,Requisitos: RF23,Hub escolhido e documentado em ADR; adapter implementa IChannelConnector e passa nos testes de contrato.,E3; RF23,28,
 Task,,,,Spike e ADR de escolha do hub,,,E3,,4
 Task,,,,Adapter do hub OLX,,,E3,,24
-Epic,E4 — Produto vendável (mês 6),,,,"Onboarding, domínio próprio, assinatura, superadmin e LGPD.",,E4,156,
-Feature,,Onboarding e domínio próprio,,,,,E4,46,
+Epic,E4 — Produto vendável (mês 6),,,,"Onboarding, domínio próprio, assinatura, superadmin e LGPD.",,E4,187,
+Feature,,Onboarding e domínio próprio,,,,,E4,77,
 Product Backlog Item,,,Assistente de onboarding,,Requisitos: RF05,"Passos salvos parcialmente e retomáveis; canais aparecem conforme o plano; loja só publica com empresa, gateway e frete concluídos.",E4; RF05,24,
 Task,,,,Fluxo e estado do onboarding,,,E4,,8
 Task,,,,Telas dos passos,,,E4,,16
@@ -161,6 +161,11 @@ Product Backlog Item,,,Domínio próprio com SSL automático,,Requisitos: RF03,P
 Task,,,,Job de verificação DNS,,,E4,,10
 Task,,,,Endpoint ask interno,,,E4,,4
 Task,,,,Tela de domínio com instruções,,,E4,,8
+Product Backlog Item,,,Loja personalizada (sob orçamento),,Requisitos: RF40,"Superadmin liga/desliga a opção por tenant (com data); com ela ligada, a API recusa e o painel trava a edição da aparência mostrando ""Loja personalizada""; tema e páginas exclusivos cadastrados pela plataforma como dados do tenant, sanitizados, sem script; peças, pedidos e demais configurações seguem com o lojista.",E4; RF40,31,
+Task,,,,Opção por tenant e trava da aparência na API,,,E4,,4
+Task,,,,"Selo ""Loja personalizada"" no painel",,,E4,,3
+Task,,,,"Tema e páginas exclusivos na vitrine (dados do tenant, sanitizados)",,,E4,,16
+Task,,,,Tela de superadmin para o tema exclusivo,,,E4,,8
 Feature,,Assinatura e planos,,,,,E4,50,
 Product Backlog Item,,,"Planos, limites e feature flags",,"Requisitos: RF37, RF36","Planos, limites e recursos são dados; mudança de plano tem efeito imediato; limite de IA bloqueia ou consome pacote excedente.",E4; RF37; RF36,20,
 Task,,,,Modelo de planos e verificação de limites,,,E4,,12

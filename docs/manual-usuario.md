@@ -55,6 +55,8 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Veículos doadores e rastreabilidade das peças | ✔ | ✔ |
 | Configurar rastreabilidade (modo desmontadora, campos extras) | ✔ | — |
 | Pedidos | ✔ | ✔ |
+| Emitir, cancelar e registrar NF-e no pedido; dados fiscais da peça | ✔ | ✔ |
+| Configurar a nota fiscal da loja (Dados da loja) | ✔ | — |
 | Venda de balcão | ✔ | ✔ |
 | Integrações (log e reprocessar falhas) | ✔ | ✔ |
 | Dados da loja | ✔ | — |
@@ -178,6 +180,11 @@ O cadastro do veículo mostra todas as peças ligadas a ele. Um veículo só pod
 
 > O sistema guarda os dados para a loja informar ao Detran. O envio ao banco de dados do Detran não é automático.
 
+**Dados fiscais da peça** (seção **Dados fiscais** no cadastro da peça)
+- **NCM**, **CSOSN/CST** e **origem** da peça.
+- Em branco, a peça usa o padrão da loja (**Dados da loja → Nota fiscal**).
+- O CSOSN vale para o Simples Nacional e o CST para o Regime Normal, conforme o regime da loja.
+
 ### 4.4 Pedidos
 
 **Acesso:** menu **Pedidos** (Dono e Operador).
@@ -241,6 +248,30 @@ As peças que voltam ao estoque ficam disponíveis de novo na hora. Quando **tod
 
 Se duas pessoas tentarem a mesma ação ao mesmo tempo, só a primeira vale. A outra recebe uma mensagem e vê o pedido atualizado.
 
+**Nota fiscal (NF-e)**
+
+A seção **Nota fiscal** aparece no detalhe do pedido depois do pagamento. O que ela mostra depende de como a loja emite (**Dados da loja → Nota fiscal**).
+
+*Pela plataforma:*
+1. Clique em **Emitir NF-e**.
+2. Confira o **destinatário**. Retirada e venda de balcão não têm endereço: preencha o endereço e o CPF ou CNPJ do cliente.
+3. Clique em **Emitir NF-e**. A nota fica **Processando na SEFAZ**, e a tela se atualiza sozinha.
+4. Quando sair o resultado:
+   - **Autorizada:** aparecem número, série e chave, e os botões **Baixar DANFE** e **Baixar XML**.
+   - **Rejeitada:** aparece o motivo da SEFAZ. Corrija o que ela apontar (por exemplo, o NCM da peça) e clique em **Emitir de novo**. A nota rejeitada continua listada como histórico.
+
+Antes de emitir, a tela avisa o que falta: configuração da loja incompleta, peça sem NCM, pedido ainda não pago. Cada pedido tem no máximo uma nota autorizada ou em processamento.
+
+*Cancelar a NF-e:* em **Cancelar NF-e**, escreva a justificativa (15 a 255 caracteres) e confirme. O prazo é de **24 horas** depois da autorização, e a tela mostra até quando. Depois disso, para desfazer a venda é preciso uma **NF-e de devolução**, que ainda não está disponível. Cancelar a nota não cancela o pedido; cancelar o pedido não cancela a nota.
+
+*Fora da plataforma:*
+1. Emita a nota no seu emissor de sempre.
+2. No pedido, informe a **chave de acesso** (44 números) ou anexe o **XML** da nota.
+3. O sistema confere a chave e se a nota é do CNPJ da loja.
+4. **Remover registro** tira a nota do pedido. Ela continua valendo: o cancelamento é feito no seu emissor.
+
+> Em **homologação**, a nota é de teste e não tem valor fiscal. Hoje a emissão "pela plataforma" funciona só em modo de teste (simulado). A conexão real com a Focus NFe entra na próxima etapa.
+
 ### 4.5 Venda de balcão
 
 **Acesso:** menu **Balcão** (Dono e Operador).
@@ -294,6 +325,20 @@ A loja conversa com serviços externos: gateway de pagamento (Mercado Pago ou Ci
   - **Oferecer retirada no balcão**, com o endereço e o horário que o comprador vê.
 - **Ocultar peças sem estoque**: sem marcar, elas aparecem como indisponíveis.
 - Clique em **Salvar**. A loja mostra as mudanças em até 1 minuto.
+
+**Nota fiscal (NF-e)**
+
+Defina com o contador da loja. O CNPJ emitente é o da loja.
+- **Como a loja emite:**
+  - **Não emite pela plataforma** (padrão).
+  - **Pela plataforma:** usa o provedor fiscal da loja (Focus NFe; a conexão real entra na próxima etapa).
+  - **Fora da plataforma:** a loja emite no próprio emissor e informa a chave ou o XML no pedido.
+- **Ambiente:** homologação (teste) ou produção.
+- **Regime tributário:** Simples Nacional (CSOSN) ou Regime Normal (CST).
+- **UF da loja**, que define o CFOP: dentro ou fora do estado do destinatário.
+- **Padrões das peças:** NCM, CFOP dentro do estado (ex.: 5102), CFOP fora do estado (ex.: 6102), CSOSN/CST e origem.
+
+Para emitir pela plataforma, UF, os dois CFOPs, CSOSN/CST e origem são obrigatórios.
 
 **E-mail de envio** (fim da página, só o Dono)
 
@@ -399,7 +444,8 @@ Limites para evitar abuso:
 Itens previstos que **ainda não estão no sistema**:
 
 - Integrações com Mercado Livre, Instagram (catálogo Meta) e OLX.
-- Emissão de NF-e (inclusive da venda de balcão).
+- Emissão real de NF-e pela Focus NFe: hoje "pela plataforma" é simulado. "Fora da plataforma" já funciona.
+- NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
 - Frete real (Melhor Envio): hoje o frete é simulado.
 - Compatibilidade com veículos e fotos pela planilha de importação; atualização em massa de peças já cadastradas.
 - Importação dos anúncios existentes do Mercado Livre.
@@ -421,3 +467,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 12/10/2026 | Devoluções (RF20): situação Devolvido e passo a passo em 4.4 Pedidos. |
 | 12/10/2026 | Integrações (RF28/RF29): seção 4.5.1, faixa de alerta de falhas e perfis. |
 | 12/10/2026 | Área do cliente e e-mails ao comprador (RF16): **Meus pedidos** na loja virtual e **E-mail de envio** em 4.6 Dados da loja. |
+| 12/10/2026 | NF-e (RF19 parte A): nota fiscal no pedido (4.4), dados fiscais da peça (4.3.1), configuração em 4.6 e perfis. |

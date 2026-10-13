@@ -9,13 +9,13 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E1 — Núcleo e loja (meses 1–3) | 470 |
 | E2 — Canais (mês 4) | 142 |
 | E3 — IA e OLX (mês 5) | 90 |
-| E4 — Produto vendável (mês 6) | 156 |
+| E4 — Produto vendável (mês 6) | 187 |
 | E5 — Primeiros clientes (meses 7–8) | 116 |
-| **Total** | **974** |
+| **Total** | **1005** |
 
-Progresso: 348 h de 974 h em tarefas concluídas (36%).
+Progresso: 364 h de 1005 h em tarefas concluídas (36%).
 
-Referência: 6 h produtivas/dia ≈ 162 dias úteis ≈ 7,7 meses de uma pessoa.
+Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
 
 ## E1 — Núcleo e loja (meses 1–3) — 470 h
 
@@ -202,14 +202,14 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 
 - [x] Caso de uso e tela de venda de balcão — 8 h
 
-#### Emissão de NF-e — 36 h  `RF19`
+#### Emissão de NF-e — 36 h  `RF19` · **em andamento**
 
 **Critérios de aceite:** Emissão via IFiscalProvider com certificado do cofre; status, DANFE e XML no pedido; rejeição mostra motivo e permite reenviar; dados fiscais configuráveis por peça com padrão por tenant.
 
-- [ ] IFiscalProvider e fake — 4 h
+- [x] IFiscalProvider e fake — 4 h
 - [ ] Adapter do provedor fiscal escolhido — 20 h
-- [ ] Configuração fiscal de tenant e peça — 6 h
-- [ ] Tela de emissão e acompanhamento — 6 h
+- [x] Configuração fiscal de tenant e peça — 6 h
+- [x] Tela de emissão e acompanhamento — 6 h
 
 #### Cancelamento e devolução — 10 h  `RF20` · **em andamento**
 
@@ -339,11 +339,11 @@ Cadastro assistido por IA, preço sugerido e integração OLX via hub.
 - [ ] Spike e ADR de escolha do hub — 4 h
 - [ ] Adapter do hub OLX — 24 h
 
-## E4 — Produto vendável (mês 6) — 156 h
+## E4 — Produto vendável (mês 6) — 187 h
 
 Onboarding, domínio próprio, assinatura, superadmin e LGPD.
 
-### Onboarding e domínio próprio — 46 h
+### Onboarding e domínio próprio — 77 h
 
 #### Assistente de onboarding — 24 h  `RF05`
 
@@ -359,6 +359,15 @@ Onboarding, domínio próprio, assinatura, superadmin e LGPD.
 - [ ] Job de verificação DNS — 10 h
 - [ ] Endpoint ask interno — 4 h
 - [ ] Tela de domínio com instruções — 8 h
+
+#### Loja personalizada (sob orçamento) — 31 h  `RF40`
+
+**Critérios de aceite:** Superadmin liga/desliga a opção por tenant (com data); com ela ligada, a API recusa e o painel trava a edição da aparência mostrando "Loja personalizada"; tema e páginas exclusivos cadastrados pela plataforma como dados do tenant, sanitizados, sem script; peças, pedidos e demais configurações seguem com o lojista.
+
+- [ ] Opção por tenant e trava da aparência na API — 4 h
+- [ ] Selo "Loja personalizada" no painel — 3 h
+- [ ] Tema e páginas exclusivos na vitrine (dados do tenant, sanitizados) — 16 h
+- [ ] Tela de superadmin para o tema exclusivo — 8 h
 
 ### Assinatura e planos — 50 h
 
