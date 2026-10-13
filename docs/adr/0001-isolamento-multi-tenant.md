@@ -39,7 +39,8 @@ Todos os tenants compartilham o mesmo código. Vazamento de dados entre lojas é
 5. **Filtro global do EF Core** por `TenantId` em todas as entidades `ITenantOwned`, e preenchimento automático de `TenantId` no `SaveChanges` (lança exceção se diferente do contexto).
 6. **Worker/jobs:** cada mensagem carrega `tenant_id`; o handler abre o escopo do tenant antes de tocar no banco. Jobs que percorrem todos os tenants listam os tenants pelo catálogo e processam um por vez, cada um em seu escopo.
 7. **Tabelas globais** (sem `tenant_id`, sem RLS, somente leitura para `app_user`): veículos (marca/modelo/ano/motorização), categorias de referência, planos.
-8. **Tenant grande:** mudar a string de conexão do tenant no catálogo para um banco dedicado, migrar os dados dele (script de cópia filtrado por `tenant_id`). O RLS continua ativo lá — o código não muda.
+8. **Exceção — inbox de canais (RF26, 13/10/2026):** avisos de canais que não trazem a loja (ex.: Mercado Livre identifica o vendedor) entram em `inbox.external_events`, schema separado **sem RLS**, porque ainda não há loja para fixar. Limites: a tabela guarda só o que o canal mandou (ids, tópico, recurso, corpo até 16 KB); o `app_user` tem SELECT/INSERT/UPDATE/DELETE apenas nela e não cria objetos no schema; o roteamento consulta só o mapa `plataforma.channel_accounts` (conta externa → loja) e entrega o evento no escopo da loja, onde ele passa a valer em tabela com RLS. Nenhum dado de negócio de loja é lido sem a loja definida (teste `ChannelInboxTests`).
+9. **Tenant grande:** mudar a string de conexão do tenant no catálogo para um banco dedicado, migrar os dados dele (script de cópia filtrado por `tenant_id`). O RLS continua ativo lá — o código não muda.
 
 ## Consequências
 
