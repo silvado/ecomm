@@ -18,6 +18,7 @@
    - 4.5.1 [Integrações](#451-integrações)
    - 4.6 [Dados da loja](#46-dados-da-loja)
    - 4.7 [Pagamentos](#47-pagamentos)
+   - 4.7.1 [Cofre e certificado digital](#471-cofre-e-certificado-digital)
    - 4.8 [Usuários](#48-usuários)
 5. [Loja virtual (o que o comprador vê)](#5-loja-virtual-o-que-o-comprador-vê)
 6. [Operação da plataforma](#6-operação-da-plataforma)
@@ -61,6 +62,7 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Integrações (log e reprocessar falhas) | ✔ | ✔ |
 | Dados da loja | ✔ | — |
 | Pagamentos (chaves dos gateways) | ✔ | — |
+| Cofre (certificado digital A1 e chaves guardadas) | ✔ | — |
 | Usuários | ✔ | — |
 
 O menu mostra só os módulos que o perfil pode usar.
@@ -386,6 +388,30 @@ O dinheiro vai **direto para a conta da loja** no gateway. O comprador paga com 
 
 **Desconectar:** pagamentos iniciados naquele gateway deixam de ser confirmados automaticamente.
 
+### 4.7.1 Cofre e certificado digital
+
+**Acesso:** menu **Cofre** (só Dono).
+
+Chaves e certificados ficam guardados **cifrados**. Depois de salvos, nunca aparecem de novo.
+
+**Certificado digital A1** (usado na NF-e)
+1. Em **Certificado digital A1**, escolha o arquivo **.pfx** (ou .p12) que a certificadora entregou e informe a **senha** dele.
+2. Clique em **Enviar certificado**. Antes de guardar, o sistema confere:
+   - se a senha abre o arquivo;
+   - se o arquivo tem a chave privada (certificado A1 completo);
+   - se ainda está na validade;
+   - se é do **CNPJ da loja**.
+3. A tela mostra o titular, o CNPJ e a validade. Para renovar, envie o novo com **Trocar certificado**. **Remover certificado** apaga o arquivo e a senha.
+
+**Aviso de vencimento**
+- A partir de **30 dias** antes do vencimento, o Dono vê uma faixa no topo do painel, em qualquer página, com a data e o atalho para o Cofre.
+- O aviso fica mais forte aos **15** e aos **5 dias** e depois de vencido.
+- A equipe da plataforma também é avisada nesses dias.
+
+**O que está guardado:** lista de tudo o que a loja guardou no cofre, com o tipo, o item, os últimos 4 caracteres (quando é uma chave de texto), a validade e a data da última atualização. As chaves dos gateways e a senha do e-mail continuam sendo cadastradas em **Pagamentos** e em **Dados da loja**.
+
+> Com a Focus NFe (na próxima etapa), o certificado pode também precisar ser enviado à própria Focus. A tela vai orientar quando a conexão estiver disponível.
+
 ### 4.8 Usuários
 
 **Acesso:** menu **Usuários** (só Dono).
@@ -475,3 +501,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 12/10/2026 | Área do cliente e e-mails ao comprador (RF16): **Meus pedidos** na loja virtual e **E-mail de envio** em 4.6 Dados da loja. |
 | 12/10/2026 | NF-e (RF19 parte A): nota fiscal no pedido (4.4), dados fiscais da peça (4.3.1), configuração em 4.6 e perfis. |
 | 12/10/2026 | Loja personalizada (RF40): selo e aparência travada em 4.6 Dados da loja; comando de operação em 6. |
+| 13/10/2026 | Cofre e certificado digital A1 (RF06): nova seção 4.7.1, aviso de vencimento e perfis. |

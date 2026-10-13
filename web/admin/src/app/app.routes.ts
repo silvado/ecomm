@@ -33,6 +33,7 @@ export const routes: Routes = [
       { path: 'balcao', loadComponent: () => import('./pages/counter/counter').then((m) => m.CounterPage), canActivate: [permissionGuard('ordersManage')], title: 'Venda de balcão' },
       { path: 'integracoes', loadComponent: () => import('./pages/integrations/integrations').then((m) => m.IntegrationsPage), canActivate: [permissionGuard('ordersManage')], title: 'Integrações' },
       { path: 'pagamentos', loadComponent: () => import('./pages/payments/payments').then((m) => m.PaymentsPage), canActivate: [permissionGuard('vaultManage')], title: 'Pagamentos' },
+      { path: 'cofre', loadComponent: () => import('./pages/vault/vault').then((m) => m.VaultPage), canActivate: [permissionGuard('vaultManage')], title: 'Cofre' },
       { path: 'loja', loadComponent: () => import('./pages/store/store').then((m) => m.StorePage), canActivate: [permissionGuard('storeManage')], title: 'Dados da loja' },
       { path: 'usuarios', loadComponent: () => import('./pages/users/users').then((m) => m.UsersPage), canActivate: [permissionGuard('usersManage')], title: 'Usuários' },
     ],

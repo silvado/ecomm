@@ -131,6 +131,7 @@ public static class DependencyInjection
         services.Configure<VaultOptions>(configuration.GetSection(VaultOptions.Section));
         services.AddScoped<SecretVault>();
         services.AddScoped<ISecretVault, SecretVault>();
+        services.AddScoped<IVaultPanel, VaultPanel>();
 
         return services;
     }

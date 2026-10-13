@@ -45,6 +45,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA3: o painel mostra apenas metadados (tipo, últimos 4 caracteres, validade); valores nunca são devolvidos ao front.
 - CA4: rotação da chave mestra re-encripta as chaves de dados sem downtime.
 - CA5: o certificado A1 exibe alerta 30, 15 e 5 dias antes de vencer.
+- Feito (13/10/2026): tela **Cofre** (só o Dono) com os metadados dos segredos e o envio do A1 (.pfx + senha, conferidos — senha, chave privada, validade e CNPJ do titular "RAZÃO:CNPJ" igual ao da loja — e guardados cifrados com a validade). Aviso: faixa no painel do Dono a partir de 30 dias (mais forte aos 15 e 5 e depois de vencido) e log de aviso do Worker nos dias 30, 15, 5, no último dia e no primeiro dia depois de vencer. **HIPÓTESE:** e-mail ao Dono fica para quando houver e-mail da plataforma (RF33); com a Focus NFe, o certificado também é cadastrado na Focus (ver RF19 parte B).
 
 ### RF07 — Usuários e perfis · E1 (dono/operador) / E4 (superadmin)
 - CA1: perfis por tenant: **Dono** (tudo, inclusive cofre, plano e usuários) e **Operador** (catálogo, pedidos, atendimento; sem cofre, plano, usuários, exportação).
