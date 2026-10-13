@@ -111,13 +111,13 @@ public static partial class ChannelSyncHandler
     }
 
     /// <summary>Trava a linha do anúncio até o fim da transação da mensagem.</summary>
-    private static async Task<ChannelListing?> LockAsync(TenantDbContext db, Guid listingId, CancellationToken ct)
+    internal static async Task<ChannelListing?> LockAsync(TenantDbContext db, Guid listingId, CancellationToken ct)
     {
         var locked = await db.Database.SqlQuery<Guid>($"SELECT id AS \"Value\" FROM channel_listings WHERE id = {listingId} FOR UPDATE").ToListAsync(ct);
         return locked.Count == 0 ? null : await db.ChannelListings.SingleAsync(l => l.Id == listingId, ct);
     }
 
-    private static async Task<(int Available, decimal Price)> StockAndPriceAsync(TenantDbContext db, Guid partId, CancellationToken ct)
+    internal static async Task<(int Available, decimal Price)> StockAndPriceAsync(TenantDbContext db, Guid partId, CancellationToken ct)
     {
         var row = await (from p in db.Parts
                          join s in db.Stocks on p.Id equals s.PartId

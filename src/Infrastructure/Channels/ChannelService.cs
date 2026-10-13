@@ -23,7 +23,7 @@ public sealed class ChannelService(TenantDbContext db, PlatformDbContext platfor
                where l.PartId == partId
                orderby c.Channel
                select new ListingView(l.Id, c.Channel, c.ExternalAccountId, l.ExternalId, l.Status, l.LastPushedQuantity, l.LastPushedPrice,
-                   l.LastSyncedAt, l.LastError)).ToListAsync(ct);
+                   l.LastSyncedAt, l.LastError, l.LastReconciledAt)).ToListAsync(ct);
 
     /// <summary>Conexão da loja com o canal simulado, se houver (dev e testes).</summary>
     public Task<Guid?> FakeConnectionIdAsync(CancellationToken ct = default) =>

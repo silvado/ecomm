@@ -203,7 +203,7 @@ export const epics = [
             title: 'Reconciliação horária',
             rf: 'RF27',
             ac: 'Job horário compara quantidade, preço e status dos anúncios com o estoque local, corrige divergências e registra no log, respeitando limites de taxa.',
-            t: [['Job de reconciliação por tenant e canal', 12]],
+            t: [['Job de reconciliação por tenant e canal', 12, 'done']],
           },
         ],
       },

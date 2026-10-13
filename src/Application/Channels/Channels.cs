@@ -51,6 +51,12 @@ public interface IChannelConnectorResolver
 /// <param name="ChangedAt">Quando o estoque mudou, para a métrica de latência (RF24: até 60 s).</param>
 public sealed record SyncListing(Guid ListingId, DateTimeOffset? ChangedAt);
 
+/// <summary>Reconciliação de uma loja (RF27): agenda a conferência de cada anúncio, espaçada para respeitar os limites do canal.</summary>
+public sealed record ReconcileChannels;
+
+/// <summary>Confere um anúncio com o canal e corrige o canal se divergir (o estoque local é a verdade).</summary>
+public sealed record ReconcileListing(Guid ListingId);
+
 public enum ListingCommandOutcome
 {
     Done,
@@ -64,7 +70,7 @@ public sealed record ListingCommandResult(ListingCommandOutcome Outcome, string?
 public sealed record ChangeListingByUser(Guid ListingId, bool Pause);
 
 public sealed record ListingView(Guid Id, string Channel, string ExternalAccount, string? ExternalId, ListingStatus Status, int? LastPushedQuantity,
-    decimal? LastPushedPrice, DateTimeOffset? LastSyncedAt, string? LastError);
+    decimal? LastPushedPrice, DateTimeOffset? LastSyncedAt, string? LastError, DateTimeOffset? LastReconciledAt = null);
 
 public interface IChannelQueries
 {

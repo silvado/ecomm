@@ -196,6 +196,7 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 - CA1: job horário compara quantidade/preço/status de cada anúncio externo com o estoque local.
 - CA2: divergência é corrigida no canal (o estoque local é a verdade) e registrada no log de integração.
 - CA3: o job respeita limites de taxa das APIs (lotes e espera).
+- Feito (13/10/2026): o Worker pede, de hora em hora, a reconciliação de cada loja com conta de canal; a loja agenda a conferência de cada anúncio em lotes por canal (`Channels:Reconciliation` — padrão 50 por lote a cada 30 s; os limites reais de cada API entram com o conector). Cada conferência lê o estado remoto e corrige o canal para a verdade local: situação (ativo com saldo, pausado sem saldo, pausa do lojista), quantidade e preço. Cada divergência corrigida vai para o log de integração ("reconciliar anúncio", com o antes → depois); conferência sem divergência só atualiza "conferido em". Anúncio excluído ou encerrado no canal fica em erro até a loja decidir.
 
 ### RF28 — Retentativas e alerta · E1
 - CA1: falhas transitórias são retentadas com backoff exponencial com jitter (ex.: 10 s, 30 s, 2 min, 10 min, 30 min).
