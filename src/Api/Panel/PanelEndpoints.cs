@@ -115,8 +115,7 @@ public static class PanelEndpoints
         });
 
         // RF06 CA3: só metadados (tipo, últimos 4 caracteres, validade).
-        panel.MapGet("/cofre", async (ISecretVault vault, CancellationToken ct) => TypedResults.Ok(await vault.ListAsync(ct)))
-            .RequirePermission(Permission.VaultManage);
+        panel.MapVaultEndpoints();
     }
 
     /// <summary>

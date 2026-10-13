@@ -15,6 +15,8 @@ builder.UseWolverine(opts => opts.ConfigureMessaging(builder.Configuration.GetCo
     retryDelays: MessagingSettings.RetryDelays(builder.Configuration)));
 // RF29 CA2: retenção de 90 dias do log de integração (uma instância só: o Worker).
 builder.Services.AddHostedService<IntegrationLogRetention>();
+// RF06 CA5: aviso no log 30, 15 e 5 dias antes de o certificado A1 vencer.
+builder.Services.AddHostedService<Ecommerce.Infrastructure.Vault.CertificateExpiryMonitor>();
 
 var host = builder.Build();
 host.Run();
