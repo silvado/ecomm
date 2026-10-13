@@ -27,7 +27,9 @@ using Wolverine;
 var builder = WebApplication.CreateBuilder(args);
 
 // Logs JSON com tenant, correlação e redação de dados sensíveis (RNF06).
-builder.Services.AddSerilog((services, logger) => logger.ConfigureEcommerce(builder.Configuration), writeToProviders: true);
+// preserveStaticLogger: cada host usa o próprio logger (sem o Log.Logger estático, que vários hosts no mesmo processo —
+// testes em paralelo — compartilhariam, misturando os logs de um no outro).
+builder.Services.AddSerilog((services, logger) => logger.ConfigureEcommerce(builder.Configuration), preserveStaticLogger: true, writeToProviders: true);
 
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
