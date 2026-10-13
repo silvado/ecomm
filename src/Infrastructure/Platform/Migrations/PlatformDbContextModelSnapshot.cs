@@ -258,6 +258,10 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateTimeOffset?>("CustomStorefrontSince")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("custom_storefront_since");
+
                     b.Property<string>("DatabaseKey")
                         .IsRequired()
                         .HasMaxLength(60)

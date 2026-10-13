@@ -13,16 +13,26 @@ const hex = Validators.pattern(/^#[0-9a-fA-F]{6}$/);
 /** Mesmo limite da API (LogoImage.MaxBytes): evita enviar à toa um arquivo que será recusado. */
 const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 
+/** Campos da aparência, travados na loja personalizada (RF40). */
+const APPEARANCE = ['tradeName', 'primaryColor', 'backgroundColor', 'textColor', 'about', 'returnPolicy', 'footer'] as const;
+
 @Component({
   selector: 'app-store',
   imports: [ReactiveFormsModule, TraceabilitySettingsSection, FiscalSettingsSection, EmailSettingsSection],
   template: `
     <main class="card">
-      <h1>Dados da loja</h1>
+      <h1>Dados da loja @if (custom()) { <span class="badge ok" data-custom-badge>Loja personalizada</span> }</h1>
       @if (profile(); as p) {
         <p class="muted">
           {{ p.legalName }} · CNPJ {{ p.cnpj }} · endereço da loja: <strong>{{ p.slug }}</strong>.
           Razão social e CNPJ não mudam por aqui.
+        </p>
+      }
+      @if (custom()) {
+        <p class="notice" role="status" data-custom-notice>
+          <strong>Loja personalizada.</strong> O visual da sua loja foi feito sob medida pela nossa equipe: logo, nome, cores e
+          textos não mudam por aqui. Para pedir uma alteração, fale com o suporte. Entrega, retirada, estoque e as demais
+          configurações abaixo continuam com você.
         </p>
       }
 
@@ -34,15 +44,19 @@ const LOGO_MAX_BYTES = 2 * 1024 * 1024;
           } @else {
             <span class="muted">Sem logo: a loja mostra o nome no cabeçalho.</span>
           }
-          <label class="button-like">
-            {{ logoUrl() ? 'Trocar logo' : 'Enviar logo' }}
-            <input type="file" accept="image/png,image/jpeg,image/webp" (change)="uploadLogo($event)" [disabled]="busy()" hidden />
-          </label>
-          @if (logoUrl()) {
-            <button type="button" class="link danger" (click)="removeLogo()" [disabled]="busy()">Remover</button>
+          @if (!custom()) {
+            <label class="button-like" data-logo-upload>
+              {{ logoUrl() ? 'Trocar logo' : 'Enviar logo' }}
+              <input type="file" accept="image/png,image/jpeg,image/webp" (change)="uploadLogo($event)" [disabled]="busy()" hidden />
+            </label>
+            @if (logoUrl()) {
+              <button type="button" class="link danger" (click)="removeLogo()" [disabled]="busy()">Remover</button>
+            }
           }
         </div>
-        <small>PNG, JPG ou WebP, até 2 MB.</small>
+        @if (!custom()) {
+          <small>PNG, JPG ou WebP, até 2 MB.</small>
+        }
         @if (logoError()) {
           <p class="error" role="alert">{{ logoError() }}</p>
         }
@@ -148,6 +162,7 @@ export class StorePage implements OnInit, OnDestroy {
   ] as const;
 
   protected readonly profile = signal<StoreProfile | null>(null);
+  protected readonly custom = computed(() => this.profile()?.customStorefront === true);
   protected readonly busy = signal(false);
   protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -294,5 +309,11 @@ export class StorePage implements OnInit, OnDestroy {
       pickupEnabled: profile.shipping.pickupEnabled,
       pickupAddress: profile.shipping.pickupAddress ?? '',
     });
+    // Loja personalizada (RF40): aparência só leitura; o salvar reenvia os valores atuais (getRawValue) e a API confere.
+    for (const name of APPEARANCE) {
+      const control = this.form.controls[name];
+      if (profile.customStorefront) control.disable({ emitEvent: false });
+      else control.enable({ emitEvent: false });
+    }
   }
 }

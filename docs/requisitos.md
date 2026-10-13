@@ -124,6 +124,7 @@ Na contratação, o lojista pode optar por um site próprio personalizado com a 
 - CA2: com a opção ligada, o painel do lojista **não permite alterar a aparência** (logo, cores, textos institucionais, layout): a área aparece como **"Loja personalizada"**, com orientação para pedir mudanças à equipe. A API recusa essas alterações (não basta esconder a tela).
 - CA3: peças, preços, estoque, pedidos, frete, pagamento, NF-e, e-mail e usuários continuam com o lojista.
 - CA4: ligar e desligar a opção é da plataforma (superadmin/contrato), registrado com data; desligar devolve a edição ao Dono.
+- **Antecipado no E1 (trava e selo):** coluna `custom_storefront_since` no tenant; até o painel de superadmin (E4), liga/desliga pelo comando do migrador `loja-personalizada --slug <slug> --ligar|--desligar`. Aparência travada = nome fantasia, logo, cores e textos (sobre, trocas e devoluções, rodapé). O tema e as páginas exclusivos (CA1) seguem no E4.
 
 ## 4. Pedidos e fiscal
 

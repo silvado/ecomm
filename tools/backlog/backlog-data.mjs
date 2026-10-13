@@ -331,7 +331,7 @@ export const epics = [
             title: 'Loja personalizada (sob orçamento)',
             rf: 'RF40',
             ac: 'Superadmin liga/desliga a opção por tenant (com data); com ela ligada, a API recusa e o painel trava a edição da aparência mostrando "Loja personalizada"; tema e páginas exclusivos cadastrados pela plataforma como dados do tenant, sanitizados, sem script; peças, pedidos e demais configurações seguem com o lojista.',
-            t: [['Opção por tenant e trava da aparência na API', 4], ['Selo "Loja personalizada" no painel', 3], ['Tema e páginas exclusivos na vitrine (dados do tenant, sanitizados)', 16], ['Tela de superadmin para o tema exclusivo', 8]],
+            t: [['Opção por tenant e trava da aparência na API', 4, 'done'], ['Selo "Loja personalizada" no painel', 3, 'done'], ['Tema e páginas exclusivos na vitrine (dados do tenant, sanitizados)', 16], ['Tela de superadmin para o tema exclusivo', 8]],
           },
         ],
       },

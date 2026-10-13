@@ -80,6 +80,18 @@ public sealed class Tenant
         TradeName = value;
     }
 
+    /// <summary>
+    /// Loja personalizada (RF40, Q40), contratada à parte: desde quando a aparência é cuidada pela equipe da plataforma.
+    /// Nulo = o Dono edita logo, nome, cores e textos.
+    /// </summary>
+    public DateTimeOffset? CustomStorefrontSince { get; private set; }
+
+    public bool IsCustomStorefront => CustomStorefrontSince is not null;
+
+    /// <summary>Liga (mantém a data original se já estava ligada) ou desliga a loja personalizada.</summary>
+    public void SetCustomStorefront(bool enabled, DateTimeOffset now) =>
+        CustomStorefrontSince = enabled ? CustomStorefrontSince ?? now : null;
+
     public void ChangePlan(string planCode)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(planCode);

@@ -33,12 +33,19 @@ public sealed class StoreProfileService(
         var branding = await TrackedBrandingAsync(tenantId, ct);
         var settings = await TrackedSettingsAsync(tenantId, ct);
 
+        // Loja personalizada (RF40): o formulário volta com a aparência atual; mudar qualquer item dela é recusado.
+        if (tenant.IsCustomStorefront && AppearanceChanged(update, tenant.TradeName, branding))
+            throw new AppearanceLockedException();
+
         // Tudo validado antes de gravar: qualquer erro devolve a mensagem e nada muda.
         try
         {
-            tenant.Rename(update.TradeName);
-            branding.Update(update.PrimaryColor, update.BackgroundColor, update.TextColor,
-                update.About, update.ReturnPolicy, update.Footer, clock.GetUtcNow());
+            if (!tenant.IsCustomStorefront)
+            {
+                tenant.Rename(update.TradeName);
+                branding.Update(update.PrimaryColor, update.BackgroundColor, update.TextColor,
+                    update.About, update.ReturnPolicy, update.Footer, clock.GetUtcNow());
+            }
             if (update.HideOutOfStock is { } hide) settings.SetHideOutOfStock(hide);
             if (update.Shipping is { } shipping) settings.ConfigureShipping(shipping.OriginPostalCode, shipping.PickupEnabled, shipping.PickupAddress);
         }
@@ -69,6 +76,7 @@ public sealed class StoreProfileService(
     public async Task<(StoreProfile? Profile, string? Error)> ReplaceLogoAsync(Stream content, CancellationToken ct = default)
     {
         var tenantId = db.RequireTenantId();
+        await RequireEditableAppearanceAsync(tenantId, ct);
 
         // Lê no máximo 1 byte além do limite: arquivo grande é recusado sem ser carregado inteiro.
         var buffer = new byte[LogoImage.MaxBytes + 1];
@@ -108,6 +116,7 @@ public sealed class StoreProfileService(
     public async Task<StoreProfile> RemoveLogoAsync(CancellationToken ct = default)
     {
         var tenantId = db.RequireTenantId();
+        await RequireEditableAppearanceAsync(tenantId, ct);
         var branding = await TrackedBrandingAsync(tenantId, ct);
         var previous = branding.RemoveLogo(clock.GetUtcNow());
         await db.SaveChangesAsync(ct);
@@ -153,7 +162,25 @@ public sealed class StoreProfileService(
         var settings = await db.StoreSettings.AsNoTracking().SingleOrDefaultAsync(ct);
         return new StoreProfile(tenant.Slug, tenant.Cnpj.Value, tenant.LegalName, tenant.TradeName,
             Theme(branding), Texts(branding), branding.ContrastWarnings(), branding.LogoId, settings?.HideOutOfStock ?? false,
-            new StoreShipping(settings?.OriginPostalCode, settings?.PickupEnabled ?? false, settings?.PickupAddress));
+            new StoreShipping(settings?.OriginPostalCode, settings?.PickupEnabled ?? false, settings?.PickupAddress), tenant.IsCustomStorefront);
+    }
+
+    private async Task RequireEditableAppearanceAsync(Guid tenantId, CancellationToken ct)
+    {
+        if (await platform.Tenants.AsNoTracking().AnyAsync(t => t.Id == tenantId && t.CustomStorefrontSince != null, ct))
+            throw new AppearanceLockedException();
+    }
+
+    /// <summary>Comparação tolerante (espaços nas pontas, quebras de linha, maiúsculas nas cores), como o painel reenvia o que leu.</summary>
+    private static bool AppearanceChanged(UpdateStoreProfile update, string tradeName, StoreBranding branding)
+    {
+        static string Text(string? value) => (value ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Trim();
+        static bool Color(string? value, string current) => string.Equals(Text(value), current, StringComparison.OrdinalIgnoreCase);
+        return Text(update.TradeName) != tradeName
+            || !Color(update.PrimaryColor, branding.PrimaryColor) || !Color(update.BackgroundColor, branding.BackgroundColor)
+            || !Color(update.TextColor, branding.TextColor)
+            || Text(update.About) != Text(branding.About) || Text(update.ReturnPolicy) != Text(branding.ReturnPolicy)
+            || Text(update.Footer) != Text(branding.Footer);
     }
 
     private void Invalidate(Guid tenantId)

@@ -2,6 +2,26 @@ using Ecommerce.Domain.Platform;
 
 namespace Ecommerce.Domain.Tests.Platform;
 
+/// <summary>RF40: loja personalizada guarda desde quando está ligada.</summary>
+public sealed class CustomStorefrontTests
+{
+    [Fact]
+    public void Ligar_de_novo_mantem_a_data_e_desligar_limpa()
+    {
+        var now = new DateTimeOffset(2026, 10, 12, 12, 0, 0, TimeSpan.Zero);
+        var tenant = Tenant.Create("pecas-teste", Cnpj.Parse("11222333000181"), "Peças Ltda", "Peças", "plataforma.test", now);
+        Assert.False(tenant.IsCustomStorefront);
+
+        tenant.SetCustomStorefront(true, now);
+        tenant.SetCustomStorefront(true, now.AddDays(3));
+        Assert.Equal(now, tenant.CustomStorefrontSince);
+
+        tenant.SetCustomStorefront(false, now.AddDays(5));
+        Assert.Null(tenant.CustomStorefrontSince);
+        Assert.False(tenant.IsCustomStorefront);
+    }
+}
+
 public sealed class TenantTests
 {
     private static readonly Cnpj Cnpj = Cnpj.Parse("11222333000181");

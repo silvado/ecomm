@@ -21,6 +21,8 @@ export interface StoreProfile {
   logoId: string | null;
   hideOutOfStock: boolean;
   shipping: StoreShipping;
+  /** Loja personalizada (RF40): a aparência é cuidada pela equipe da plataforma. */
+  customStorefront?: boolean;
 }
 
 export interface StoreProfileUpdate {
