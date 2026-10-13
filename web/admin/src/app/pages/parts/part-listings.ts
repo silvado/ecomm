@@ -16,6 +16,7 @@ export interface ListingView {
   lastPushedPrice: number | null;
   lastSyncedAt: string | null;
   lastError: string | null;
+  lastReconciledAt?: string | null;
 }
 
 export const LISTING_STATUS: Record<ListingStatus, string> = {
@@ -62,7 +63,7 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
       <h2>Anúncios</h2>
       @if (listings().length) {
         <table>
-          <thead><tr><th>Canal</th><th>Situação</th><th>Quantidade e preço no canal</th><th>Atualizado</th><th></th></tr></thead>
+          <thead><tr><th>Canal</th><th>Situação</th><th>Quantidade e preço no canal</th><th>Atualizado</th><th>Conferido</th><th></th></tr></thead>
           <tbody>
             @for (l of listings(); track l.id) {
               <tr [attr.data-listing]="l.status">
@@ -75,6 +76,7 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
                 </td>
                 <td>{{ l.lastPushedQuantity ?? '—' }} un. · {{ l.lastPushedPrice != null ? (l.lastPushedPrice | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR') : '—' }}</td>
                 <td>{{ l.lastSyncedAt ? when(l.lastSyncedAt) : '—' }}</td>
+                <td data-reconciled>{{ l.lastReconciledAt ? when(l.lastReconciledAt) : '—' }}</td>
                 <td>
                   @if (l.status === 'active' || l.status === 'pausedBySystem' || l.status === 'error') {
                     <button type="button" class="link" (click)="change(l, 'pausar')" [disabled]="busy()" data-pause>Pausar</button>
@@ -86,7 +88,7 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
             }
           </tbody>
         </table>
-        <small class="muted">Sem estoque, o anúncio pausa sozinho e volta quando houver saldo. Pausado por você só volta quando você retomar.</small>
+        <small class="muted">Sem estoque, o anúncio pausa sozinho e volta quando houver saldo. Pausado por você só volta quando você retomar. De hora em hora conferimos o anúncio no canal e corrigimos o que estiver diferente do estoque.</small>
       } @else {
         <p class="muted">A peça ainda não está anunciada em nenhum canal. A publicação no Mercado Livre e no Instagram entra em breve.</p>
       }

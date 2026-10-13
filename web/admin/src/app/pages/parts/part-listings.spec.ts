@@ -46,6 +46,11 @@ describe('Anúncios da peça', () => {
     expect(element.textContent).toContain('Canal fora do ar');
   });
 
+  it('mostra quando foi conferido no canal', async () => {
+    const { element } = await render([listing({ lastReconciledAt: '2026-10-13T15:00:00Z' })]);
+    expect(element.querySelector('[data-reconciled]')!.textContent).toContain('13/10/2026');
+  });
+
   it('sem anúncios avisa', async () => {
     const { element } = await render([]);
     expect(element.textContent).toContain('ainda não está anunciada');
