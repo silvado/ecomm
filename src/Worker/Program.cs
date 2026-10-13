@@ -17,6 +17,8 @@ builder.UseWolverine(opts => opts.ConfigureMessaging(builder.Configuration.GetCo
 builder.Services.AddHostedService<IntegrationLogRetention>();
 // RF06 CA5: aviso no log 30, 15 e 5 dias antes de o certificado A1 vencer.
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Vault.CertificateExpiryMonitor>();
+// RF27: reconciliação horária dos anúncios com os canais.
+builder.Services.AddHostedService<Ecommerce.Infrastructure.Channels.ChannelReconciliationScheduler>();
 
 var host = builder.Build();
 host.Run();

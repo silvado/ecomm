@@ -539,6 +539,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("last_pushed_quantity");
 
+                    b.Property<DateTimeOffset?>("LastReconciledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_reconciled_at");
+
                     b.Property<DateTimeOffset?>("LastSyncedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_synced_at");

@@ -105,6 +105,39 @@ public sealed class ChannelListing : ITenantOwned
     public string? LastError { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
 
+    /// <summary>Última conferência com o canal (reconciliação horária — RF27).</summary>
+    public DateTimeOffset? LastReconciledAt { get; private set; }
+
+    /// <summary>
+    /// Situação que o anúncio deve ter no canal, segundo a verdade local: ativo só com saldo e sem pausa do lojista.
+    /// Já considera a ação pendente (ex.: zerou e a sincronização ainda não rodou).
+    /// </summary>
+    public ListingStatus ExpectedStatus(int available) => Status switch
+    {
+        ListingStatus.PausedByUser => ListingStatus.PausedByUser,
+        ListingStatus.Active or ListingStatus.PausedBySystem or ListingStatus.Error => available > 0 ? ListingStatus.Active : ListingStatus.PausedBySystem,
+        _ => Status,
+    };
+
+    /// <summary>Conferido com o canal; <paramref name="expected"/> passa a ser a situação local (o canal foi corrigido se preciso).</summary>
+    public void Reconciled(ListingStatus expected, int quantity, decimal price, bool corrected, DateTimeOffset now)
+    {
+        if (expected is (ListingStatus.Active or ListingStatus.PausedBySystem) && Status != ListingStatus.PausedByUser)
+        {
+            var wasError = Status == ListingStatus.Error;
+            Status = expected;
+            if (corrected || wasError || LastPushedQuantity is null) Synced(quantity, price, now);
+        }
+        LastReconciledAt = now;
+    }
+
+    /// <summary>O anúncio sumiu do canal (excluído lá): fica em erro até a loja decidir.</summary>
+    public void MissingInChannel(DateTimeOffset now)
+    {
+        Failed("O anúncio não existe mais no canal.", now);
+        LastReconciledAt = now;
+    }
+
     /// <summary>RF24: decide a ação para o saldo e o preço atuais.</summary>
     public ListingAction Decide(int available, decimal price) => Status switch
     {

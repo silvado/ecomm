@@ -16,11 +16,26 @@ public sealed class FakeChannelConnector : IChannelConnector
 {
     private static readonly ConcurrentDictionary<string, RemoteListing> Listings = new();
     private static readonly ConcurrentDictionary<string, int> Failures = new();
+    private static readonly ConcurrentDictionary<string, bool> Removed = new();
 
     public string Channel => FakeChannelProcessor.ChannelName;
 
     /// <summary>Quantas das próximas chamadas para este anúncio falham como canal fora do ar (por anúncio: testes em paralelo não se misturam).</summary>
     public static void FailNext(string externalId, int count) => Failures[externalId] = count;
+
+    /// <summary>Altera o anúncio "no canal" por fora (alguém mexeu lá), para testar a reconciliação.</summary>
+    public static void SetRemote(RemoteListing listing)
+    {
+        Removed.TryRemove(listing.ExternalId, out _);
+        Listings[listing.ExternalId] = listing;
+    }
+
+    /// <summary>Simula o anúncio excluído no canal: a leitura passa a devolver nulo.</summary>
+    public static void RemoveRemote(string externalId)
+    {
+        Listings.TryRemove(externalId, out _);
+        Removed[externalId] = true;
+    }
 
     public static RemoteListing? Remote(string externalId) => Listings.TryGetValue(externalId, out var listing) ? listing : null;
 
@@ -57,7 +72,12 @@ public sealed class FakeChannelConnector : IChannelConnector
     public Task<RemoteListing?> GetRemoteStateAsync(string externalId, CancellationToken ct = default)
     {
         ThrowIfDown(externalId);
-        return Task.FromResult(Remote(externalId));
+        // Anúncio do simulado que este processo não conhece (publicado por outro processo do compose) existe, sem estado
+        // conhecido; só os excluídos de propósito e ids que não são do simulado não existem.
+        RemoteListing? known = Remote(externalId);
+        if (known is null && externalId.StartsWith("SIM-", StringComparison.Ordinal) && !Removed.ContainsKey(externalId))
+            known = Existing(externalId);
+        return Task.FromResult(known);
     }
 
     // Memória do processo: no compose, a API publica e o Worker pode sincronizar. Anúncio que este processo não conhece
