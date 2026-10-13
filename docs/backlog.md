@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1005** |
 
-Progresso: 383 h de 1005 h em tarefas concluídas (38%).
+Progresso: 405 h de 1005 h em tarefas concluídas (40%).
 
 Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -234,13 +234,13 @@ Mercado Livre e Instagram (catálogo Meta) sincronizados com o estoque único.
 
 ### Conector de canais comum — 34 h
 
-#### IChannelConnector e propagação de estoque — 22 h  `RF25, RF24`
+#### IChannelConnector e propagação de estoque — 22 h  `RF25, RF24` · **concluído**
 
 **Critérios de aceite:** Interface comum (publicar, atualizar, pausar, retomar, eventos, estado remoto); handler de StockChanged atualiza todos os canais ativos; peça zerada pausa anúncios em ≤ 60 s; reativa só o que o sistema pausou.
 
-- [ ] Interface, fake e testes de contrato genéricos — 8 h
-- [ ] Handler de propagação por canal — 8 h
-- [ ] Regras de pausa/reativação e métrica de latência — 6 h
+- [x] Interface, fake e testes de contrato genéricos — 8 h
+- [x] Handler de propagação por canal — 8 h
+- [x] Regras de pausa/reativação e métrica de latência — 6 h
 
 #### Reconciliação horária — 12 h  `RF27`
 

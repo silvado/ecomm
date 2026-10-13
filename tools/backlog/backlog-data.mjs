@@ -197,7 +197,7 @@ export const epics = [
             title: 'IChannelConnector e propagação de estoque',
             rf: 'RF25, RF24',
             ac: 'Interface comum (publicar, atualizar, pausar, retomar, eventos, estado remoto); handler de StockChanged atualiza todos os canais ativos; peça zerada pausa anúncios em ≤ 60 s; reativa só o que o sistema pausou.',
-            t: [['Interface, fake e testes de contrato genéricos', 8], ['Handler de propagação por canal', 8], ['Regras de pausa/reativação e métrica de latência', 6]],
+            t: [['Interface, fake e testes de contrato genéricos', 8, 'done'], ['Handler de propagação por canal', 8, 'done'], ['Regras de pausa/reativação e métrica de latência', 6, 'done']],
           },
           {
             title: 'Reconciliação horária',
