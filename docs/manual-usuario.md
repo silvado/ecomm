@@ -153,6 +153,8 @@ Use para cadastrar o estoque de uma vez, por exemplo na implantação da loja.
   - quando volta a ter saldo, ele **reativa sozinho**;
   - peça **inativa** também pausa o anúncio.
 - **Pausar:** o anúncio fica **Pausado por você** e não volta sozinho, mesmo com estoque. **Retomar** faz ele voltar a seguir o estoque.
+- **Conferência de hora em hora:** o sistema compara cada anúncio com o estoque da loja (situação, quantidade e preço) e corrige o canal se alguém mexeu lá. Vale o estoque da loja. Cada correção aparece em **Integrações** como "reconciliar anúncio", com o que mudou. A coluna **Conferido** mostra quando foi a última conferência.
+- **Anúncio excluído ou encerrado direto no canal:** fica com erro, para a loja decidir.
 - **Erro na última atualização:** o canal não respondeu, mesmo depois das novas tentativas automáticas. A próxima mudança de estoque tenta de novo, e o detalhe fica em **Integrações**.
 
 ### 4.3.1 Veículos doadores e rastreabilidade
@@ -513,3 +515,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 12/10/2026 | Loja personalizada (RF40): selo e aparência travada em 4.6 Dados da loja; comando de operação em 6. |
 | 13/10/2026 | Cofre e certificado digital A1 (RF06): nova seção 4.7.1, aviso de vencimento e perfis. |
 | 13/10/2026 | Anúncios da peça (base do E2, RF24): situação nos canais, pausa e retomada, atualização automática pelo estoque (4.3). |
+| 13/10/2026 | Conferência de hora em hora dos anúncios com os canais (RF27), na seção Anúncios (4.3). |

@@ -259,6 +259,7 @@ erDiagram
         numeric last_pushed_price
         timestamptz last_synced_at
         string last_error "última falha (limpa ao sincronizar)"
+        timestamptz last_reconciled_at "RF27: última conferência com o canal"
     }
     REF_VEHICLE_VERSION {
         uuid id PK "réplica de plataforma.vehicle_version"
