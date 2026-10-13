@@ -45,6 +45,20 @@ public sealed partial class IntegrationLogRetention(IServiceScopeFactory scopes,
             tenants = await scope.ServiceProvider.GetRequiredService<PlatformDbContext>().Tenants.AsNoTracking().Select(t => t.Id).ToListAsync(ct);
 
         var removed = 0;
+        // Inbox de canais (RF26, sem loja): roteados saem com 30 dias; sem dono, com 90 (dá tempo de investigar).
+        try
+        {
+            await using var scope = scopes.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<TenantDbContext>();
+            var routedLimit = clock.GetUtcNow().AddDays(-30);
+            removed += await db.InboxEvents.Where(e => (e.Status == InboxStatus.Routed && e.ReceivedAt < routedLimit)
+                || (e.Status == InboxStatus.Unroutable && e.ReceivedAt < limit)).ExecuteDeleteAsync(ct);
+        }
+        catch (Exception e) when (e is DbUpdateException or Npgsql.NpgsqlException or InvalidOperationException)
+        {
+            LogPurgeFailed(logger, e, Guid.Empty);
+        }
+
         foreach (var tenantId in tenants)
         {
             try

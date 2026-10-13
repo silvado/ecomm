@@ -678,6 +678,78 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.ToTable("fiscal_documents", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Integrations.InboxEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ExternalAccount")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("external_account");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<string>("Payload")
+                        .HasMaxLength(16384)
+                        .HasColumnType("character varying(16384)")
+                        .HasColumnName("payload");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at");
+
+                    b.Property<string>("Resource")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("resource");
+
+                    b.Property<DateTimeOffset?>("RoutedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("routed_at");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("topic");
+
+                    b.HasKey("Id")
+                        .HasName("pk_inbox_external_events");
+
+                    b.HasIndex("Source", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_inbox_external_events_source_idempotency_key");
+
+                    b.HasIndex("Status", "ReceivedAt")
+                        .HasDatabaseName("ix_inbox_external_events_status_received_at");
+
+                    b.ToTable("external_events", "inbox");
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Integrations.IntegrationLogEntry", b =>
                 {
                     b.Property<Guid>("Id")

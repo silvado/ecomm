@@ -152,6 +152,46 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                     b.ToTable("user_accounts", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Platform.ChannelAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("channel");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ExternalAccountId")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("external_account_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_channel_accounts");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_channel_accounts_tenant_id");
+
+                    b.HasIndex("Channel", "ExternalAccountId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_channel_accounts_channel_external_account_id");
+
+                    b.ToTable("channel_accounts", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Platform.Plan", b =>
                 {
                     b.Property<Guid>("Id")
@@ -486,6 +526,16 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_tenant_memberships_user_accounts_user_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Platform.ChannelAccount", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Platform.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_channel_accounts_tenants_tenant_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Platform.PlanLimit", b =>

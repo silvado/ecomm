@@ -68,6 +68,8 @@ services:
       Payments__UseFakeGateway: "true"
       # NF-e simulada (sem valor fiscal) enquanto o adaptador da Focus NFe não entra. Nunca em produção.
       Fiscal__UseFakeProvider: "true"
+      # Canal de venda simulado (webhook /api/webhooks/canais/canal-simulado) até os canais reais (E2). Nunca em produção.
+      Channels__UseFakeChannel: "true"
       Platform__Domain: ${PLATFORM_DOMAIN:-localhost}   # URL de notificação mostrada no painel (<slug>.<domínio>)
       Shipping__MelhorEnvio__BaseUrl: https://sandbox.melhorenvio.com.br
       Shipping__MelhorEnvio__UserAgent: ${MELHOR_ENVIO_USER_AGENT:-}
@@ -87,6 +89,7 @@ services:
       # O worker também processa notificações de pagamento da fila: precisa ver o mesmo gateway fake da API.
       Payments__UseFakeGateway: "true"
       Fiscal__UseFakeProvider: "true"
+      Channels__UseFakeChannel: "true"
       ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD}
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
       Vault__CurrentMasterKeyVersion: v1
