@@ -31,6 +31,8 @@ internal sealed class PartConfiguration : IEntityTypeConfiguration<Part>
         builder.HasIndex(p => new { p.TenantId, p.TraceabilityTag }).IsUnique().HasFilter("traceability_tag IS NOT NULL");
         builder.HasOne<DonorVehicle>().WithMany().HasForeignKey(p => p.DonorVehicleId).OnDelete(DeleteBehavior.Restrict);
         builder.Property(p => p.CustomFields).AsJson("'{}'::jsonb");
+        builder.Property(p => p.Ncm).HasMaxLength(8);
+        builder.Property(p => p.TaxCode).HasMaxLength(3);
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("ck_parts_price_positive", "price > 0");

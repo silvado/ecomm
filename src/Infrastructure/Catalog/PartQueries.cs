@@ -59,7 +59,8 @@ public sealed class PartQueries(TenantDbContext db) : IPartQueries
         return new PartView(part.Id, part.InternalCode, part.Title, part.Description, part.Condition, part.Price,
             part.LengthCm, part.WidthCm, part.HeightCm, part.WeightG, part.OemCodes.Select(c => c.Code).Order().ToList(),
             part.Status, stock, part.HasShippingDimensions, part.CreatedAt, part.UpdatedAt,
-            part.Photos.Select(f => new PhotoView(f.Id, f.Position)).ToList(), compatibilities, await TraceabilityAsync(part, ct));
+            part.Photos.Select(f => new PhotoView(f.Id, f.Position)).ToList(), compatibilities, await TraceabilityAsync(part, ct),
+            new PartFiscalView(part.Ncm, part.TaxCode, part.FiscalOrigin));
     }
 
     /// <summary>Origem da peça e o que o modo desmontadora ainda exige para ela ir à venda (RF10).</summary>

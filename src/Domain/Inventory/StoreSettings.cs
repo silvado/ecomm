@@ -73,6 +73,13 @@ public sealed class StoreSettings : ITenantOwned
         ContactEmail = contact;
     }
 
+    /// <summary>Configuração fiscal (RF19); nulo = <see cref="Fiscal.FiscalSettings.Default"/> (emissão desligada).</summary>
+    public Domain.Fiscal.FiscalSettings? Fiscal { get; private set; }
+
+    public Domain.Fiscal.FiscalSettings FiscalOrDefault => Fiscal ?? Domain.Fiscal.FiscalSettings.Default;
+
+    public void ConfigureFiscal(Domain.Fiscal.FiscalSettings settings) => Fiscal = Domain.Fiscal.FiscalRules.Normalize(settings);
+
     public void SetReservationMinutes(int minutes)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(minutes, 5);

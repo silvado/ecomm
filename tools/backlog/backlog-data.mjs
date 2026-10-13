@@ -162,7 +162,7 @@ export const epics = [
             title: 'Emissão de NF-e',
             rf: 'RF19',
             ac: 'Emissão via IFiscalProvider com certificado do cofre; status, DANFE e XML no pedido; rejeição mostra motivo e permite reenviar; dados fiscais configuráveis por peça com padrão por tenant.',
-            t: [['IFiscalProvider e fake', 4], ['Adapter do provedor fiscal escolhido', 20], ['Configuração fiscal de tenant e peça', 6], ['Tela de emissão e acompanhamento', 6]],
+            t: [['IFiscalProvider e fake', 4, 'done'], ['Adapter do provedor fiscal escolhido', 20], ['Configuração fiscal de tenant e peça', 6, 'done'], ['Tela de emissão e acompanhamento', 6, 'done']],
           },
           {
             title: 'Cancelamento e devolução',
@@ -326,6 +326,12 @@ export const epics = [
             rf: 'RF03',
             ac: 'Painel mostra registros DNS exatos; verificação a cada 5 min por até 72 h; certificado emitido só para domínio verificado via endpoint ask; MX nunca tocado.',
             t: [['Job de verificação DNS', 10], ['Endpoint ask interno', 4], ['Tela de domínio com instruções', 8]],
+          },
+          {
+            title: 'Loja personalizada (sob orçamento)',
+            rf: 'RF40',
+            ac: 'Superadmin liga/desliga a opção por tenant (com data); com ela ligada, a API recusa e o painel trava a edição da aparência mostrando "Loja personalizada"; tema e páginas exclusivos cadastrados pela plataforma como dados do tenant, sanitizados, sem script; peças, pedidos e demais configurações seguem com o lojista.',
+            t: [['Opção por tenant e trava da aparência na API', 4], ['Selo "Loja personalizada" no painel', 3], ['Tema e páginas exclusivos na vitrine (dados do tenant, sanitizados)', 16], ['Tela de superadmin para o tema exclusivo', 8]],
           },
         ],
       },

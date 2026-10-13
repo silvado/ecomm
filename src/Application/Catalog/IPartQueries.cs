@@ -26,7 +26,10 @@ public sealed record PartView(
     Guid Id, string InternalCode, string Title, string Description, PartCondition Condition, decimal Price,
     int? LengthCm, int? WidthCm, int? HeightCm, int? WeightG, IReadOnlyList<string> OemCodes,
     PartStatus Status, StockView Stock, bool HasShippingDimensions, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt,
-    IReadOnlyList<PhotoView> Photos, IReadOnlyList<CompatibilityView> Compatibilities, PartTraceabilityView Traceability);
+    IReadOnlyList<PhotoView> Photos, IReadOnlyList<CompatibilityView> Compatibilities, PartTraceabilityView Traceability, PartFiscalView Fiscal);
+
+/// <summary>Dados fiscais próprios da peça (RF19 CA3); nulos usam o padrão da loja.</summary>
+public sealed record PartFiscalView(string? Ncm, string? TaxCode, int? Origin);
 
 /// <param name="Search">Trecho do título ou do código interno, um código OEM (com ou sem espaços e hífens) ou a etiqueta de rastreabilidade.</param>
 public sealed record PartSearch(string? Search, PartStatus? Status, int Page = 1, int PageSize = 25, VehicleFilter? Vehicle = null)

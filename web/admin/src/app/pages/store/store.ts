@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthStore, problemTitle } from '../../core/auth';
 import { EmailSettingsSection } from './email-settings';
+import { FiscalSettingsSection } from '../fiscal/fiscal-settings';
 import { contrastRatio, isHexColor, MIN_COMPONENT_CONTRAST, MIN_TEXT_CONTRAST, readableOn } from '../../shared/contrast';
 import { StoreApi, StoreProfile } from './store.api';
 import { TraceabilitySettingsSection } from './traceability-settings';
@@ -14,7 +15,7 @@ const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 
 @Component({
   selector: 'app-store',
-  imports: [ReactiveFormsModule, TraceabilitySettingsSection, EmailSettingsSection],
+  imports: [ReactiveFormsModule, TraceabilitySettingsSection, FiscalSettingsSection, EmailSettingsSection],
   template: `
     <main class="card">
       <h1>Dados da loja</h1>
@@ -125,6 +126,11 @@ const LOGO_MAX_BYTES = 2 * 1024 * 1024;
       </form>
 
       <app-traceability-settings />
+      @defer (on viewport) {
+        <app-fiscal-settings />
+      } @placeholder {
+        <p class="muted">Nota fiscal…</p>
+      }
       @if (auth.can('vaultManage')) {
         <app-email-settings />
       }

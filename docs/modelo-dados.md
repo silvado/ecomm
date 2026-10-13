@@ -144,7 +144,9 @@ erDiagram
         int width_cm
         int height_cm
         string status "draft|active|inactive (sem exclusão)"
-        jsonb fiscal "ncm, cfop, cst_csosn, origem"
+        string ncm "RF19: nulo = padrão da loja"
+        string tax_code "CSOSN (Simples) ou CST do ICMS; nulo = padrão"
+        int fiscal_origin "0 a 8; nulo = padrão"
         jsonb extra_attributes "atributos do ML etc."
         bool ai_generated_pending_review
         tsvector search_vector
@@ -418,13 +420,20 @@ erDiagram
     FISCAL_DOCUMENT {
         uuid id PK
         uuid tenant_id "RLS"
-        uuid order_id FK
-        string kind "nfe_sale|nfe_return"
-        string access_key "chave de 44 dígitos"
-        string status "processing|authorized|rejected|canceled"
-        string xml_storage_key
-        string danfe_storage_key
-        string rejection_reason
+        uuid order_id FK "UK parcial (tenant_id, order_id) com status processing|authorized — uma nota ativa por pedido"
+        string source "provider|external (chave/XML informados)"
+        string status "processing|authorized|rejected|canceled — cada tentativa é uma linha"
+        string reference "UK (tenant_id, reference) — PED{número}-{tentativa}, id da nota no provedor"
+        string provider "ex.: focus-nfe"
+        string environment "homologation|production"
+        jsonb recipient "destinatário enviado (nome, CPF/CNPJ, e-mail, endereço)"
+        string access_key "44 posições; CNPJ pode ser alfanumérico"
+        int number_series "número e série"
+        string message "motivo da rejeição"
+        string xml_storage_key "bucket privado {tenant}/nfe/{id}.xml"
+        string danfe_storage_key "{tenant}/nfe/{id}.pdf"
+        timestamptz authorized_at "cancelamento até +24 h"
+        string cancel_justification "15 a 255 caracteres"
     }
 ```
 
@@ -512,6 +521,7 @@ erDiagram
         bool dismantler_mode "RF10: modo desmontadora (Lei 12.977)"
         jsonb traceability_fields "campos extras: chave, rótulo, obrigatório"
         string contact_email "Q38: resposta dos e-mails do remetente da plataforma"
+        jsonb fiscal "RF19: modo, ambiente, regime, UF e padrões (NCM, CFOP, CSOSN/CST, origem); nulo = emissão desligada"
         jsonb smtp "Q38: SMTP da loja (servidor, porta, segurança, usuário, remetente); senha no cofre (smtp:password); nulo = remetente da plataforma"
     }
     ACCESS_LOG {

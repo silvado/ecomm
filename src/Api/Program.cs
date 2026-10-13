@@ -183,6 +183,10 @@ if (app.Configuration.GetValue<bool>("Payments:UseFakeGateway"))
     app.MapFakePaymentSimulation();
 }
 
+// A NF-e simulada não tem valor fiscal: jamais em produção.
+if (app.Environment.IsProduction() && app.Configuration.GetValue<bool>("Fiscal:UseFakeProvider"))
+    throw new InvalidOperationException("Fiscal:UseFakeProvider não pode ser usado em produção.");
+
 app.MapAuthEndpoints();
 app.MapPanelEndpoints();
 

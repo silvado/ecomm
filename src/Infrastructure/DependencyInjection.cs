@@ -8,6 +8,8 @@ using Ecommerce.Application.Email;
 using Ecommerce.Application.Identity;
 using Ecommerce.Infrastructure.Customers;
 using Ecommerce.Infrastructure.Email;
+using Ecommerce.Application.Fiscal;
+using Ecommerce.Infrastructure.Fiscal;
 using Ecommerce.Infrastructure.Catalog;
 using Ecommerce.Application.Orders;
 using Ecommerce.Application.Payments;
@@ -118,6 +120,12 @@ public static class DependencyInjection
         services.AddScoped<EmailBranding>();
         services.AddScoped<IStoreEmailSettings, StoreEmailSettingsService>();
         services.AddScoped<ICustomerArea, CustomerAreaService>();
+
+        // NF-e (RF19): provedor da loja (Focus NFe na parte B) ou o falso em dev/testes.
+        services.Configure<FiscalOptions>(configuration.GetSection(FiscalOptions.Section));
+        services.AddScoped<IFiscalProviderResolver, FiscalProviderResolver>();
+        services.AddScoped<IFiscalService, FiscalService>();
+        services.AddScoped<TenantIssuer>();
         services.AddScoped<IPartCompatibilities, PartCompatibilityService>();
 
         services.Configure<VaultOptions>(configuration.GetSection(VaultOptions.Section));

@@ -61,5 +61,7 @@ internal sealed class StoreSettingsConfiguration : IEntityTypeConfiguration<Stor
         builder.Property(s => s.TraceabilityFields).AsJson("'[]'::jsonb");
         builder.Property(s => s.ContactEmail).HasMaxLength(Domain.Email.StoreEmailRules.AddressMaxLength);
         builder.Property(s => s.Smtp).AsOptionalJson();
+        builder.Property(s => s.Fiscal).AsOptionalJson();
+        builder.Ignore(s => s.FiscalOrDefault);
     }
 }

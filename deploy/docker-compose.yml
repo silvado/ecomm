@@ -66,6 +66,8 @@ services:
       Shipping__UseFakeProvider: "true"
       # Gateway de pagamento simulado (página /api/dev/pagamento-simulado). Nunca em produção.
       Payments__UseFakeGateway: "true"
+      # NF-e simulada (sem valor fiscal) enquanto o adaptador da Focus NFe não entra. Nunca em produção.
+      Fiscal__UseFakeProvider: "true"
       Platform__Domain: ${PLATFORM_DOMAIN:-localhost}   # URL de notificação mostrada no painel (<slug>.<domínio>)
       Shipping__MelhorEnvio__BaseUrl: https://sandbox.melhorenvio.com.br
       Shipping__MelhorEnvio__UserAgent: ${MELHOR_ENVIO_USER_AGENT:-}
@@ -84,10 +86,15 @@ services:
       DOTNET_ENVIRONMENT: Development
       # O worker também processa notificações de pagamento da fila: precisa ver o mesmo gateway fake da API.
       Payments__UseFakeGateway: "true"
+      Fiscal__UseFakeProvider: "true"
       ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD}
       ConnectionStrings__Tenants: Host=postgres;Database=lojas;Username=app_user;Password=${APP_USER_PASSWORD}
       Vault__CurrentMasterKeyVersion: v1
       Vault__MasterKeys__v1: ${VAULT_MASTER_KEY_V1:?defina no .env}
+      # XML e DANFE da NF-e são gravados pela fila: o worker também escreve no storage.
+      Storage__ServiceUrl: http://s3:8333
+      Storage__AccessKey: ${S3_ACCESS_KEY}
+      Storage__SecretKey: ${S3_SECRET_KEY}
       # E-mails ao comprador saem pela fila (qualquer processo pode enviar): mesma configuração da API.
       Platform__Domain: ${PLATFORM_DOMAIN:-localhost}
       Email__Platform__Host: mailpit
