@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IntegrationLog } from '../integrations/integration-log';
 import { OrderReturnForm } from './order-return';
+import { OrderInvoice } from '../fiscal/order-invoice';
 import { problemTitle } from '../../core/auth';
 import {
   ACTOR_LABELS,
@@ -43,7 +44,7 @@ const ACTION_LABELS: Record<OrderAction, string> = {
  */
 @Component({
   selector: 'app-orders',
-  imports: [FormsModule, RouterLink, CurrencyPipe, OrderReturnForm, IntegrationLog],
+  imports: [FormsModule, RouterLink, CurrencyPipe, OrderReturnForm, OrderInvoice, IntegrationLog],
   template: `
     <main class="card wide">
       <h1>Pedidos</h1>
@@ -240,6 +241,14 @@ const ACTION_LABELS: Record<OrderAction, string> = {
                 </li>
               }
             </ul>
+          }
+
+          @if (o.paidAt) {
+            @defer (on viewport) {
+              <app-order-invoice [orderId]="o.id" />
+            } @placeholder {
+              <p class="muted">Nota fiscal…</p>
+            }
           }
 
           @defer (on viewport) {

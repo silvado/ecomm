@@ -41,6 +41,8 @@ export interface PartView extends PartSummary {
   photos: PhotoView[];
   compatibilities: CompatibilityView[];
   traceability: PartTraceability;
+  /** Dados fiscais próprios (RF19); nulos usam o padrão da loja. */
+  fiscal?: { ncm: string | null; taxCode: string | null; origin: number | null };
 }
 
 /** Origem da peça (RF10), só no painel. `missingForSale`: o que o modo desmontadora ainda exige para pôr à venda. */
