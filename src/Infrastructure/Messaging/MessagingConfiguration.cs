@@ -45,7 +45,8 @@ public static class MessagingConfiguration
         opts.CodeGeneration.AlwaysUseServiceLocationFor<IIntegrationLog>(); // grava na loja do escopo
         opts.CodeGeneration.AlwaysUseServiceLocationFor<IEmailSender>(); // servidor e cofre da loja do escopo
         opts.CodeGeneration.AlwaysUseServiceLocationFor<EmailBranding>();
-
+        opts.CodeGeneration.AlwaysUseServiceLocationFor<Application.Fiscal.IFiscalProviderResolver>(); // configuração fiscal da loja do escopo
+        opts.CodeGeneration.AlwaysUseServiceLocationFor<Fiscal.TenantIssuer>(); // lê o banco da plataforma pelo contêiner
         opts.Policies.AddMiddleware(typeof(TenantMessageMiddleware));
         opts.Policies.UseDurableLocalQueues();
         opts.Policies.AutoApplyTransactions();
@@ -59,6 +60,7 @@ public static class MessagingConfiguration
             .Or<PaymentGatewayException>()
             .Or<ShippingProviderException>()
             .Or<EmailDeliveryException>()
+            .Or<Application.Fiscal.FiscalProviderException>()
             .Or<NpgsqlException>(e => e.IsTransient, "PostgreSQL transitório")
             .ScheduleRetry(retryDelays ?? DefaultRetryDelays).WithBoundedJitter(0.2)
             .Then.CustomAction(MessageFailures.RecordAndDeadLetterAsync, "registrar a falha para a loja");

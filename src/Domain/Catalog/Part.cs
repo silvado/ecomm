@@ -131,6 +131,23 @@ public sealed class Part : ITenantOwned
         UpdatedAt = now;
     }
 
+    /// <summary>NCM da peça (RF19 CA3); nulo = padrão da loja.</summary>
+    public string? Ncm { get; private set; }
+
+    /// <summary>CSOSN (Simples) ou CST do ICMS (Normal); nulo = padrão da loja.</summary>
+    public string? TaxCode { get; private set; }
+
+    /// <summary>Origem da mercadoria (0 a 8); nulo = padrão da loja.</summary>
+    public int? FiscalOrigin { get; private set; }
+
+    /// <summary>Dados fiscais já normalizados pelo regime da loja (<see cref="Fiscal.FiscalRules.Normalize(Fiscal.PartFiscalData, Fiscal.TaxRegime)"/>).</summary>
+    public void SetFiscal(Fiscal.PartFiscalData data, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        (Ncm, TaxCode, FiscalOrigin) = (data.Ncm, data.TaxCode, data.Origin);
+        UpdatedAt = now;
+    }
+
     /// <summary>
     /// RF09 CA1. Anos opcionais restringem dentro da faixa da versão; a mesma versão com a mesma faixa não se repete.
     /// Versão descontinuada não recebe compatibilidades novas.

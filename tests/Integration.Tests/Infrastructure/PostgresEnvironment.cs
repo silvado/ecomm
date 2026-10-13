@@ -57,6 +57,7 @@ public sealed class PostgresEnvironment : IAsyncDisposable
         ["Email:Platform:Provider"] = "memory",
         ["Shipping:UseFakeProvider"] = "true",
         ["Payments:UseFakeGateway"] = "true",
+        ["Fiscal:UseFakeProvider"] = "true",
     };
 
     /// <summary>Chave mestra do cofre gerada por ambiente de teste (nunca uma chave fixa no código).</summary>

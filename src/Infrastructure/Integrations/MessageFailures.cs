@@ -29,6 +29,8 @@ public static partial class MessageFailures
         [typeof(ProcessPartImport)] = "Importar peças da planilha (lote)",
         [typeof(NotifyBuyer)] = "Enviar e-mail do pedido ao comprador",
         [typeof(SendCustomerAccessLink)] = "Enviar link de acesso aos pedidos",
+        [typeof(Application.Fiscal.SendInvoice)] = "Enviar NF-e ao provedor fiscal",
+        [typeof(Application.Fiscal.CheckInvoice)] = "Consultar a NF-e no provedor fiscal",
     };
 
     public static string Describe(object? message) =>

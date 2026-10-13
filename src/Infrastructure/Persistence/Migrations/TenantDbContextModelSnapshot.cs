@@ -157,6 +157,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("donor_vehicle_id");
 
+                    b.Property<int?>("FiscalOrigin")
+                        .HasColumnType("integer")
+                        .HasColumnName("fiscal_origin");
+
                     b.Property<int?>("HeightCm")
                         .HasColumnType("integer")
                         .HasColumnName("height_cm");
@@ -171,6 +175,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("length_cm");
 
+                    b.Property<string>("Ncm")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("ncm");
+
                     b.Property<decimal>("Price")
                         .HasPrecision(12, 2)
                         .HasColumnType("numeric(12,2)")
@@ -181,6 +190,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("status");
+
+                    b.Property<string>("TaxCode")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("tax_code");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
@@ -544,6 +558,126 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.ToTable("customer_sessions", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Fiscal.FiscalDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccessKey")
+                        .HasMaxLength(44)
+                        .HasColumnType("character varying(44)")
+                        .HasColumnName("access_key");
+
+                    b.Property<DateTimeOffset?>("AuthorizedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("authorized_at");
+
+                    b.Property<string>("CancelJustification")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("cancel_justification");
+
+                    b.Property<DateTimeOffset?>("CanceledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("canceled_at");
+
+                    b.Property<string>("DanfeStorageKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("danfe_storage_key");
+
+                    b.Property<string>("Environment")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("environment");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("message");
+
+                    b.Property<int?>("Number")
+                        .HasColumnType("integer")
+                        .HasColumnName("number");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("Recipient")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("recipient");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("reference");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<Guid?>("RequestedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by");
+
+                    b.Property<int?>("Series")
+                        .HasColumnType("integer")
+                        .HasColumnName("series");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("XmlStorageKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("xml_storage_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_fiscal_documents");
+
+                    b.HasIndex("OrderId")
+                        .HasDatabaseName("ix_fiscal_documents_order_id");
+
+                    b.HasIndex("TenantId", "OrderId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_fiscal_documents_tenant_id_order_id_active")
+                        .HasFilter("status IN ('Processing', 'Authorized')");
+
+                    b.HasIndex("TenantId", "Reference")
+                        .IsUnique()
+                        .HasDatabaseName("ix_fiscal_documents_tenant_id_reference")
+                        .HasFilter("reference IS NOT NULL");
+
+                    b.HasIndex("TenantId", "OrderId", "RequestedAt")
+                        .HasDatabaseName("ix_fiscal_documents_tenant_id_order_id_requested_at");
+
+                    b.ToTable("fiscal_documents", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Integrations.IntegrationLogEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -855,6 +989,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("dismantler_mode");
+
+                    b.Property<string>("Fiscal")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("fiscal");
 
                     b.Property<bool>("HideOutOfStock")
                         .ValueGeneratedOnAdd()
@@ -1754,6 +1892,16 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_part_photos_parts_part_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Fiscal.FiscalDocument", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Orders.CustomerOrder", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_fiscal_documents_customer_orders_order_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Inventory.Stock", b =>
