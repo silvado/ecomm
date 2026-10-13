@@ -46,7 +46,7 @@ export const epics = [
             title: 'Cofre de segredos por tenant',
             rf: 'RF06',
             ac: 'Segredos com criptografia envelope; painel mostra só metadados; teste automatizado não encontra segredos em logs; alerta de vencimento do certificado A1.',
-            t: [['Serviço de criptografia envelope e rotação de chave mestra', 8, 'done'], ['API de cadastro e metadados', 3], ['Teste de vazamento em logs', 3, 'done'], ['Alerta de vencimento do A1', 3]],
+            t: [['Serviço de criptografia envelope e rotação de chave mestra', 8, 'done'], ['API de cadastro e metadados', 3, 'done'], ['Teste de vazamento em logs', 3, 'done'], ['Alerta de vencimento do A1', 3, 'done']],
           },
           {
             title: 'Autenticação, usuários e perfis do tenant',

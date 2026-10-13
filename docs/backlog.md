@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1005** |
 
-Progresso: 371 h de 1005 h em tarefas concluídas (37%).
+Progresso: 377 h de 1005 h em tarefas concluídas (38%).
 
 Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -66,14 +66,14 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 - [x] Health checks — 2 h
 - [x] Métricas OpenTelemetry da fila — 4 h
 
-#### Cofre de segredos por tenant — 17 h  `RF06` · **em andamento**
+#### Cofre de segredos por tenant — 17 h  `RF06` · **concluído**
 
 **Critérios de aceite:** Segredos com criptografia envelope; painel mostra só metadados; teste automatizado não encontra segredos em logs; alerta de vencimento do certificado A1.
 
 - [x] Serviço de criptografia envelope e rotação de chave mestra — 8 h
-- [ ] API de cadastro e metadados — 3 h
+- [x] API de cadastro e metadados — 3 h
 - [x] Teste de vazamento em logs — 3 h
-- [ ] Alerta de vencimento do A1 — 3 h
+- [x] Alerta de vencimento do A1 — 3 h
 
 #### Autenticação, usuários e perfis do tenant — 24 h  `RF07` · **concluído**
 
