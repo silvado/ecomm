@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1005** |
 
-Progresso: 377 h de 1005 h em tarefas concluídas (38%).
+Progresso: 383 h de 1005 h em tarefas concluídas (38%).
 
 Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -135,12 +135,12 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 - [x] Expiração de reserva por mensagem agendada — 4 h
 - [x] Testes de concorrência — 6 h
 
-#### Outbox, idempotência e retentativas — 20 h  `RF25, RF26, RF28` · **em andamento**
+#### Outbox, idempotência e retentativas — 20 h  `RF25, RF26, RF28` · **concluído**
 
 **Critérios de aceite:** Toda alteração de estoque grava evento na mesma transação; webhook entregue 10 vezes altera o estoque uma vez; falhas retentadas com backoff e enviadas à fila de falhas com alerta após 5 tentativas; reprocessamento pelo painel.
 
 - [x] Evento StockChanged pelo outbox — 4 h
-- [ ] Inbox de eventos externos com chave única — 6 h
+- [x] Inbox de eventos externos com chave única — 6 h
 - [x] Política de retentativa, fila de falhas e alerta — 4 h
 - [x] Tela de eventos em falha com reprocessamento — 6 h
 

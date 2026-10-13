@@ -19,6 +19,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<ChannelAccount> ChannelAccounts => Set<ChannelAccount>();
     public DbSet<VehicleBrand> VehicleBrands => Set<VehicleBrand>();
     public DbSet<VehicleModel> VehicleModels => Set<VehicleModel>();
     public DbSet<VehicleVersion> VehicleVersions => Set<VehicleVersion>();
@@ -91,6 +92,17 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             b.Property(m => m.Role).HasConversion<string>().HasMaxLength(20);
             b.HasOne<Tenant>().WithMany().HasForeignKey(m => m.TenantId).OnDelete(DeleteBehavior.Cascade);
             b.HasOne<UserAccount>().WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // RF26: roteia avisos de canal (inbox) para a loja dona da conta externa.
+        modelBuilder.Entity<ChannelAccount>(b =>
+        {
+            b.HasKey(a => a.Id);
+            b.Property(a => a.Channel).HasMaxLength(ChannelAccount.ChannelMaxLength).IsRequired();
+            b.Property(a => a.ExternalAccountId).HasMaxLength(ChannelAccount.ExternalAccountMaxLength).IsRequired();
+            b.HasIndex(a => new { a.Channel, a.ExternalAccountId }).IsUnique();
+            b.HasIndex(a => a.TenantId);
+            b.HasOne<Tenant>().WithMany().HasForeignKey(a => a.TenantId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // Fonte da tabela de veículos (RF09 CA2); replicada para ref.* em cada banco de lojas.

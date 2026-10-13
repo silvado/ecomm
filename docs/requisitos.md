@@ -189,6 +189,7 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 - CA1: todo evento externo (webhook) tem chave única (ex.: `ml:{topic}:{resource}:{sent}` ou id do evento do gateway) gravada com restrição `UNIQUE`.
 - CA2: o mesmo webhook entregue 10 vezes altera o estoque uma única vez (teste automatizado).
 - CA3: handlers internos também são idempotentes (chave por evento do outbox).
+- Feito (13/10/2026): inbox de avisos de canais sem loja na URL (`inbox.external_events`, chave única origem + chave), roteamento pela tabela `channel_accounts` do banco da plataforma e entrega no escopo da loja (`external_events`, chave única por loja) antes do processador do canal. CA2 provado com o canal simulado: 10 entregas simultâneas do mesmo aviso → 1 registro e 1 efeito. Conta sem loja → "sem dono" + log crítico. Os processadores reais (ML, Meta, OLX) e o preenchimento de `channel_accounts` pela conexão OAuth entram no E2/E3.
 
 ### RF27 — Reconciliação horária · E2
 - CA1: job horário compara quantidade/preço/status de cada anúncio externo com o estoque local.

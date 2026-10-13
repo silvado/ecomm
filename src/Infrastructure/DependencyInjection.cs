@@ -102,6 +102,11 @@ public static class DependencyInjection
         // RF28/RF29: log de integração (grava em escopo próprio), falhas e métricas da fila.
         services.AddScoped<IIntegrationLog, IntegrationLog>();
         services.AddScoped<IIntegrationQueries, IntegrationQueries>();
+        // RF26: avisos de canais (inbox → loja). Canal simulado só em dev/testes; os reais entram no E2.
+        services.AddScoped<ChannelAccountDirectory>();
+        services.AddScoped<ChannelProcessors>();
+        if (configuration.GetValue<bool>("Channels:UseFakeChannel"))
+            services.AddScoped<IChannelEventProcessor, FakeChannelProcessor>();
         services.AddScoped<QueueMetrics>();
         services.AddScoped<VehicleImporter>();
         services.AddScoped<IVehicleCatalog, VehicleCatalog>();

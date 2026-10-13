@@ -104,7 +104,7 @@ export const epics = [
             title: 'Outbox, idempotência e retentativas',
             rf: 'RF25, RF26, RF28',
             ac: 'Toda alteração de estoque grava evento na mesma transação; webhook entregue 10 vezes altera o estoque uma vez; falhas retentadas com backoff e enviadas à fila de falhas com alerta após 5 tentativas; reprocessamento pelo painel.',
-            t: [['Evento StockChanged pelo outbox', 4, 'done'], ['Inbox de eventos externos com chave única', 6], ['Política de retentativa, fila de falhas e alerta', 4, 'done'], ['Tela de eventos em falha com reprocessamento', 6, 'done']],
+            t: [['Evento StockChanged pelo outbox', 4, 'done'], ['Inbox de eventos externos com chave única', 6, 'done'], ['Política de retentativa, fila de falhas e alerta', 4, 'done'], ['Tela de eventos em falha com reprocessamento', 6, 'done']],
           },
           {
             title: 'Log de integração consultável',

@@ -45,6 +45,9 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<CustomerAccessLink> CustomerAccessLinks => Set<CustomerAccessLink>();
     public DbSet<CustomerSession> CustomerSessions => Set<CustomerSession>();
     public DbSet<IntegrationLogEntry> IntegrationLogs => Set<IntegrationLogEntry>();
+
+    /// <summary>Avisos de canais antes do roteamento (schema inbox, sem RLS e sem filtro de tenant — RF26, ADR-0001).</summary>
+    public DbSet<InboxEvent> InboxEvents => Set<InboxEvent>();
     public DbSet<MessageFailure> MessageFailures => Set<MessageFailure>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<ExternalEvent> ExternalEvents => Set<ExternalEvent>();

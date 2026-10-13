@@ -47,6 +47,8 @@ public static class MessagingConfiguration
         opts.CodeGeneration.AlwaysUseServiceLocationFor<EmailBranding>();
         opts.CodeGeneration.AlwaysUseServiceLocationFor<Application.Fiscal.IFiscalProviderResolver>(); // configuração fiscal da loja do escopo
         opts.CodeGeneration.AlwaysUseServiceLocationFor<Fiscal.TenantIssuer>(); // lê o banco da plataforma pelo contêiner
+        opts.CodeGeneration.AlwaysUseServiceLocationFor<ChannelAccountDirectory>(); // idem (mapa de contas de canal)
+        opts.CodeGeneration.AlwaysUseServiceLocationFor<ChannelProcessors>(); // processadores do canal, no escopo da loja
         opts.Policies.AddMiddleware(typeof(TenantMessageMiddleware));
         opts.Policies.UseDurableLocalQueues();
         opts.Policies.AutoApplyTransactions();

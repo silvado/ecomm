@@ -39,6 +39,13 @@ erDiagram
         timestamptz custom_storefront_since "RF40: loja personalizada desde; nulo = Dono edita a aparência"
         timestamptz created_at
     }
+    CHANNEL_ACCOUNT {
+        uuid id PK
+        uuid tenant_id FK "RF26: dono da conta no canal"
+        string channel "UK (channel, external_account_id)"
+        string external_account_id "ex.: user_id do vendedor no ML"
+        timestamptz created_at
+    }
     TENANT_DOMAIN {
         uuid id PK
         uuid tenant_id FK
@@ -442,9 +449,21 @@ erDiagram
 
 ```mermaid
 erDiagram
+    INBOX_EXTERNAL_EVENT {
+        uuid id PK "schema inbox, SEM RLS (ADR-0001) — aviso antes de saber a loja"
+        string source "canal (ex.: mercado-livre)"
+        string idempotency_key "UK (source, idempotency_key)"
+        string external_account "conta do vendedor no canal"
+        string topic
+        string resource "recurso a consultar no canal"
+        string payload "corpo do aviso, até 16 KB (diagnóstico)"
+        string status "pending|routed|unroutable"
+        uuid tenant_id "nulo até o roteamento"
+        timestamptz received_at "roteados saem com 30 dias; sem dono, 90"
+    }
     EXTERNAL_EVENT {
         uuid id PK
-        uuid tenant_id "RLS — vem da URL do webhook (cada loja tem a sua)"
+        uuid tenant_id "RLS — da URL do webhook (pagamentos) ou do roteamento do inbox (canais)"
         string source "mercado_livre|mercado_pago|cielo|meta|olx_hub|fiscal"
         string idempotency_key "UK (tenant_id, source, idempotency_key)"
         string resource_id "recurso a consultar na origem"
@@ -535,7 +554,7 @@ erDiagram
     }
 ```
 
-**Nota sobre `EXTERNAL_EVENT`:** o webhook chega antes de sabermos o tenant (ex.: ML identifica o vendedor por `user_id`). O endpoint grava o evento numa tabela de **entrada** sem RLS no schema `inbox` (só `INSERT` para `app_user`), resolve o tenant por `channel_connection.external_account_id` e enfileira o processamento já no escopo do tenant. A tabela com RLS guarda o evento depois de associado.
+**Nota sobre `EXTERNAL_EVENT` e o inbox (RF26, implementado em 13/10/2026):** o aviso de canal chega antes de sabermos a loja (ex.: o ML identifica o vendedor por `user_id`). O webhook responde 2xx e grava em `inbox.external_events` (sem RLS; `UNIQUE (source, idempotency_key)`); o roteamento procura a loja em **`plataforma.channel_accounts`** (canal + conta externa → loja; a consulta por loja em `channel_connection` não serve, pois ela tem RLS e exige a loja definida) e publica o evento já no escopo da loja, onde ele entra em `external_events` (RLS, chave única por loja) antes do processador do canal — reentrega em qualquer ponto não repete o efeito. Conta sem loja fica `unroutable` e gera log crítico.
 
 ## Onde está o `tenant_id` — resumo
 
@@ -544,5 +563,5 @@ erDiagram
 | `plataforma.*` | Coluna em `tenant_domain`, `tenant_membership`, `subscription` | Não (acesso só pela API/superadmin) |
 | `lojas.public.*` (negócio) | **Obrigatório, NOT NULL**, primeiro campo de todo índice | **Sim**, `FORCE` |
 | `lojas.ref.*` (veículos, categorias) | Não tem | Não; somente leitura para `app_user` |
-| `lojas.inbox.*` (webhooks crus) | Não tem | Não; `app_user` só `INSERT`/leitura pelo Worker de roteamento |
+| `lojas.inbox.*` (avisos de canal antes do roteamento) | Nulo até rotear | Não (ADR-0001); `app_user` com SELECT/INSERT/UPDATE/DELETE só em `inbox.external_events`, sem criar objetos |
 | `lojas.wolverine.*` (fila/outbox) | Dentro da mensagem | Não |
