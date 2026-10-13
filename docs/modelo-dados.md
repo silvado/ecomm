@@ -243,21 +243,22 @@ erDiagram
     CHANNEL_CONNECTION {
         uuid id PK
         uuid tenant_id "RLS"
-        string channel "mercado_livre|meta|olx"
-        string external_account_id "user_id do vendedor no ML"
+        string channel "mercado-livre|meta|olx|canal-simulado (dev)"
+        string external_account_id "UK (tenant_id, channel, external_account_id); espelhado em plataforma.channel_accounts"
         string status "active|reauth_required|disabled"
-        uuid secret_id FK "tokens no cofre"
+        uuid secret_id FK "tokens no cofre (RF21)"
     }
     CHANNEL_LISTING {
         uuid id PK
         uuid tenant_id "RLS"
-        uuid part_id FK
+        uuid part_id FK "UK (tenant_id, part_id, connection_id)"
         uuid connection_id FK
-        string external_id "MLB123..."
+        string external_id "MLB123...; UK (tenant_id, connection_id, external_id)"
         string status "pending|active|paused_by_system|paused_by_user|closed|error"
         int last_pushed_quantity
         numeric last_pushed_price
         timestamptz last_synced_at
+        string last_error "última falha (limpa ao sincronizar)"
     }
     REF_VEHICLE_VERSION {
         uuid id PK "réplica de plataforma.vehicle_version"

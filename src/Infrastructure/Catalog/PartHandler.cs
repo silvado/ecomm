@@ -87,10 +87,12 @@ public static class PartHandler
         return (PartCommandResult.Ok(part.Id), outgoing);
     }
 
-    public static async Task<PartCommandResult> Handle(ChangePartStatus command, TenantDbContext db, TimeProvider clock, CancellationToken ct)
+    public static async Task<(PartCommandResult, OutgoingMessages)> Handle(ChangePartStatus command, TenantDbContext db, TimeProvider clock, CancellationToken ct)
     {
+        var outgoing = new OutgoingMessages();
         var part = await db.Parts.Include(p => p.Photos).SingleOrDefaultAsync(p => p.Id == command.PartId, ct);
-        if (part is null) return PartCommandResult.Fail(PartCommandOutcome.NotFound);
+        if (part is null) return (PartCommandResult.Fail(PartCommandOutcome.NotFound), outgoing);
+        var before = part.Status;
 
         try
         {
@@ -98,18 +100,24 @@ public static class PartHandler
             {
                 case PartStatus.Active:
                     // RF10 CA2: no modo desmontadora, peça usada só vai à venda com a origem completa.
-                    if (await MissingForSaleAsync(db, part, part.DonorVehicleId, ct) is { Count: > 0 } missing) return Invalid(Traceability.Message(missing));
+                    if (await MissingForSaleAsync(db, part, part.DonorVehicleId, ct) is { Count: > 0 } missing) return (Invalid(Traceability.Message(missing)), outgoing);
                     part.Activate(clock.GetUtcNow());
                     break;
                 case PartStatus.Inactive: part.Deactivate(clock.GetUtcNow()); break;
-                default: return Invalid("Uma peça não volta para rascunho.");
+                default: return (Invalid("Uma peça não volta para rascunho."), outgoing);
             }
         }
         catch (InvalidOperationException e)
         {
-            return Invalid(e.Message);
+            return (Invalid(e.Message), outgoing);
         }
-        return PartCommandResult.Ok(part.Id);
+        // Ativar ou inativar muda o que os canais podem vender (inativa = anúncio pausado — RF24).
+        if (part.Status != before)
+        {
+            var available = await db.Stocks.Where(s => s.PartId == part.Id).Select(s => s.OnHand - s.Reserved).SingleOrDefaultAsync(ct);
+            outgoing.Add(new StockChanged(part.Id, available));
+        }
+        return (PartCommandResult.Ok(part.Id), outgoing);
     }
 
     public const string TraceabilityTagIndex = "ix_parts_tenant_id_traceability_tag";

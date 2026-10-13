@@ -107,6 +107,11 @@ public static class DependencyInjection
         services.AddScoped<ChannelProcessors>();
         if (configuration.GetValue<bool>("Channels:UseFakeChannel"))
             services.AddScoped<IChannelEventProcessor, FakeChannelProcessor>();
+        // E2: anúncios nos canais e propagação de estoque (RF24/RF25).
+        services.AddScoped<Application.Channels.IChannelConnectorResolver, Channels.ChannelConnectorResolver>();
+        services.AddScoped<Application.Channels.IChannelQueries, Channels.ChannelService>();
+        services.AddScoped<Channels.ChannelService>();
+        services.AddSingleton<Channels.ChannelSyncMetrics>();
         services.AddScoped<QueueMetrics>();
         services.AddScoped<VehicleImporter>();
         services.AddScoped<IVehicleCatalog, VehicleCatalog>();

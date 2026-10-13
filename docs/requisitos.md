@@ -177,6 +177,7 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 ### RF24 — Pausa ao zerar estoque · E2
 - CA1: quando o disponível chega a 0, todos os anúncios ativos da peça são pausados em ≤ 60 s (meta: ≤ 10 s) em operação normal.
 - CA2: quando volta a ter saldo, os anúncios pausados **pelo sistema** são reativados; os pausados manualmente, não.
+- Feito (13/10/2026, base do E2): `IChannelConnector` com testes de contrato genéricos e conector simulado; `channel_connections` e `channel_listings` (RLS); cada `StockChanged` vira uma sincronização por anúncio, que lê o saldo atual (eventos fora de ordem não estragam), pausa ao zerar, reativa o que o sistema pausou, atualiza quantidade e preço e respeita a pausa do lojista (painel: Anúncios na peça). Peça inativa conta como sem saldo. Falha do canal segue a política de novas tentativas (RF28) e o log de integração. Latência medida da mudança de estoque até o canal (histograma OpenTelemetry `Ecommerce.Channels` e `/internal/metricas/canais`; log de aviso acima de 60 s). Conectar uma conta também grava o mapa de roteamento do inbox (`channel_accounts`). Conectores reais e publicação com categoria/atributos: RF21–RF23.
 
 ## 6. Sincronização
 

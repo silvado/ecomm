@@ -464,6 +464,120 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Channels.ChannelConnection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("channel");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ExternalAccountId")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("external_account_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_channel_connections");
+
+                    b.HasIndex("TenantId", "Channel", "ExternalAccountId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_channel_connections_tenant_id_channel_external_account_id");
+
+                    b.ToTable("channel_connections", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Channels.ChannelListing", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ConnectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("connection_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("external_id");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("last_error");
+
+                    b.Property<decimal?>("LastPushedPrice")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("last_pushed_price");
+
+                    b.Property<int?>("LastPushedQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_pushed_quantity");
+
+                    b.Property<DateTimeOffset?>("LastSyncedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_synced_at");
+
+                    b.Property<Guid>("PartId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("part_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_channel_listings");
+
+                    b.HasIndex("ConnectionId")
+                        .HasDatabaseName("ix_channel_listings_connection_id");
+
+                    b.HasIndex("PartId")
+                        .HasDatabaseName("ix_channel_listings_part_id");
+
+                    b.HasIndex("TenantId", "ConnectionId", "ExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_channel_listings_tenant_id_connection_id_external_id")
+                        .HasFilter("external_id IS NOT NULL");
+
+                    b.HasIndex("TenantId", "PartId", "ConnectionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_channel_listings_tenant_id_part_id_connection_id");
+
+                    b.ToTable("channel_listings", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Customers.CustomerAccessLink", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1964,6 +2078,23 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_part_photos_parts_part_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Channels.ChannelListing", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Channels.ChannelConnection", null)
+                        .WithMany()
+                        .HasForeignKey("ConnectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_channel_listings_channel_connections_connection_id");
+
+                    b.HasOne("Ecommerce.Domain.Catalog.Part", null)
+                        .WithMany()
+                        .HasForeignKey("PartId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_channel_listings_parts_part_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Fiscal.FiscalDocument", b =>

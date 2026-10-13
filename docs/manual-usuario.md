@@ -145,6 +145,16 @@ Use para cadastrar o estoque de uma vez, por exemplo na implantação da loja.
 - O cadastro mostra três números: **disponível**, **físico** e **reservado**. Reservado é o que está preso em pedidos aguardando pagamento.
 - Não é possível baixar a quantidade abaixo do que está reservado.
 
+**Anúncios** (seção no cadastro da peça)
+- Mostra onde a peça está anunciada fora da loja: canal, situação, quantidade e preço enviados e quando foi a última atualização.
+- O **estoque manda**:
+  - toda venda, reserva ou ajuste de quantidade atualiza o anúncio sozinho;
+  - quando a peça **zera**, o anúncio fica **Pausado (sem estoque)**;
+  - quando volta a ter saldo, ele **reativa sozinho**;
+  - peça **inativa** também pausa o anúncio.
+- **Pausar:** o anúncio fica **Pausado por você** e não volta sozinho, mesmo com estoque. **Retomar** faz ele voltar a seguir o estoque.
+- **Erro na última atualização:** o canal não respondeu, mesmo depois das novas tentativas automáticas. A próxima mudança de estoque tenta de novo, e o detalhe fica em **Integrações**.
+
 ### 4.3.1 Veículos doadores e rastreabilidade
 
 **Acesso:** menu **Doadores** (Dono e Operador) e seção **Rastreabilidade** no cadastro de cada peça.
@@ -475,7 +485,7 @@ Limites para evitar abuso:
 
 Itens previstos que **ainda não estão no sistema**:
 
-- Integrações com Mercado Livre, Instagram (catálogo Meta) e OLX.
+- Integrações com Mercado Livre, Instagram (catálogo Meta) e OLX: conectar a conta e publicar. A seção **Anúncios** e a atualização automática pelo estoque já estão prontas para recebê-los.
 - Emissão real de NF-e pela Focus NFe: hoje "pela plataforma" é simulado. "Fora da plataforma" já funciona.
 - NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
 - Frete real (Melhor Envio): hoje o frete é simulado.
@@ -502,3 +512,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 12/10/2026 | NF-e (RF19 parte A): nota fiscal no pedido (4.4), dados fiscais da peça (4.3.1), configuração em 4.6 e perfis. |
 | 12/10/2026 | Loja personalizada (RF40): selo e aparência travada em 4.6 Dados da loja; comando de operação em 6. |
 | 13/10/2026 | Cofre e certificado digital A1 (RF06): nova seção 4.7.1, aviso de vencimento e perfis. |
+| 13/10/2026 | Anúncios da peça (base do E2, RF24): situação nos canais, pausa e retomada, atualização automática pelo estoque (4.3). |

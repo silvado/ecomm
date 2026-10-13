@@ -1,0 +1,132 @@
+using Ecommerce.Application.Channels;
+using Ecommerce.Application.Integrations;
+using Ecommerce.Application.Inventory;
+using Ecommerce.Domain.Channels;
+using Ecommerce.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Wolverine;
+
+namespace Ecommerce.Infrastructure.Channels;
+
+/// <summary>
+/// Propagação de estoque para os canais (RF24, RF25 CA2). Cada mudança de estoque vira uma mensagem por anúncio; cada
+/// uma lê o saldo atual, decide (pausar ao zerar, reativar o que o sistema pausou, atualizar quantidade) e chama o canal.
+/// A linha do anúncio fica travada durante a sincronização: duas mudanças seguidas não se atropelam no canal.
+/// </summary>
+public static partial class ChannelSyncHandler
+{
+    public static async Task<OutgoingMessages> Handle(StockChanged @event, Envelope envelope, TenantDbContext db, CancellationToken ct)
+    {
+        var outgoing = new OutgoingMessages();
+        var listings = await (from l in db.ChannelListings
+                              join c in db.ChannelConnections on l.ConnectionId equals c.Id
+                              where l.PartId == @event.PartId && c.Status == ChannelConnectionStatus.Active
+                                    && (l.Status == ListingStatus.Active || l.Status == ListingStatus.PausedBySystem || l.Status == ListingStatus.Error)
+                              select l.Id).ToListAsync(ct);
+        foreach (var id in listings) outgoing.Add(new SyncListing(id, envelope.SentAt));
+        return outgoing;
+    }
+
+    public static async Task Handle(SyncListing command, TenantDbContext db, IChannelConnectorResolver connectors, IIntegrationLog log,
+        ChannelSyncMetrics metrics, TimeProvider clock, ILogger<SyncListing> logger, CancellationToken ct)
+    {
+        if (await LockAsync(db, command.ListingId, ct) is not { } listing) return;
+        var connection = await db.ChannelConnections.SingleAsync(c => c.Id == listing.ConnectionId, ct);
+        if (connection.Status != ChannelConnectionStatus.Active || listing.ExternalId is not { } externalId) return;
+        var (available, price) = await StockAndPriceAsync(db, listing.PartId, ct);
+
+        var action = listing.Decide(available, price);
+        if (action == ListingAction.None) return;
+        if (await connectors.ResolveAsync(connection, ct) is not { } resolved)
+        {
+            listing.Failed("Canal sem conector disponível.", clock.GetUtcNow());
+            return;
+        }
+        var connector = new LoggedChannelConnector(resolved, log, listing.PartId);
+
+        // Falha de comunicação sobe: a política da fila tenta de novo (RF28) e, esgotadas, registra a falha.
+        switch (action)
+        {
+            case ListingAction.Pause:
+                await connector.PauseAsync(externalId, ct);
+                break;
+            case ListingAction.Resume:
+                await connector.ResumeAsync(externalId, available, ct);
+                if (price != listing.LastPushedPrice) await connector.UpdatePriceAndQuantityAsync(externalId, price, available, ct);
+                break;
+            case ListingAction.UpdateQuantity:
+                if (listing.Status == ListingStatus.Error && available > 0) await connector.ResumeAsync(externalId, available, ct);
+                await connector.UpdatePriceAndQuantityAsync(externalId, price, available, ct);
+                break;
+        }
+        var now = clock.GetUtcNow();
+        listing.Applied(action, available, price, now);
+
+        if (command.ChangedAt is { } changedAt)
+        {
+            var latency = now - changedAt;
+            metrics.Record(connection.Channel, latency);
+            if (latency > ChannelSyncMetrics.Target) LogLate(logger, connection.Channel, listing.Id, latency.TotalSeconds);
+        }
+    }
+
+    public static async Task<ListingCommandResult> Handle(ChangeListingByUser command, TenantDbContext db, IChannelConnectorResolver connectors,
+        IIntegrationLog log, TimeProvider clock, CancellationToken ct)
+    {
+        if (await LockAsync(db, command.ListingId, ct) is not { } listing) return new(ListingCommandOutcome.NotFound, "Anúncio não encontrado.");
+        var connection = await db.ChannelConnections.SingleAsync(c => c.Id == listing.ConnectionId, ct);
+        if (listing.ExternalId is not { } externalId || connection.Status != ChannelConnectionStatus.Active
+            || await connectors.ResolveAsync(connection, ct) is not { } resolved)
+            return new(ListingCommandOutcome.NotAllowed, "O canal deste anúncio não está conectado.");
+        var connector = new LoggedChannelConnector(resolved, log, listing.PartId);
+        var (available, price) = await StockAndPriceAsync(db, listing.PartId, ct);
+        var now = clock.GetUtcNow();
+
+        try
+        {
+            if (command.Pause)
+            {
+                if (listing.Status is not (ListingStatus.Active or ListingStatus.PausedBySystem or ListingStatus.Error))
+                    return new(ListingCommandOutcome.NotAllowed, "Só anúncio ativo ou pausado pelo sistema pode ser pausado.");
+                if (listing.Status != ListingStatus.PausedBySystem) await connector.PauseAsync(externalId, ct);
+                listing.PauseByUser(now);
+            }
+            else
+            {
+                if (listing.Status != ListingStatus.PausedByUser) return new(ListingCommandOutcome.NotAllowed, "O anúncio não está pausado pelo lojista.");
+                if (available > 0)
+                {
+                    await connector.ResumeAsync(externalId, available, ct);
+                    await connector.UpdatePriceAndQuantityAsync(externalId, price, available, ct);
+                }
+                listing.ResumeByUser(available, price, now);
+            }
+        }
+        catch (ChannelConnectorException e)
+        {
+            return new(ListingCommandOutcome.NotAllowed, $"O canal não respondeu: {e.Message} Tente de novo em instantes.");
+        }
+        return new(ListingCommandOutcome.Done);
+    }
+
+    /// <summary>Trava a linha do anúncio até o fim da transação da mensagem.</summary>
+    private static async Task<ChannelListing?> LockAsync(TenantDbContext db, Guid listingId, CancellationToken ct)
+    {
+        var locked = await db.Database.SqlQuery<Guid>($"SELECT id AS \"Value\" FROM channel_listings WHERE id = {listingId} FOR UPDATE").ToListAsync(ct);
+        return locked.Count == 0 ? null : await db.ChannelListings.SingleAsync(l => l.Id == listingId, ct);
+    }
+
+    private static async Task<(int Available, decimal Price)> StockAndPriceAsync(TenantDbContext db, Guid partId, CancellationToken ct)
+    {
+        var row = await (from p in db.Parts
+                         join s in db.Stocks on p.Id equals s.PartId
+                         where p.Id == partId
+                         select new { p.Price, p.Status, Available = s.OnHand - s.Reserved }).SingleAsync(ct);
+        // Peça inativa ou em rascunho conta como sem saldo: o anúncio pausa.
+        return (row.Status == Domain.Catalog.PartStatus.Active ? Math.Max(0, row.Available) : 0, row.Price);
+    }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Propagação de estoque acima de 60 s no canal {Channel} (anúncio {ListingId}): {Seconds:0.0} s")]
+    private static partial void LogLate(ILogger logger, string channel, Guid listingId, double seconds);
+}

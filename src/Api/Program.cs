@@ -208,6 +208,12 @@ internalApi.MapGet("/tls/ask", async (string domain, ITenantCatalog catalog, Can
 
 // RNF06: fila em números para o monitoramento da VPS (só rede interna).
 internalApi.MapGet("/metricas", async (QueueMetrics metrics, CancellationToken ct) => TypedResults.Ok(await metrics.ReadAsync(ct)));
+// RF24: latência da propagação de estoque medida neste processo (a API e o Worker processam a fila).
+internalApi.MapGet("/metricas/canais", (Ecommerce.Infrastructure.Channels.ChannelSyncMetrics metrics) =>
+{
+    var (count, late, max) = metrics.Snapshot();
+    return TypedResults.Ok(new { sincronizacoes = count, acimaDe60s = late, maiorLatenciaSegundos = Math.Round(max.TotalSeconds, 1) });
+});
 
 app.Run();
 

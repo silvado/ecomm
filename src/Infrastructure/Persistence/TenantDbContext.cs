@@ -42,6 +42,8 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<OrderHistoryEntry> OrderHistory => Set<OrderHistoryEntry>();
     public DbSet<OrderReturn> OrderReturns => Set<OrderReturn>();
     public DbSet<FiscalDocument> FiscalDocuments => Set<FiscalDocument>();
+    public DbSet<Domain.Channels.ChannelConnection> ChannelConnections => Set<Domain.Channels.ChannelConnection>();
+    public DbSet<Domain.Channels.ChannelListing> ChannelListings => Set<Domain.Channels.ChannelListing>();
     public DbSet<CustomerAccessLink> CustomerAccessLinks => Set<CustomerAccessLink>();
     public DbSet<CustomerSession> CustomerSessions => Set<CustomerSession>();
     public DbSet<IntegrationLogEntry> IntegrationLogs => Set<IntegrationLogEntry>();
