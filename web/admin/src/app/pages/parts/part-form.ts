@@ -8,6 +8,7 @@ import { Compatibilities } from './compatibilities';
 import { IntegrationLog } from '../integrations/integration-log';
 import { PartTraceability } from './part-traceability';
 import { PartFiscal } from '../fiscal/part-fiscal';
+import { PartListings } from './part-listings';
 import { PhotoThumb } from './photo-thumb';
 
 /** Mesmos limites do domínio (Part). */
@@ -19,7 +20,7 @@ const LIMITS = { code: 60, title: 120, description: 5000, dimensionCm: 1000, wei
 
 @Component({
   selector: 'app-part-form',
-  imports: [ReactiveFormsModule, RouterLink, PhotoThumb, Compatibilities, PartTraceability, PartFiscal, IntegrationLog],
+  imports: [ReactiveFormsModule, RouterLink, PhotoThumb, Compatibilities, PartTraceability, PartFiscal, PartListings, IntegrationLog],
   template: `
     <main class="card">
       <p><a routerLink="/pecas">← Peças</a></p>
@@ -81,6 +82,12 @@ const LIMITS = { code: 60, title: 120, description: 5000, dimensionCm: 1000, wei
           <app-part-fiscal [part]="p" (changed)="part.set($event)" />
         } @placeholder {
           <p class="muted">Dados fiscais…</p>
+        }
+
+        @defer (on viewport) {
+          <app-part-listings [partId]="p.id" />
+        } @placeholder {
+          <p class="muted">Anúncios…</p>
         }
 
         @defer (on viewport) {
