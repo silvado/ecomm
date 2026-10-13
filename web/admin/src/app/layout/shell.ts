@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter } from 'rxjs';
 import { AuthStore } from '../core/auth';
 import { IntegrationsApi } from '../pages/integrations/integrations.api';
+import { alertText, CertificateAlert, VaultApi } from '../pages/vault/vault.api';
 import { RoleLabelPipe } from '../shared/role-label';
 
 /** De quanto em quanto tempo o painel confere se há falhas de integração pendentes (RF28 CA2). */
@@ -34,6 +35,7 @@ const FAILURE_CHECK_MS = 2 * 60 * 1000;
         }
         @if (auth.can('vaultManage')) {
           <a routerLink="/pagamentos" routerLinkActive="active">Pagamentos</a>
+          <a routerLink="/cofre" routerLinkActive="active">Cofre</a>
         }
         @if (auth.can('usersManage')) {
           <a routerLink="/usuarios" routerLinkActive="active">Usuários</a>
@@ -54,6 +56,11 @@ const FAILURE_CHECK_MS = 2 * 60 * 1000;
         <a routerLink="/integracoes">Ver e reprocessar</a>
       </p>
     }
+    @if (certificateAlert(); as a) {
+      <p class="alert-bar" role="alert" data-certificate-alert>
+        {{ certificateText(a) }} <a routerLink="/cofre">Abrir o Cofre</a>
+      </p>
+    }
     <router-outlet />
   `,
 })
@@ -61,11 +68,17 @@ export class Shell implements OnInit {
   protected readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly integrations = inject(IntegrationsApi);
+  private readonly vault = inject(VaultApi);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly pendingFailures = signal(0);
+  protected readonly certificateAlert = signal<CertificateAlert | null>(null);
+  protected readonly certificateText = alertText;
 
   ngOnInit(): void {
+    // RF06 CA5: o Dono vê o aviso de vencimento do A1 em qualquer página (uma vez por entrada no painel).
+    if (this.auth.can('vaultManage'))
+      this.vault.alert().then((a) => this.certificateAlert.set(a), () => undefined);
     if (!this.auth.can('ordersManage')) return;
     void this.checkFailures();
     const timer = setInterval(() => void this.checkFailures(), FAILURE_CHECK_MS);
