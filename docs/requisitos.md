@@ -249,6 +249,7 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 ### RF37 — Planos e feature flags · E4
 - CA1: planos Essencial, Profissional, Completo com limites (peças ativas, usuários, cadastros com IA/mês) e recursos habilitados.
 - CA2: limites e recursos são dados (tabela), não código; mudar o plano de um tenant tem efeito imediato.
+- Feito (13/10/2026, antecipado do E4): `plan_limits` (usuários, peças ativas, cadastros com IA/mês) e `plan_features` (canais, domínio próprio, automações de IA) no banco da plataforma, lidos a cada consulta (sem cache). Peça acima do limite não é ativada (trava por loja contra ativações simultâneas); canal fora do plano não conecta; cartão "Seu plano" no Início (Dono) com uso e recursos; troca pelo comando `plano --slug <loja> --plano <código>` até a cobrança (RF38). **HIPÓTESE (Q41):** ao baixar de plano, o que já passou do limite continua; só não dá para acrescentar. O bloqueio pelo limite de IA entra com o RF36.
 
 ### RF38 — Cobrança recorrente · E4
 - CA1: cobra mensalidade e taxa de implantação via gateway **da plataforma**.
@@ -325,6 +326,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q38 | De onde saem os e-mails e quem paga? | Da plataforma: domínio e custo da plataforma. Da loja ao comprador: SMTP da loja (Workspace, 365, outro) se configurado; senão remetente padrão da plataforma, incluído na assinatura. Provedor padrão a escolher (SES São Paulo ou Resend), via SMTP. | RF16, RF33, RF07 |
 | Q39 | Como o comprador entra na área do cliente e que e-mails recebe? | Só por link no e-mail (sem senha); sessão de 30 dias; e-mails: link de acesso, pedido recebido, pagamento confirmado, pedido enviado (com rastreio) e pedido cancelado. | RF16 |
 | Q40 | Como funciona a opção de site personalizado contratada à parte? | Cobrada por orçamento; a equipe da plataforma cria tema e páginas exclusivos na própria vitrine (dados do tenant, mesmo código); o lojista perde só a edição da aparência (logo, cores, textos, layout), que aparece como "Loja personalizada"; peças, preços, estoque, pedidos, frete e pagamento continuam com ele. | RF40, RF01, RF37 |
+| Q41 | Quais limites e recursos tem cada plano? | **HIPÓTESE** aprovada como ponto de partida (13/10/2026): usuários 2/5/10; peças ativas 500/3.000/sem limite; cadastros com IA 50/300/1.000 por mês; Mercado Livre e IA de cadastro em todos; Instagram, domínio próprio e demais IAs a partir do Profissional; OLX só no Completo; loja virtual, balcão, NF-e e e-mail em todos. Ajustável por migração de dados quando houver tabela de preços. | RF37, RF36, RF07 |
 
 ## Fontes
 

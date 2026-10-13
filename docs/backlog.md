@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1005** |
 
-Progresso: 417 h de 1005 h em tarefas concluídas (41%).
+Progresso: 429 h de 1005 h em tarefas concluídas (43%).
 
 Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -371,11 +371,11 @@ Onboarding, domínio próprio, assinatura, superadmin e LGPD.
 
 ### Assinatura e planos — 50 h
 
-#### Planos, limites e feature flags — 20 h  `RF37, RF36`
+#### Planos, limites e feature flags — 20 h  `RF37, RF36` · **em andamento**
 
 **Critérios de aceite:** Planos, limites e recursos são dados; mudança de plano tem efeito imediato; limite de IA bloqueia ou consome pacote excedente.
 
-- [ ] Modelo de planos e verificação de limites — 12 h
+- [x] Modelo de planos e verificação de limites — 12 h
 - [ ] Bloqueio e pacote excedente de IA — 8 h
 
 #### Cobrança recorrente e inadimplência — 30 h  `RF38`

@@ -342,7 +342,7 @@ export const epics = [
             title: 'Planos, limites e feature flags',
             rf: 'RF37, RF36',
             ac: 'Planos, limites e recursos são dados; mudança de plano tem efeito imediato; limite de IA bloqueia ou consome pacote excedente.',
-            t: [['Modelo de planos e verificação de limites', 12], ['Bloqueio e pacote excedente de IA', 8]],
+            t: [['Modelo de planos e verificação de limites', 12, 'done'], ['Bloqueio e pacote excedente de IA', 8]],
           },
           {
             title: 'Cobrança recorrente e inadimplência',

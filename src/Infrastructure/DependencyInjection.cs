@@ -78,6 +78,9 @@ public static class DependencyInjection
 
         services.Configure<PlatformOptions>(configuration.GetSection(PlatformOptions.Section));
         services.AddScoped<ITenantProvisioning, TenantProvisioning>();
+        // RF37: plano da loja (limites e recursos como dados).
+        services.AddScoped<PlanDirectory>();
+        services.AddScoped<Application.Platform.IPlanUsage, PlanUsageService>();
         services.AddScoped<IStoreProfileService, StoreProfileService>();
         services.AddScoped<IPartQueries, PartQueries>();
         services.AddScoped<IStoreCatalog, StoreCatalog>();

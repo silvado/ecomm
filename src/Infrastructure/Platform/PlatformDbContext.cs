@@ -16,6 +16,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<TenantDomain> TenantDomains => Set<TenantDomain>();
     public DbSet<Plan> Plans => Set<Plan>();
     public DbSet<PlanLimit> PlanLimits => Set<PlanLimit>();
+    public DbSet<PlanFeature> PlanFeatures => Set<PlanFeature>();
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -70,11 +71,34 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         {
             b.HasKey(l => new { l.PlanCode, l.Key });
             b.Property(l => l.Key).HasMaxLength(40);
-            // HIPÓTESE (requisitos → Em aberto): 2 / 5 / 10 usuários.
+            // HIPÓTESE (requisitos → Em aberto, Q17 e Q41): usuários 2/5/10; peças ativas 500/3.000/sem limite; IA 50/300/1.000 por mês.
             b.HasData(
                 new PlanLimit(Plan.Essential, PlanLimit.Users, 2),
                 new PlanLimit(Plan.Professional, PlanLimit.Users, 5),
-                new PlanLimit(Plan.Complete, PlanLimit.Users, 10));
+                new PlanLimit(Plan.Complete, PlanLimit.Users, 10),
+                new PlanLimit(Plan.Essential, PlanLimit.ActiveParts, 500),
+                new PlanLimit(Plan.Professional, PlanLimit.ActiveParts, 3000),
+                new PlanLimit(Plan.Essential, PlanLimit.AiListingsPerMonth, 50),
+                new PlanLimit(Plan.Professional, PlanLimit.AiListingsPerMonth, 300),
+                new PlanLimit(Plan.Complete, PlanLimit.AiListingsPerMonth, 1000));
+        });
+
+        modelBuilder.Entity<PlanFeature>(b =>
+        {
+            b.HasKey(f => new { f.PlanCode, f.Feature });
+            b.Property(f => f.PlanCode).HasMaxLength(30);
+            b.Property(f => f.Feature).HasMaxLength(60);
+            b.HasOne<Plan>().WithMany().HasForeignKey(f => f.PlanCode).HasPrincipalKey(p => p.Code).OnDelete(DeleteBehavior.Cascade);
+            // HIPÓTESE (Q41): Essencial = ML + IA de cadastro; Profissional = + Instagram, domínio próprio e demais IAs; Completo = + OLX.
+            string[] essential = [PlanFeature.MercadoLivre, PlanFeature.AiPartFromPhotos];
+            string[] professional = [.. essential, PlanFeature.Meta, PlanFeature.CustomDomain, PlanFeature.AiBuyerAnswers, PlanFeature.AiPriceSuggestion,
+                PlanFeature.AiDailySummary];
+            string[] complete = [.. professional, PlanFeature.Olx];
+            b.HasData([
+                .. essential.Select(f => new PlanFeature(Plan.Essential, f)),
+                .. professional.Select(f => new PlanFeature(Plan.Professional, f)),
+                .. complete.Select(f => new PlanFeature(Plan.Complete, f)),
+            ]);
         });
 
         modelBuilder.Entity<UserAccount>(b =>

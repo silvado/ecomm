@@ -86,6 +86,17 @@ A sessão continua aberta por até 7 dias sem uso. Depois disso, é preciso entr
 
 Tela de boas-vindas com o nome da loja. Os módulos ficam no menu do topo.
 
+**Seu plano** (só o Dono)
+- Mostra o plano da loja (Essencial, Profissional ou Completo) e quanto de cada limite já foi usado: peças ativas, usuários e cadastros com IA no mês.
+- Também lista os recursos incluídos, por exemplo Mercado Livre, Instagram e domínio próprio. Loja virtual, balcão, nota fiscal e e-mails estão em todos os planos.
+- Quando a loja chega a um limite, aparece um aviso. Para mudar de plano, fale com a equipe da plataforma.
+
+**Limites do plano**
+- **Peças ativas:** no limite, ativar uma peça nova é recusado com a mensagem do plano. Inative outra peça ou mude de plano. Peças em rascunho ou inativas não contam.
+- **Usuários:** no limite, não dá para adicionar outro usuário.
+- **Canais:** conectar um canal que o plano não inclui é recusado.
+- Ao mudar para um plano menor, nada é desativado: só não dá para acrescentar além do novo limite.
+
 ### 4.3 Peças
 
 **Acesso:** menu **Peças** (Dono e Operador).
@@ -481,6 +492,7 @@ Limites para evitar abuso:
 
 - **Criar uma loja e o Dono**: comando `criar-loja` do migrador (ver `CLAUDE.md`, seção Comandos). A senha provisória do Dono aparece na saída do comando e deve ser repassada a ele, que cria a própria senha no primeiro acesso.
 - **Loja personalizada** (RF40): comando `loja-personalizada --slug <slug> --ligar` (ou `--desligar`) do migrador, depois de fechado o orçamento. Ligada, o Dono não muda mais a aparência pelo painel; desligada, volta a mudar.
+- **Plano da loja** (RF37): comando `plano --slug <slug> --plano essencial|profissional|completo` do migrador. Vale na hora. A cobrança automática da assinatura ainda não existe.
 - **Tabela de veículos** (marcas, modelos e versões usados na compatibilidade): comando `importar-veiculos` do migrador.
 
 ## 7. Ainda não disponível
@@ -516,3 +528,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 13/10/2026 | Cofre e certificado digital A1 (RF06): nova seção 4.7.1, aviso de vencimento e perfis. |
 | 13/10/2026 | Anúncios da peça (base do E2, RF24): situação nos canais, pausa e retomada, atualização automática pelo estoque (4.3). |
 | 13/10/2026 | Conferência de hora em hora dos anúncios com os canais (RF27), na seção Anúncios (4.3). |
+| 13/10/2026 | Planos e limites (RF37): cartão Seu plano e limites em 4.2; comando de troca de plano em 6. |

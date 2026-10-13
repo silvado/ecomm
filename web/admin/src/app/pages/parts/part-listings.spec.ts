@@ -1,7 +1,11 @@
+import { registerLocaleData } from '@angular/common';
+import localePt from '@angular/common/locales/pt';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ListingView, PartListings } from './part-listings';
+
+registerLocaleData(localePt, 'pt-BR');
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
   for (let i = 0; i < 3; i++) {

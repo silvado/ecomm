@@ -74,13 +74,13 @@ erDiagram
         numeric setup_fee
     }
     PLAN_LIMIT {
-        uuid plan_id PK
-        string key PK "active_parts|users|ai_listings_month"
+        string plan_code PK "FK plan.code"
+        string key PK "active_parts|users|ai_listings_month — sem linha = sem limite"
         int value
     }
     PLAN_FEATURE {
-        uuid plan_id PK
-        string feature PK "channel_ml|channel_instagram|channel_olx|ai_answers|..."
+        string plan_code PK "FK plan.code"
+        string feature PK "channel:mercado-livre|channel:meta|channel:olx|custom_domain|ai:part_from_photos|ai:buyer_answers|ai:price_suggestion|ai:daily_summary"
     }
     SUBSCRIPTION {
         uuid id PK
