@@ -210,6 +210,18 @@ table {
   margin: 0;
 }
 
+.notice {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+// Registros de DNS do domínio próprio (RF03): valores longos quebram em vez de alargar a página.
+table.dns code {
+  word-break: break-all;
+}
+
 textarea {
   font: inherit;
   padding: 0.5rem 0.6rem;

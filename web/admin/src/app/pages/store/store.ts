@@ -2,6 +2,7 @@ import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthStore, problemTitle } from '../../core/auth';
+import { DomainSettingsSection } from './domain-settings';
 import { EmailSettingsSection } from './email-settings';
 import { FiscalSettingsSection } from '../fiscal/fiscal-settings';
 import { contrastRatio, isHexColor, MIN_COMPONENT_CONTRAST, MIN_TEXT_CONTRAST, readableOn } from '../../shared/contrast';
@@ -18,7 +19,7 @@ const APPEARANCE = ['tradeName', 'primaryColor', 'backgroundColor', 'textColor',
 
 @Component({
   selector: 'app-store',
-  imports: [ReactiveFormsModule, TraceabilitySettingsSection, FiscalSettingsSection, EmailSettingsSection],
+  imports: [ReactiveFormsModule, TraceabilitySettingsSection, FiscalSettingsSection, EmailSettingsSection, DomainSettingsSection],
   template: `
     <main class="card">
       <h1>Dados da loja @if (custom()) { <span class="badge ok" data-custom-badge>Loja personalizada</span> }</h1>
@@ -147,6 +148,11 @@ const APPEARANCE = ['tradeName', 'primaryColor', 'backgroundColor', 'textColor',
       }
       @if (auth.can('vaultManage')) {
         <app-email-settings />
+      }
+      @defer (on viewport) {
+        <app-domain-settings />
+      } @placeholder {
+        <p class="muted">Domínio próprio…</p>
       }
     </main>
   `,
