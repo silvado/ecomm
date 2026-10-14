@@ -193,6 +193,13 @@ if (app.Configuration.GetValue<bool>("Channels:UseFakeChannel"))
     app.MapFakeChannelWebhook();
 }
 
+if (app.Configuration.GetValue<bool>("Dns:UseFake"))
+{
+    // DNS simulado (RF03): qualquer um "prova" um domínio. Jamais em produção.
+    if (app.Environment.IsProduction()) throw new InvalidOperationException("Dns:UseFake não pode ser usado em produção.");
+    app.MapFakeDns();
+}
+
 // A NF-e simulada não tem valor fiscal: jamais em produção.
 if (app.Environment.IsProduction() && app.Configuration.GetValue<bool>("Fiscal:UseFakeProvider"))
     throw new InvalidOperationException("Fiscal:UseFakeProvider não pode ser usado em produção.");

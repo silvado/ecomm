@@ -21,6 +21,8 @@ builder.Services.AddHostedService<IntegrationLogRetention>();
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Vault.CertificateExpiryMonitor>();
 // RF27: reconciliação horária dos anúncios com os canais.
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Channels.ChannelReconciliationScheduler>();
+// RF03: verificação dos domínios próprios a cada 5 min.
+builder.Services.AddHostedService<Ecommerce.Infrastructure.Platform.DomainVerificationJob>();
 
 var host = builder.Build();
 host.Run();

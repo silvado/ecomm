@@ -495,7 +495,6 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
             modelBuilder.Entity("Ecommerce.Domain.Platform.TenantDomain", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -515,6 +514,19 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         .HasColumnType("character varying(30)")
                         .HasColumnName("kind");
 
+                    b.Property<string>("LastCheckMessage")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("last_check_message");
+
+                    b.Property<DateTimeOffset?>("LastCheckedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_checked_at");
+
+                    b.Property<DateTimeOffset?>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
@@ -524,6 +536,11 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("verification_status");
+
+                    b.Property<string>("VerificationToken")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("verification_token");
 
                     b.Property<DateTimeOffset?>("VerifiedAt")
                         .HasColumnType("timestamp with time zone")
@@ -538,6 +555,10 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("ix_tenant_domains_tenant_id");
+
+                    b.HasIndex("VerificationStatus")
+                        .HasDatabaseName("ix_tenant_domains_verification_status")
+                        .HasFilter("verification_status = 'Pending'");
 
                     b.ToTable("tenant_domains", (string)null);
                 });
