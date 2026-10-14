@@ -70,6 +70,9 @@ services:
       Fiscal__UseFakeProvider: "true"
       # Canal de venda simulado (webhook /api/webhooks/canais/canal-simulado) até os canais reais (E2). Nunca em produção.
       Channels__UseFakeChannel: "true"
+      # DNS simulado para o domínio próprio (POST /api/dev/dns) e IP público de exemplo para o registro A. Nunca em produção.
+      Dns__UseFake: "true"
+      Platform__PublicIps__0: 127.0.0.1
       Platform__Domain: ${PLATFORM_DOMAIN:-localhost}   # URL de notificação mostrada no painel (<slug>.<domínio>)
       Shipping__MelhorEnvio__BaseUrl: https://sandbox.melhorenvio.com.br
       Shipping__MelhorEnvio__UserAgent: ${MELHOR_ENVIO_USER_AGENT:-}

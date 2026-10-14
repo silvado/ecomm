@@ -68,7 +68,7 @@ public sealed class StoreProfileService(
         var tenant = await catalog.FindByIdAsync(tenantId, ct) ?? throw new InvalidOperationException("Tenant do escopo fora do catálogo.");
         var branding = await LoadBrandingAsync(tenantId, ct);
         var store = new PublicStore(tenant.Slug, tenant.TradeName, Theme(branding), Texts(branding),
-            branding.LogoId is { } logoId ? IStoreProfileService.LogoPath(logoId) : null);
+            branding.LogoId is { } logoId ? IStoreProfileService.LogoPath(logoId) : null, tenant.PrimaryHost);
         cache.Set(PublicKey(tenantId), store, PublicTtl);
         return store;
     }
@@ -196,5 +196,6 @@ public sealed class StoreProfileService(
 
     private static StoreTexts Texts(StoreBranding b) => new(b.About, b.ReturnPolicy, b.Footer);
 
-    private static string PublicKey(Guid tenantId) => $"store:public:{tenantId}";
+    /// <summary>Chave do <see cref="PublicStore"/> em cache; quem muda o host principal (RF03) também a limpa.</summary>
+    internal static string PublicKey(Guid tenantId) => $"store:public:{tenantId}";
 }

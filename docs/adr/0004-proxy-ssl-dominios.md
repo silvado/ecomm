@@ -32,7 +32,9 @@ Cada loja tem subdomínio da plataforma (`slug.plataforma.com.br`) e pode ter do
   1. ALIAS/ANAME/CNAME flattening, se o provedor DNS do cliente suportar;
   2. redirecionamento raiz → `www` oferecido pelo registrador;
   3. registro `A` para o IP da plataforma (exige IP estável — usar IP flutuante/reservado da VPS para poder trocar de servidor sem que clientes alterem DNS).
-- Verificação: resolver o `www` (e o raiz, se configurado) e confirmar que aponta para a plataforma; nunca consultar ou alterar MX/TXT.
+- Verificação: resolver o `www` (e o raiz, se configurado) e confirmar que aponta para a plataforma (CNAME para `slug.plataforma.com.br` ou A para um dos IPs públicos em `Platform:PublicIps`); nunca consultar ou alterar MX nem os TXT de e-mail do domínio.
+- **Prova de controle (atualização de 2026-10-13):** apontar para a plataforma não prova que o domínio é da loja (qualquer um pode apontar um domínio alheio que já aponte para nós, ou cadastrar o domínio de outra loja antes dela). Por isso a loja cria também `TXT _ecomm-verificacao.<host> = "ecomm-verificacao=<código>"`, com código aleatório de 128 bits gerado por domínio. O nome com prefixo próprio não colide com SPF/DKIM/DMARC e só ele é consultado. O mesmo host não pode estar em duas lojas (índice único). Mesmo padrão de verificação usado por provedores como Google Search Console e Cloudflare for SaaS (TXT em subdomínio de verificação).
+- Pendentes são conferidos pelo Worker a cada 5 min por até 72 h; depois ficam "falhou" até a loja pedir "Verificar agora". O resolvedor é `IDnsResolver` (biblioteca DnsClient, sem cache; versão simulada em dev e testes).
 
 **Roteamento:** Caddy encaminha o tráfego da loja para o `storefront` (SSR), que repassa o `Host` à API; exceção: `/api/loja/*` no domínio da loja vai direto para a API (ex.: logo), que resolve o tenant pelo mesmo `Host`. `admin.plataforma.com.br` → app admin; `api.plataforma.com.br` → API (webhooks).
 

@@ -52,6 +52,10 @@ erDiagram
         string host UK "www.loja.com.br"
         string kind "platform_subdomain|custom_www|custom_apex"
         string verification_status "pending|verified|failed"
+        string verification_token "TXT _ecomm-verificacao (RF03)"
+        timestamptz requested_at
+        timestamptz last_checked_at
+        string last_check_message
         timestamptz verified_at
         bool is_primary
     }

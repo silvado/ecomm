@@ -45,6 +45,8 @@ public sealed class CachedTenantCatalog(IServiceScopeFactory scopes, IMemoryCach
 
     public void Invalidate(Guid tenantId) => cache.Remove(IdKey(tenantId));
 
+    public void InvalidateHost(string host) => cache.Remove($"tenant:host:{TenantDomain.NormalizeHost(host)}");
+
     private static string IdKey(Guid tenantId) => $"tenant:id:{tenantId}";
 
     private async Task<TenantDescriptor?> QueryAsync(Func<PlatformDbContext, IQueryable<Tenant>> query, CancellationToken ct)
@@ -52,7 +54,8 @@ public sealed class CachedTenantCatalog(IServiceScopeFactory scopes, IMemoryCach
         await using var scope = scopes.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
         return await query(db).AsNoTracking()
-            .Select(t => new TenantDescriptor(t.Id, t.Slug, t.TradeName, t.Status, t.DatabaseKey))
+            .Select(t => new TenantDescriptor(t.Id, t.Slug, t.TradeName, t.Status, t.DatabaseKey,
+                t.Domains.Where(d => d.IsPrimary).Select(d => d.Host).FirstOrDefault()))
             .SingleOrDefaultAsync(ct);
     }
 }

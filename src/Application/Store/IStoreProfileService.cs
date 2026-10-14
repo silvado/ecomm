@@ -35,7 +35,8 @@ public sealed record UpdateStoreProfile(
 /// O que a loja pública precisa para se desenhar (storefront SSR). <see cref="LogoUrl"/> é relativo ao domínio
 /// da loja e muda a cada troca de logo (pode ter cache longo).
 /// </summary>
-public sealed record PublicStore(string Slug, string Name, StoreTheme Theme, StoreTexts Texts, string? LogoUrl);
+/// <param name="PrimaryHost">Host principal: a vitrine redireciona (301) os outros hosts da loja para ele (RF02 CA3, RF03).</param>
+public sealed record PublicStore(string Slug, string Name, StoreTheme Theme, StoreTexts Texts, string? LogoUrl, string? PrimaryHost = null);
 
 /// <summary>Perfil e aparência da loja do tenant do escopo.</summary>
 public interface IStoreProfileService

@@ -92,6 +92,50 @@ public sealed class Tenant
     public void SetCustomStorefront(bool enabled, DateTimeOffset now) =>
         CustomStorefrontSince = enabled ? CustomStorefrontSince ?? now : null;
 
+    /// <summary>RF03: até um domínio com www e um raiz por loja.</summary>
+    public TenantDomain AddCustomDomain(string host, DomainKind kind, DateTimeOffset now)
+    {
+        if (kind == DomainKind.PlatformSubdomain) throw new ArgumentException("Tipo de domínio inválido.", nameof(kind));
+        if (_domains.Any(d => d.Host == host)) throw new InvalidOperationException("Este domínio já está cadastrado na loja.");
+        if (_domains.Any(d => d.Kind == kind))
+            throw new InvalidOperationException(kind == DomainKind.CustomWww
+                ? "A loja já tem um domínio com www. Remova o atual antes de cadastrar outro."
+                : "A loja já tem um domínio raiz. Remova o atual antes de cadastrar outro.");
+        var domain = TenantDomain.Custom(Id, host, kind, now);
+        _domains.Add(domain);
+        return domain;
+    }
+
+    /// <summary>Verificado (RF03 CA3): passa a abrir a loja e vira o principal (o www tem preferência sobre o raiz).</summary>
+    public void DomainVerified(Guid domainId, DateTimeOffset now)
+    {
+        FindDomain(domainId).Verified(now);
+        ChoosePrimary();
+    }
+
+    public void DomainCheckFailed(Guid domainId, string message, DateTimeOffset now) => FindDomain(domainId).CheckFailed(message, now);
+
+    public void RestartDomainVerification(Guid domainId, DateTimeOffset now) => FindDomain(domainId).RestartVerification(now);
+
+    /// <summary>RF03 CA5: sai na hora; sem domínio próprio verificado, o subdomínio volta a ser o principal.</summary>
+    public void RemoveCustomDomain(Guid domainId)
+    {
+        var domain = FindDomain(domainId);
+        if (!domain.IsCustom) throw new InvalidOperationException("O endereço da plataforma não pode ser removido.");
+        _domains.Remove(domain);
+        ChoosePrimary();
+    }
+
+    private TenantDomain FindDomain(Guid domainId) => _domains.SingleOrDefault(d => d.Id == domainId) ?? throw new KeyNotFoundException("Domínio não encontrado.");
+
+    private void ChoosePrimary()
+    {
+        var primary = _domains.Where(d => d.VerificationStatus == DomainVerificationStatus.Verified)
+            .OrderBy(d => d.Kind switch { DomainKind.CustomWww => 0, DomainKind.CustomApex => 1, _ => 2 })
+            .First();
+        foreach (var d in _domains) d.SetPrimary(d == primary);
+    }
+
     public void ChangePlan(string planCode)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(planCode);

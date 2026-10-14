@@ -325,7 +325,7 @@ export const epics = [
             title: 'Domínio próprio com SSL automático',
             rf: 'RF03',
             ac: 'Painel mostra registros DNS exatos; verificação a cada 5 min por até 72 h; certificado emitido só para domínio verificado via endpoint ask; MX nunca tocado.',
-            t: [['Job de verificação DNS', 10], ['Endpoint ask interno', 4], ['Tela de domínio com instruções', 8]],
+            t: [['Job de verificação DNS', 10, 'done'], ['Endpoint ask interno', 4, 'done'], ['Tela de domínio com instruções', 8, 'done']],
           },
           {
             title: 'Loja personalizada (sob orçamento)',

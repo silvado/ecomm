@@ -20,6 +20,8 @@ export interface PublicStore {
   texts: StoreTexts;
   /** Relativo ao domínio da loja; muda a cada troca de logo. */
   logoUrl: string | null;
+  /** Host principal (domínio próprio verificado ou subdomínio da plataforma); os outros redirecionam para ele. */
+  primaryHost?: string | null;
 }
 
 /** Resultado de resolver a loja pelo Host (RF04): aberta, inexistente, suspensa ou API fora do ar. */

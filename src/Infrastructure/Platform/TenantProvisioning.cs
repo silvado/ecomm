@@ -16,6 +16,12 @@ public sealed class PlatformOptions
 
     /// <summary>Ex.: <c>plataforma.com.br</c> em produção, <c>localhost</c> em dev (o Caddy emite certificado local).</summary>
     public string Domain { get; set; } = string.Empty;
+
+    /// <summary>
+    /// IPs públicos da plataforma (IP reservado da VPS — ADR-0004), para o registro A do domínio raiz das lojas (RF03).
+    /// Vazio: o painel só orienta CNAME/ALIAS.
+    /// </summary>
+    public string[] PublicIps { get; set; } = [];
 }
 
 /// <summary>

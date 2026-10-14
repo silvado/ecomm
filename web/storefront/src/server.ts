@@ -68,8 +68,16 @@ app.use(
 app.use(async (req, res, next) => {
   try {
     const host = req.headers.host ?? '';
+    const store = await loadStore(req);
+    // RF02 CA3 / RF03: com domínio próprio verificado, os outros endereços da loja redirecionam (301) para o principal.
+    // O destino vem da API (domínio verificado da própria loja), nunca do Host da requisição.
+    const primary = store.kind === 'open' ? store.store.primaryHost : null;
+    if (primary && (req.method === 'GET' || req.method === 'HEAD') && host.split(':')[0].toLowerCase() !== primary) {
+      res.redirect(301, `${req.protocol}://${primary}${req.originalUrl}`);
+      return;
+    }
     const context: StoreRequestContext = {
-      store: await loadStore(req),
+      store,
       origin: `${req.protocol}://${host}`,
       api: { url: apiUrl, host, proto: req.protocol, clientIp: req.ip ?? '' },
     };

@@ -388,6 +388,23 @@ Venda de balcão não gera e-mail.
 - **Enviar e-mail de teste**: envia na hora e mostra o erro do servidor, se houver.
 - Se o servidor de e-mail falhar, o sistema tenta de novo sozinho. As tentativas aparecem em **Integrações**.
 
+**Domínio próprio** (fim da página; planos Profissional e Completo)
+
+A loja sempre funciona no endereço da plataforma (mostrado na tela). Com domínio próprio, ela abre também em, por exemplo, `www.sualoja.com.br`.
+1. Digite o domínio (de preferência com "www") e clique em **Adicionar domínio**. Para o endereço sem "www" também funcionar, adicione os dois (um de cada).
+2. A tela mostra os registros a criar no painel de DNS do domínio (Registro.br, GoDaddy, Cloudflare…):
+   - **CNAME** do "www" para o endereço da loja na plataforma. No domínio sem "www", **ALIAS/ANAME** ou, se o provedor não tiver, **A** para o IP indicado.
+   - **TXT** com o nome `_ecomm-verificacao…` e o código mostrado: prova que o domínio é da loja.
+
+   Os registros de e-mail do domínio não são tocados.
+3. O sistema confere sozinho a cada poucos minutos, por até 72 horas. A mudança no DNS pode levar algumas horas para valer. Situações:
+   - **Aguardando o DNS**: ainda não encontrou os registros; a tela diz o que falta.
+   - **Funcionando**: o domínio vira o **endereço principal**. Quem entra pelo endereço antigo é levado para ele. O cadeado (HTTPS) é emitido no primeiro acesso.
+   - **Não encontramos os registros**: passaram 72 horas. Corrija o DNS e clique em **Verificar agora** (vale também para conferir na hora).
+- **Remover** tira o domínio na hora; a loja volta a abrir no endereço da plataforma.
+- Um domínio só pode estar em uma loja.
+- Nos outros planos, a seção mostra como mudar de plano.
+
 ### 4.7 Pagamentos
 
 **Acesso:** menu **Pagamentos** (só Dono).
@@ -529,3 +546,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 13/10/2026 | Anúncios da peça (base do E2, RF24): situação nos canais, pausa e retomada, atualização automática pelo estoque (4.3). |
 | 13/10/2026 | Conferência de hora em hora dos anúncios com os canais (RF27), na seção Anúncios (4.3). |
 | 13/10/2026 | Planos e limites (RF37): cartão Seu plano e limites em 4.2; comando de troca de plano em 6. |
+| 13/10/2026 | Domínio próprio (RF03): passo a passo em 4.6 Dados da loja. |

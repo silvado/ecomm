@@ -81,6 +81,11 @@ public static class DependencyInjection
         // RF37: plano da loja (limites e recursos como dados).
         services.AddScoped<PlanDirectory>();
         services.AddScoped<Application.Platform.IPlanUsage, PlanUsageService>();
+        // RF03: domínio próprio. DNS simulado só em dev/testes (Dns:UseFake).
+        if (configuration.GetValue<bool>("Dns:UseFake")) services.AddSingleton<Application.Platform.IDnsResolver, FakeDnsResolver>();
+        else services.AddSingleton<Application.Platform.IDnsResolver, DnsClientResolver>();
+        services.AddScoped<DomainVerifier>();
+        services.AddScoped<Application.Platform.ICustomDomains, CustomDomainService>();
         services.AddScoped<IStoreProfileService, StoreProfileService>();
         services.AddScoped<IPartQueries, PartQueries>();
         services.AddScoped<IStoreCatalog, StoreCatalog>();

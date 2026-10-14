@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1005** |
 
-Progresso: 429 h de 1005 h em tarefas concluídas (43%).
+Progresso: 451 h de 1005 h em tarefas concluídas (45%).
 
 Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -352,13 +352,13 @@ Onboarding, domínio próprio, assinatura, superadmin e LGPD.
 - [ ] Fluxo e estado do onboarding — 8 h
 - [ ] Telas dos passos — 16 h
 
-#### Domínio próprio com SSL automático — 22 h  `RF03`
+#### Domínio próprio com SSL automático — 22 h  `RF03` · **concluído**
 
 **Critérios de aceite:** Painel mostra registros DNS exatos; verificação a cada 5 min por até 72 h; certificado emitido só para domínio verificado via endpoint ask; MX nunca tocado.
 
-- [ ] Job de verificação DNS — 10 h
-- [ ] Endpoint ask interno — 4 h
-- [ ] Tela de domínio com instruções — 8 h
+- [x] Job de verificação DNS — 10 h
+- [x] Endpoint ask interno — 4 h
+- [x] Tela de domínio com instruções — 8 h
 
 #### Loja personalizada (sob orçamento) — 31 h  `RF40` · **em andamento**
 

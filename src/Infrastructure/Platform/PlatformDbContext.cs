@@ -48,10 +48,19 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         modelBuilder.Entity<TenantDomain>(b =>
         {
             b.HasKey(d => d.Id);
+            // Id gerado na aplicação e domínio adicionado pela coleção do tenant: sem isto o EF faria UPDATE.
+            b.Property(d => d.Id).ValueGeneratedNever();
             b.Property(d => d.Host).HasMaxLength(253).IsRequired();
             b.HasIndex(d => d.Host).IsUnique();
             b.Property(d => d.Kind).HasConversion<string>().HasMaxLength(30);
             b.Property(d => d.VerificationStatus).HasConversion<string>().HasMaxLength(20);
+            b.Property(d => d.VerificationToken).HasMaxLength(64);
+            b.Property(d => d.LastCheckMessage).HasMaxLength(300);
+            b.Ignore(d => d.VerificationRecordName);
+            b.Ignore(d => d.VerificationRecordValue);
+            b.Ignore(d => d.IsCustom);
+            // Verificação periódica (RF03 CA2) procura os pendentes.
+            b.HasIndex(d => d.VerificationStatus).HasFilter("verification_status = 'Pending'");
         });
 
         modelBuilder.Entity<Plan>(b =>
