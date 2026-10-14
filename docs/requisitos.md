@@ -26,6 +26,8 @@ CNPJ, razão social, nome fantasia, logo, cores, textos institucionais. **HIPÓT
 - CA3: só após verificado o domínio entra na lista consultada pelo endpoint `ask` do Caddy; antes disso nenhum certificado é emitido.
 - CA4: o sistema **nunca** solicita, altera ou exibe instruções sobre registros MX/TXT de e-mail do cliente.
 - CA5: remover o domínio tira-o da lista `ask` imediatamente; o subdomínio volta a ser o principal.
+- Prova de controle (decidido em 13/10/2026): além do CNAME/A, a loja cria um TXT **só nosso** em `_ecomm-verificacao.<domínio>` com um código aleatório por domínio. Esse nome não é o TXT do domínio (SPF/DKIM/DMARC continuam intocados — CA4) e impede que alguém cadastre um domínio que só aponta para a plataforma sem ser dele. Ver [ADR-0004](adr/0004-proxy-ssl-dominios.md).
+- Feito (13/10/2026, antecipado do E4): até um `www` e um domínio raiz por loja, só nos planos com `custom_domain` (RF37); seção "Domínio próprio" em Dados da loja com os registros, situação, "Verificar agora" e "Remover"; job do Worker a cada 5 min (pendentes por 72 h, depois "falhou"; "Verificar agora" reabre a janela); ao verificar, vira o domínio principal (o `www` tem preferência) e a vitrine redireciona com 301 os outros endereços (RF02 CA3); `ask` do Caddy só responde 200 para verificado; DNS atrás de `IDnsResolver` (DnsClient; simulado em dev com `POST /api/dev/dns`). Domínio já usado por outra loja é recusado. Falta: certificado real em produção (VPS, Let's Encrypt).
 
 ### RF04 — Resolução de tenant por Host · E1
 - CA1: toda requisição da loja/API pública resolve o tenant pelo cabeçalho `Host` (subdomínio ou domínio próprio verificado), com cache em memória (TTL ≤ 60 s).
