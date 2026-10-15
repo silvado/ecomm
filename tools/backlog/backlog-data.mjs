@@ -359,7 +359,7 @@ export const epics = [
             title: 'Painel de superadmin',
             rf: 'RF07',
             ac: 'Gestão de tenants e planos; MFA obrigatório; todo acesso a dados de tenant auditado.',
-            t: [['Telas de superadmin', 16], ['MFA', 6], ['Auditoria de acesso', 4]],
+            t: [['Telas de superadmin', 16, 'done'], ['MFA', 6, 'done'], ['Auditoria de acesso', 4, 'done']],
           },
           {
             title: 'LGPD e exportação de dados',

@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 12/10/2026 (RF28/RF29: integrações e falhas).
+> Última atualização: 15/10/2026 (RF07: painel da plataforma, superadmin).
 
 ## Sumário
 
@@ -21,7 +21,7 @@
    - 4.7.1 [Cofre e certificado digital](#471-cofre-e-certificado-digital)
    - 4.8 [Usuários](#48-usuários)
 5. [Loja virtual (o que o comprador vê)](#5-loja-virtual-o-que-o-comprador-vê)
-6. [Operação da plataforma](#6-operação-da-plataforma)
+6. [Painel da plataforma (superadmin)](#6-painel-da-plataforma-superadmin)
 7. [Ainda não disponível](#7-ainda-não-disponível)
 8. [Histórico do manual](#8-histórico-do-manual)
 
@@ -35,6 +35,7 @@ A plataforma tem duas partes:
 |---|---|---|
 | **Painel da loja** | Dono e operadores da loja | Cadastrar peças, lançar vendas de balcão, acompanhar e tratar pedidos, configurar a loja, os pagamentos e os usuários |
 | **Loja virtual** | Comprador | Buscar peças, comprar (entrega ou retirada), pagar e acompanhar o pedido |
+| **Painel da plataforma** | Equipe da plataforma (superadmin) | Criar lojas, trocar plano, suspender e reativar, ligar a loja personalizada e consultar a auditoria |
 
 O **estoque é único**: a mesma quantidade vale para a loja virtual e, quando chegarem as integrações, para os outros canais. Uma peça reservada num pedido deixa de aparecer como disponível para os outros compradores.
 
@@ -44,6 +45,7 @@ O **estoque é único**: a mesma quantidade vale para a loja virtual e, quando c
 |---|---|
 | Painel da loja | *a definir para produção*; em desenvolvimento: `http://localhost:4200` |
 | Loja virtual | `https://<endereço-da-loja>.<domínio-da-plataforma>` (ex.: `demo.localhost` em desenvolvimento) ou o domínio próprio da loja |
+| Painel da plataforma | Mesmo endereço do painel da loja, em `/plataforma` (em desenvolvimento: `http://localhost:4200/plataforma`) |
 | Acompanhamento do pedido | Link `…/pedido#…` mostrado ao comprador ao confirmar o pedido |
 
 ## 3. Perfis e permissões
@@ -503,15 +505,44 @@ Limites para evitar abuso:
 
 **Trocas e devoluções:** página com o texto da loja.
 
-## 6. Operação da plataforma
+## 6. Painel da plataforma (superadmin)
 
-*Feito pela equipe da plataforma, não pela loja.*
+*Usado pela equipe da plataforma, não pela loja.* É um painel separado: a conta de superadmin não é a mesma conta de nenhuma loja, e quem entra no painel de uma loja não vê nada daqui (nem o contrário).
 
-- **Criar uma loja e o Dono**: comando `criar-loja` do migrador (ver `CLAUDE.md`, seção Comandos). A senha provisória do Dono aparece na saída do comando e deve ser repassada a ele, que cria a própria senha no primeiro acesso.
-- **Loja personalizada** (RF40): comando `loja-personalizada --slug <slug> --ligar` (ou `--desligar`) do migrador, depois de fechado o orçamento. Ligada, o Dono não muda mais a aparência pelo painel; desligada, volta a mudar.
-- **Plano da loja** (RF37): comando `plano --slug <slug> --plano essencial|profissional|completo` do migrador. Vale na hora. A cobrança automática da assinatura ainda não existe.
-- **Tabela de veículos** (marcas, modelos e versões usados na compatibilidade): comando `importar-veiculos` do migrador.
+### 6.1 Primeiro acesso
 
+1. A equipe técnica cria a conta pelo comando `criar-superadmin --email <e-mail>` do migrador (ver `CLAUDE.md`, seção Comandos) e repassa a senha provisória por um canal seguro.
+2. Em **/plataforma**, entre com o e-mail e a senha provisória.
+3. Crie uma senha só sua (de 10 a 128 caracteres).
+4. Cadastre um **app autenticador** no celular (Google Authenticator, Microsoft Authenticator, Authy ou outro): clique em **Gerar chave**, no app escolha *adicionar conta* → *inserir chave de configuração* e digite a chave mostrada (ou, no celular, use **abrir direto no app**). Digite o código de 6 dígitos que o app mostrar e clique em **Ativar**.
+5. Aparecem **10 códigos de recuperação**. Guarde-os em lugar seguro: cada um serve uma única vez, no lugar do código do app, se você perder o celular. Eles não aparecem de novo.
+
+### 6.2 Entrar no dia a dia
+
+E-mail e senha, depois o código de 6 dígitos do app (ou um código de recuperação). A sessão dura até 8 horas; depois, entre de novo. **Sair** encerra a sessão na hora.
+
+Cinco erros seguidos (senha ou código) bloqueiam a conta por 15 minutos. Um mesmo código do app não vale duas vezes.
+
+### 6.3 Lojas
+
+- **Lista**: busca por nome, endereço, domínio ou CNPJ completo, e filtro por situação (ativa, suspensa…).
+- **Nova loja**: nome fantasia, razão social, CNPJ, endereço (o começo do endereço da loja: letras minúsculas, números e hífen) e e-mail do Dono. Ao criar, aparece a **senha provisória do Dono** — só nesse momento. Repasse ao Dono por um canal seguro; no primeiro acesso ele cria a própria senha. Se o e-mail já tinha conta na plataforma, o Dono entra com a senha que já usa.
+- **Abrir uma loja** mostra dados cadastrais, endereços (subdomínio e domínio próprio), usuários e perfis. Peças, pedidos e clientes da loja **não** aparecem aqui.
+  - **Plano**: escolha e clique em **Trocar plano**. Vale na hora; ao baixar de plano, o que já passou do novo limite continua, só não dá para acrescentar mais.
+  - **Suspender loja** (pede confirmação): a loja virtual sai do ar e a sincronização com os canais para. **Reativar loja** desfaz.
+  - **Loja personalizada** (RF40): **Ligar** depois de fechado o orçamento; o Dono deixa de mudar logo, nome, cores e textos. **Desligar** devolve a edição ao Dono.
+
+### 6.4 Planos
+
+Mostra os limites (usuários, peças ativas, cadastros por IA no mês) e os recursos de cada plano, e quantas lojas usam cada um. Só consulta: mudar limites exige atualização do sistema.
+
+### 6.5 Auditoria
+
+Tudo o que os superadmins fazem fica registrado e não pode ser alterado nem apagado: entradas (e tentativas recusadas), cadastro do app, uso de código de recuperação, troca de senha, **cada abertura de uma loja** e cada ação (criar, plano, suspender, reativar, loja personalizada). Filtre por ação ou e-mail; na tela de uma loja, **Ver o que a plataforma fez nesta loja** mostra só os registros dela.
+
+### 6.6 Comandos do servidor
+
+Continuam disponíveis no migrador, para a equipe técnica: `criar-superadmin`, `criar-loja`, `plano`, `loja-personalizada` e `importar-veiculos` (tabela de veículos usada na compatibilidade).
 ## 7. Ainda não disponível
 
 Itens previstos que **ainda não estão no sistema**:
@@ -528,6 +559,7 @@ Itens previstos que **ainda não estão no sistema**:
 - NF-e de devolução e estorno automático do reembolso.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
+- Painel da plataforma: criar outros superadmins pela tela (hoje, só a equipe técnica, pelo servidor); trocar o app autenticador ou gerar novos códigos de recuperação (hoje não há como — sem o celular e sem códigos, a equipe técnica cria outra conta); QR code no cadastro do app; ver peças e pedidos de uma loja; tela do tema exclusivo da loja personalizada; importar a tabela de veículos pela tela.
 
 ## 8. Histórico do manual
 
@@ -547,3 +579,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 13/10/2026 | Conferência de hora em hora dos anúncios com os canais (RF27), na seção Anúncios (4.3). |
 | 13/10/2026 | Planos e limites (RF37): cartão Seu plano e limites em 4.2; comando de troca de plano em 6. |
 | 13/10/2026 | Domínio próprio (RF03): passo a passo em 4.6 Dados da loja. |
+| 15/10/2026 | Painel da plataforma (RF07): seção 6 reescrita (primeiro acesso com app autenticador, lojas, planos, auditoria); endereço em 2 e visão geral. |
