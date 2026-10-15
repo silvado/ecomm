@@ -5,10 +5,24 @@ import { ChangePasswordPage } from './pages/change-password/change-password';
 import { ChooseStorePage } from './pages/choose-store/choose-store';
 import { HomePage } from './pages/home/home';
 import { LoginPage } from './pages/login/login';
+import { platformGuard } from './platform/platform-auth';
 
 // Páginas do painel carregadas sob demanda: o bundle inicial fica só com login, moldura e início.
 export const routes: Routes = [
   { path: 'entrar', component: LoginPage, title: 'Entrar' },
+  // Painel da plataforma (superadmin, ADR-0007): login, sessão e moldura próprios; nada da sessão de loja.
+  { path: 'plataforma/entrar', loadComponent: () => import('./platform/platform-login').then((m) => m.PlatformLoginPage), title: 'Entrar na plataforma' },
+  {
+    path: 'plataforma',
+    loadComponent: () => import('./platform/platform-shell').then((m) => m.PlatformShell),
+    canActivate: [platformGuard],
+    children: [
+      { path: '', loadComponent: () => import('./platform/tenants').then((m) => m.PlatformTenantsPage), title: 'Lojas — plataforma' },
+      { path: 'lojas/:id', loadComponent: () => import('./platform/tenant-detail').then((m) => m.PlatformTenantPage), title: 'Loja — plataforma' },
+      { path: 'planos', loadComponent: () => import('./platform/plans-audit').then((m) => m.PlatformPlansPage), title: 'Planos — plataforma' },
+      { path: 'auditoria', loadComponent: () => import('./platform/plans-audit').then((m) => m.PlatformAuditPage), title: 'Auditoria — plataforma' },
+    ],
+  },
   { path: 'trocar-senha', component: ChangePasswordPage, canActivate: [authGuard], title: 'Trocar senha' },
   {
     path: 'escolher-loja',

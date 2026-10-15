@@ -6,6 +6,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from './app.routes';
 import { AuthStore } from './core/auth';
 import { authInterceptor } from './core/auth.interceptor';
+import { platformInterceptor } from './platform/platform-auth';
 
 // Preços em reais (pipe currency com 'pt-BR').
 registerLocaleData(localePt, 'pt-BR');
@@ -13,7 +14,7 @@ registerLocaleData(localePt, 'pt-BR');
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor, platformInterceptor])),
     provideRouter(routes, withComponentInputBinding()),
     // Ao abrir ou recarregar a página, retoma a sessão pelo cookie de renovação (se houver).
     provideAppInitializer(() => inject(AuthStore).refresh()),

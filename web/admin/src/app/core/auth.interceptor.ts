@@ -8,7 +8,8 @@ const usesCookieOnly = (url: string) => url.startsWith('/api/auth/') && !url.end
 
 /** Envia o token de acesso e, se ele expirou (401), renova pelo cookie e repete a requisição uma vez. */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.startsWith('/api/') || usesCookieOnly(req.url)) return next(req);
+  // O painel da plataforma tem token próprio (platformInterceptor).
+  if (!req.url.startsWith('/api/') || req.url.startsWith('/api/plataforma/') || usesCookieOnly(req.url)) return next(req);
 
   const auth = inject(AuthStore);
   const withToken = (request: HttpRequest<unknown>) => {
