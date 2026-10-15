@@ -1239,6 +1239,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("bytea")
                         .HasColumnName("access_token_hash");
 
+                    b.Property<DateTimeOffset?>("AnonymizedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("anonymized_at");
+
                     b.Property<string>("BuyerCnpj")
                         .HasMaxLength(14)
                         .HasColumnType("character varying(14)")
@@ -1459,7 +1463,7 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_customer_orders_counter_payment", "(origin = 'Counter') = (payment_method IS NOT NULL)");
 
-                            t.HasCheckConstraint("ck_customer_orders_delivery", "(delivery_method = 'Shipping' AND delivery_postal_code IS NOT NULL AND shipping_service_id IS NOT NULL) OR (delivery_method = 'Pickup' AND pickup_address IS NOT NULL)");
+                            t.HasCheckConstraint("ck_customer_orders_delivery", "(delivery_method = 'Shipping' AND (delivery_postal_code IS NOT NULL OR anonymized_at IS NOT NULL) AND shipping_service_id IS NOT NULL) OR (delivery_method = 'Pickup' AND pickup_address IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_customer_orders_totals", "items_total > 0 AND shipping_total >= 0 AND total = items_total + shipping_total");
                         });
@@ -1784,6 +1788,63 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_payments_tenant_id_gateway_external_id");
 
                     b.ToTable("payments", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Privacy.PersonalDataAccess", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("action");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("details");
+
+                    b.Property<string>("Ip")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)")
+                        .HasColumnName("ip");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UserEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("user_email");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_personal_data_access_log");
+
+                    b.HasIndex("TenantId", "At")
+                        .HasDatabaseName("ix_personal_data_access_log_tenant_id_at");
+
+                    b.HasIndex("TenantId", "OrderId")
+                        .HasDatabaseName("ix_personal_data_access_log_tenant_id_order_id");
+
+                    b.ToTable("personal_data_access_log", (string)null);
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Store.StoreBranding", b =>

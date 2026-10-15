@@ -372,6 +372,39 @@ public sealed class CustomerOrder : ITenantOwned
     /// <summary>Entregue ou retirado (e não devolvido por inteiro): aceita devolução.</summary>
     public bool AcceptsReturn => Status is OrderStatus.Delivered or OrderStatus.PickedUp;
 
+    /// <summary>Nome que fica no lugar do comprador anonimizado sem nota fiscal (RNF04).</summary>
+    public const string AnonymizedName = "Titular anonimizado";
+
+    /// <summary>Quando os dados do comprador foram anonimizados a pedido dele (RNF04). Nulo = dados originais.</summary>
+    public DateTimeOffset? AnonymizedAt { get; private set; }
+
+    /// <summary>Em andamento: anonimizar agora impediria entregar, cobrar ou resolver o pedido.</summary>
+    public bool IsInProgress => Status is OrderStatus.PendingPayment or OrderStatus.Paid or OrderStatus.NeedsReview or OrderStatus.Shipped;
+
+    /// <summary>
+    /// Anonimização a pedido do titular (RNF04, LGPD art. 18). Apaga contato e endereço de entrega (fica só cidade e UF).
+    /// Com nota fiscal (<paramref name="hasInvoice"/>), nome e CPF/CNPJ ficam: a lei fiscal obriga a guardar por 5 anos e
+    /// são eles que ligam o pedido à nota. Pedido, peças e valores sempre ficam.
+    /// </summary>
+    public void AnonymizeBuyer(bool hasInvoice, DateTimeOffset now)
+    {
+        if (IsInProgress) throw new InvalidOperationException($"Pedido {Number} em andamento: conclua ou cancele antes de anonimizar.");
+        BuyerEmail = string.Empty;
+        BuyerPhone = string.Empty;
+        DeliveryPostalCode = null;
+        DeliveryStreet = null;
+        DeliveryNumber = null;
+        DeliveryComplement = null;
+        DeliveryDistrict = null;
+        if (!hasInvoice)
+        {
+            BuyerName = AnonymizedName;
+            BuyerCpf = string.Empty;
+            BuyerCnpj = null;
+        }
+        AnonymizedAt ??= now;
+    }
+
     /// <summary>
     /// Devolução de peças (RF20, Q35): parcial ou total, nunca acima do que foi vendido menos o já devolvido. Quando tudo
     /// volta, o pedido fica "Devolvido". Estoque: o chamador devolve as linhas com <see cref="OrderReturnLine.Restock"/>.

@@ -19,7 +19,7 @@ public static class PanelProblemTypes
 /// Rotas do painel: o token diz a loja; o vínculo no banco (cache curto) diz se o usuário ainda pode e com qual papel.
 /// Só então o tenant do escopo é fixado (RLS) — usuário removido ou de outra loja nunca chega ao banco de lojas.
 /// </summary>
-public sealed class PanelTenantFilter(IMembershipLookup memberships, TenantScope scope) : IEndpointFilter
+public sealed class PanelTenantFilter(IMembershipLookup memberships, TenantScope scope, Application.Privacy.PanelActor actor) : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
@@ -38,6 +38,10 @@ public sealed class PanelTenantFilter(IMembershipLookup memberships, TenantScope
         scope.Set(tenantId);
         Correlation.TenantId = tenantId;
         http.Items[typeof(PanelUser)] = new PanelUser(userId, access);
+        // Para o registro de acesso a dados pessoais (RNF04).
+        actor.UserId = userId;
+        actor.Email = http.User.FindFirst(Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames.Email)?.Value ?? string.Empty;
+        actor.Ip = http.Connection.RemoteIpAddress?.ToString();
         return await next(context);
     }
 }

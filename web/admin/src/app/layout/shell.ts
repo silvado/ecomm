@@ -40,6 +40,9 @@ const FAILURE_CHECK_MS = 2 * 60 * 1000;
         @if (auth.can('usersManage')) {
           <a routerLink="/usuarios" routerLinkActive="active">Usuários</a>
         }
+        @if (auth.can('dataExport')) {
+          <a routerLink="/privacidade" routerLinkActive="active">Privacidade</a>
+        }
       </nav>
       <div class="account">
         <span class="muted">{{ auth.current()?.email }}</span>
