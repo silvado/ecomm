@@ -42,6 +42,8 @@ import { StoreContext } from './store';
             @if (ctx.store!.texts.returnPolicy) {
               <a routerLink="/trocas-e-devolucoes">Trocas e devoluções</a>
             }
+            <a routerLink="/termos">Termos de uso</a>
+            <a routerLink="/privacidade">Política de privacidade</a>
           </footer>
         </div>
       }

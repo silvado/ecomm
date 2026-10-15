@@ -38,6 +38,12 @@ public sealed record UpdateStoreProfile(
 /// <param name="PrimaryHost">Host principal: a vitrine redireciona (301) os outros hosts da loja para ele (RF02 CA3, RF03).</param>
 public sealed record PublicStore(string Slug, string Name, StoreTheme Theme, StoreTexts Texts, string? LogoUrl, string? PrimaryHost = null);
 
+/// <summary>Política de privacidade e termos como a vitrine mostra: os da loja ou, se vazios, o modelo padrão (RNF04).</summary>
+public sealed record StoreLegalTexts(string PrivacyPolicy, string Terms);
+
+/// <summary>Para o painel: o que a loja escreveu (vazio = usa o modelo) e o modelo já preenchido com os dados dela.</summary>
+public sealed record StoreLegalTextsEditor(string PrivacyPolicy, string Terms, string DefaultPrivacyPolicy, string DefaultTerms);
+
 /// <summary>Perfil e aparência da loja do tenant do escopo.</summary>
 public interface IStoreProfileService
 {
@@ -56,6 +62,13 @@ public interface IStoreProfileService
     Task<(StoreProfile? Profile, string? Error)> ReplaceLogoAsync(Stream content, CancellationToken ct = default);
 
     Task<StoreProfile> RemoveLogoAsync(CancellationToken ct = default);
+
+    Task<StoreLegalTextsEditor> GetLegalTextsAsync(CancellationToken ct = default);
+
+    /// <summary>Texto vazio volta ao modelo padrão. Vale também com a loja personalizada (não é aparência).</summary>
+    Task<(StoreLegalTextsEditor? Texts, string? Error)> UpdateLegalTextsAsync(string? privacyPolicy, string? terms, CancellationToken ct = default);
+
+    Task<StoreLegalTexts> GetPublicLegalTextsAsync(CancellationToken ct = default);
 
     /// <summary>
     /// O logo da loja do escopo, se <paramref name="logoId"/> for o atual (nulo = o atual, para o painel).

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { CartPage } from './cart-page';
+import { LegalPage, legalTextsResolver } from './legal';
 import { MyOrdersPage } from './my-orders';
 import { OrderPage } from './order-page';
 import { HomePage, PartPage, ReturnPolicyPage, SearchPage } from './pages';
@@ -16,5 +17,8 @@ export const routes: Routes = [
   // Área do cliente (RF16): o link do e-mail também traz o token no fragmento.
   { path: 'meus-pedidos', component: MyOrdersPage },
   { path: 'trocas-e-devolucoes', component: ReturnPolicyPage },
+  // RNF04: textos da loja ou o modelo padrão.
+  { path: 'privacidade', component: LegalPage, data: { kind: 'privacy' }, resolve: { texts: legalTextsResolver } },
+  { path: 'termos', component: LegalPage, data: { kind: 'terms' }, resolve: { texts: legalTextsResolver } },
   { path: '**', redirectTo: '' },
 ];

@@ -117,6 +117,12 @@ app.MapHealthChecks("/health/ready");
 var store = app.MapGroup("/api/loja").AddEndpointFilter<StoreTenantFilter>();
 // Nome, tema e textos: o storefront SSR desenha a loja com isto a cada página (RF01 CA3, ADR-0006).
 store.MapGet("/identidade", async (IStoreProfileService profiles, CancellationToken ct) => TypedResults.Ok(await profiles.GetPublicAsync(ct)));
+// RNF04: política de privacidade e termos (os da loja ou o modelo padrão).
+store.MapGet("/privacidade", async (IStoreProfileService profiles, HttpResponse response, CancellationToken ct) =>
+{
+    response.Headers.CacheControl = "public, max-age=60";
+    return TypedResults.Ok(await profiles.GetPublicLegalTextsAsync(ct));
+});
 
 // Vitrine (RF13): só peças ativas da loja do Host; busca por texto (sem acento), código/OEM e veículo (RF09 CA3).
 store.MapVehicleCatalog();

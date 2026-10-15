@@ -18,6 +18,8 @@ public sealed class StoreBranding : ITenantOwned
 {
     public const int LongTextMaxLength = 4000;
     public const int FooterMaxLength = 500;
+    /// <summary>Política de privacidade e termos de uso (RNF04): textos jurídicos, mais longos.</summary>
+    public const int LegalTextMaxLength = 20000;
     public const double MinTextContrast = 4.5;
     public const double MinComponentContrast = 3.0;
 
@@ -40,6 +42,12 @@ public sealed class StoreBranding : ITenantOwned
     public string About { get; private set; } = string.Empty;
     public string ReturnPolicy { get; private set; } = string.Empty;
     public string Footer { get; private set; } = string.Empty;
+
+    /// <summary>Vazio = a vitrine mostra o modelo padrão (<see cref="LegalTemplates"/>).</summary>
+    public string PrivacyPolicy { get; private set; } = string.Empty;
+
+    /// <summary>Vazio = a vitrine mostra o modelo padrão (<see cref="LegalTemplates"/>).</summary>
+    public string Terms { get; private set; } = string.Empty;
     public DateTimeOffset UpdatedAt { get; private set; }
 
     /// <summary>Logo atual (nulo = sem logo). Muda a cada troca, para a URL pública poder ter cache longo.</summary>
@@ -86,6 +94,19 @@ public sealed class StoreBranding : ITenantOwned
         About = about;
         ReturnPolicy = returnPolicy;
         Footer = footer;
+        UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// Política de privacidade e termos (RNF04). Fora da trava da loja personalizada (RF40): é conteúdo jurídico da loja,
+    /// não aparência.
+    /// </summary>
+    public void UpdateLegalTexts(string? privacyPolicy, string? terms, DateTimeOffset now)
+    {
+        privacyPolicy = Normalize(privacyPolicy, LegalTextMaxLength, nameof(privacyPolicy));
+        terms = Normalize(terms, LegalTextMaxLength, nameof(terms));
+        PrivacyPolicy = privacyPolicy;
+        Terms = terms;
         UpdatedAt = now;
     }
 

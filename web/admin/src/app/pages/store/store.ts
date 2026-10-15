@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthStore, problemTitle } from '../../core/auth';
 import { DomainSettingsSection } from './domain-settings';
 import { EmailSettingsSection } from './email-settings';
+import { LegalTextsSection } from './legal-texts';
 import { FiscalSettingsSection } from '../fiscal/fiscal-settings';
 import { contrastRatio, isHexColor, MIN_COMPONENT_CONTRAST, MIN_TEXT_CONTRAST, readableOn } from '../../shared/contrast';
 import { StoreApi, StoreProfile } from './store.api';
@@ -19,7 +20,7 @@ const APPEARANCE = ['tradeName', 'primaryColor', 'backgroundColor', 'textColor',
 
 @Component({
   selector: 'app-store',
-  imports: [ReactiveFormsModule, TraceabilitySettingsSection, FiscalSettingsSection, EmailSettingsSection, DomainSettingsSection],
+  imports: [ReactiveFormsModule, TraceabilitySettingsSection, FiscalSettingsSection, EmailSettingsSection, DomainSettingsSection, LegalTextsSection],
   template: `
     <main class="card">
       <h1>Dados da loja @if (custom()) { <span class="badge ok" data-custom-badge>Loja personalizada</span> }</h1>
@@ -153,6 +154,11 @@ const APPEARANCE = ['tradeName', 'primaryColor', 'backgroundColor', 'textColor',
         <app-domain-settings />
       } @placeholder {
         <p class="muted">Domínio próprio…</p>
+      }
+      @defer (on viewport) {
+        <app-legal-texts />
+      } @placeholder {
+        <p class="muted">Privacidade e termos…</p>
       }
     </main>
   `,

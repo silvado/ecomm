@@ -1826,11 +1826,27 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(7)")
                         .HasColumnName("primary_color");
 
+                    b.Property<string>("PrivacyPolicy")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("privacy_policy");
+
                     b.Property<string>("ReturnPolicy")
                         .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)")
                         .HasColumnName("return_policy");
+
+                    b.Property<string>("Terms")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("terms");
 
                     b.Property<string>("TextColor")
                         .IsRequired()
