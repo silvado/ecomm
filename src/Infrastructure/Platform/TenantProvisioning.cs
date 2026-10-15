@@ -92,6 +92,6 @@ public sealed class TenantProvisioning(
     private static CreateTenantResult Fail(CreateTenantError error) => new(null, error);
 
     /// <summary>16 caracteres aleatórios em 4 grupos (ex.: <c>k7wd-3mqa-9xte-b2nh</c>): ~78 bits, dentro da política.</summary>
-    private static string NewTemporaryPassword() =>
+    internal static string NewTemporaryPassword() =>
         string.Join('-', Enumerable.Range(0, 4).Select(_ => RandomNumberGenerator.GetString(ReadableCharacters, 4)));
 }

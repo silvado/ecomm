@@ -24,6 +24,10 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<VehicleBrand> VehicleBrands => Set<VehicleBrand>();
     public DbSet<VehicleModel> VehicleModels => Set<VehicleModel>();
     public DbSet<VehicleVersion> VehicleVersions => Set<VehicleVersion>();
+    public DbSet<PlatformAdmin> PlatformAdmins => Set<PlatformAdmin>();
+    public DbSet<PlatformAdminRecoveryCode> PlatformAdminRecoveryCodes => Set<PlatformAdminRecoveryCode>();
+    public DbSet<PlatformAdminSession> PlatformAdminSessions => Set<PlatformAdminSession>();
+    public DbSet<PlatformAuditEntry> PlatformAuditLog => Set<PlatformAuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -148,6 +152,46 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             b.HasIndex(t => t.FamilyId);
             b.HasIndex(t => new { t.UserId, t.TenantId });
             b.HasOne<UserAccount>().WithMany().HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Superadmin (ADR-0007): contas separadas das de loja.
+        modelBuilder.Entity<PlatformAdmin>(b =>
+        {
+            b.HasKey(a => a.Id);
+            b.Property(a => a.Email).HasMaxLength(254).IsRequired();
+            b.HasIndex(a => a.Email).IsUnique();
+            b.Property(a => a.PasswordHash).HasMaxLength(200).IsRequired();
+            b.Property(a => a.TotpKeyVersion).HasMaxLength(20);
+            b.Ignore(a => a.HasMfa);
+        });
+
+        modelBuilder.Entity<PlatformAdminRecoveryCode>(b =>
+        {
+            b.HasKey(c => c.Id);
+            b.HasIndex(c => new { c.AdminId, c.CodeHash });
+            b.HasOne<PlatformAdmin>().WithMany().HasForeignKey(c => c.AdminId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PlatformAdminSession>(b =>
+        {
+            b.HasKey(s => s.Id);
+            b.HasIndex(s => s.TokenHash).IsUnique();
+            b.HasIndex(s => s.AdminId);
+            b.HasOne<PlatformAdmin>().WithMany().HasForeignKey(s => s.AdminId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Somente inclusão: a migração tira UPDATE/DELETE/TRUNCATE do papel da aplicação. Sem FK: sobrevive à conta e à loja.
+        modelBuilder.Entity<PlatformAuditEntry>(b =>
+        {
+            b.ToTable("platform_audit_log");
+            b.HasKey(e => e.Id);
+            b.Property(e => e.AdminEmail).HasMaxLength(254).IsRequired();
+            b.Property(e => e.Action).HasMaxLength(PlatformAuditEntry.ActionMaxLength).IsRequired();
+            b.Property(e => e.Details).HasMaxLength(PlatformAuditEntry.DetailsMaxLength);
+            b.Property(e => e.Ip).HasMaxLength(45);
+            b.Property(e => e.CorrelationId).HasMaxLength(100);
+            b.HasIndex(e => e.At);
+            b.HasIndex(e => new { e.TenantId, e.At });
         });
     }
 }

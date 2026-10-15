@@ -86,6 +86,12 @@ public static class DependencyInjection
         else services.AddSingleton<Application.Platform.IDnsResolver, DnsClientResolver>();
         services.AddScoped<DomainVerifier>();
         services.AddScoped<Application.Platform.ICustomDomains, CustomDomainService>();
+        // RF07 CA3 / ADR-0007: superadmin com MFA e auditoria.
+        services.AddScoped<Application.Platform.PlatformActor>();
+        services.AddScoped<Application.Platform.IPlatformAudit, PlatformAudit>();
+        services.AddSingleton<TotpSecretProtector>();
+        services.AddScoped<Application.Platform.IPlatformAdminAuth, PlatformAdminAuth>();
+        services.AddScoped<Application.Platform.IPlatformConsole, PlatformConsoleService>();
         services.AddScoped<IStoreProfileService, StoreProfileService>();
         services.AddScoped<IPartQueries, PartQueries>();
         services.AddScoped<IStoreCatalog, StoreCatalog>();

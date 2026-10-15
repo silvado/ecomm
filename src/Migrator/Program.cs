@@ -21,6 +21,8 @@ if (args.Length > 0 && args[0] == ChangePlanCommand.Name)
     return await ChangePlanCommand.RunAsync(host, args[1..], Console.Out);
 if (args.Length > 0 && args[0] == CustomStorefrontCommand.Name)
     return await CustomStorefrontCommand.RunAsync(host, args[1..], Console.Out);
+if (args.Length > 0 && args[0] == CreatePlatformAdminCommand.Name)
+    return await CreatePlatformAdminCommand.RunAsync(host, args[1..], Console.Out);
 if (args.Length > 0 && args[0] == ImportVehiclesCommand.Name)
     return await ImportVehiclesCommand.RunAsync(host, args[1..], Console.Out);
 
