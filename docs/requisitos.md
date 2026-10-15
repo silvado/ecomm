@@ -52,7 +52,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 ### RF07 — Usuários e perfis · E1 (dono/operador) / E4 (superadmin)
 - CA1: perfis por tenant: **Dono** (tudo, inclusive cofre, plano e usuários) e **Operador** (catálogo, pedidos, atendimento; sem cofre, plano, usuários, exportação).
 - CA2: número de usuários respeita o limite do plano. **HIPÓTESE:** 2 / 5 / 10 (Q17).
-- CA3: superadmin da plataforma é um papel separado, com MFA obrigatório; todo acesso de superadmin a dados de um tenant é registrado em log de auditoria.
+- CA3: superadmin da plataforma é um papel separado, com MFA obrigatório; todo acesso de superadmin a dados de um tenant é registrado em log de auditoria. **Implementado (E4, ADR-0007):** conta separada das contas de loja, MFA por app autenticador (TOTP) com 10 códigos de recuperação, sessão de até 8 h (**HIPÓTESE**), superadmin vê só dados do banco `plataforma` (sem peças, pedidos ou clientes) e auditoria somente inclusão. Primeiro superadmin pelo comando `criar-superadmin`.
 - CA4: login com e-mail + senha (hash Argon2id/PBKDF2), MFA opcional para Dono; bloqueio após 5 tentativas. **HIPÓTESE:** bloqueio de 15 min, senha de 10+ caracteres, sem recuperação por e-mail por enquanto (Q18, Q19).
 
 ## 2. Catálogo e estoque

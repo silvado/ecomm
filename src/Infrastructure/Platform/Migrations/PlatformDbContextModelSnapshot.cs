@@ -22,6 +22,142 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Ecommerce.Domain.Identity.PlatformAdmin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
+                    b.Property<int>("FailedLoginCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("failed_login_count");
+
+                    b.Property<DateTimeOffset?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until");
+
+                    b.Property<DateTimeOffset?>("MfaEnabledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("mfa_enabled_at");
+
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("boolean")
+                        .HasColumnName("must_change_password");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("password_hash");
+
+                    b.Property<string>("TotpKeyVersion")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("totp_key_version");
+
+                    b.Property<long?>("TotpLastStep")
+                        .HasColumnType("bigint")
+                        .HasColumnName("totp_last_step");
+
+                    b.Property<byte[]>("TotpSecretCipher")
+                        .HasColumnType("bytea")
+                        .HasColumnName("totp_secret_cipher");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_admins");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ix_platform_admins_email");
+
+                    b.ToTable("platform_admins", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Identity.PlatformAdminRecoveryCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("admin_id");
+
+                    b.Property<byte[]>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_admin_recovery_codes");
+
+                    b.HasIndex("AdminId", "CodeHash")
+                        .HasDatabaseName("ix_platform_admin_recovery_codes_admin_id_code_hash");
+
+                    b.ToTable("platform_admin_recovery_codes", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Identity.PlatformAdminSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("admin_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("token_hash");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_admin_sessions");
+
+                    b.HasIndex("AdminId")
+                        .HasDatabaseName("ix_platform_admin_sessions_admin_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_platform_admin_sessions_token_hash");
+
+                    b.ToTable("platform_admin_sessions", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Identity.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -416,6 +552,64 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Platform.PlatformAuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("action");
+
+                    b.Property<string>("AdminEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("admin_email");
+
+                    b.Property<Guid?>("AdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("admin_id");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("correlation_id");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("details");
+
+                    b.Property<string>("Ip")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)")
+                        .HasColumnName("ip");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_audit_log");
+
+                    b.HasIndex("At")
+                        .HasDatabaseName("ix_platform_audit_log_at");
+
+                    b.HasIndex("TenantId", "At")
+                        .HasDatabaseName("ix_platform_audit_log_tenant_id_at");
+
+                    b.ToTable("platform_audit_log", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Platform.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -655,6 +849,26 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         {
                             t.HasCheckConstraint("ck_vehicle_versions_years", "year_to IS NULL OR year_to >= year_from");
                         });
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Identity.PlatformAdminRecoveryCode", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Identity.PlatformAdmin", null)
+                        .WithMany()
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_platform_admin_recovery_codes_platform_admins_admin_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Identity.PlatformAdminSession", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Identity.PlatformAdmin", null)
+                        .WithMany()
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_platform_admin_sessions_platform_admins_admin_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Identity.RefreshToken", b =>

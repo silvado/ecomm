@@ -8,6 +8,7 @@ using Ecommerce.Api.Diagnostics;
 using Ecommerce.Api.Internal;
 using Ecommerce.Api.Panel;
 using Ecommerce.Api.Payments;
+using Ecommerce.Api.Platform;
 using Ecommerce.Api.Tenancy;
 using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Orders;
@@ -50,6 +51,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     o.TokenValidationParameters = AccessTokens.ValidationParameters(authOptions);
 });
 builder.Services.AddAuthorization();
+// Superadmin (ADR-0007): outra audiência, MFA obrigatório.
+PlatformTokens.AddPlatformAuthentication(builder.Services, authOptions);
 builder.Services.AddRateLimiter(o =>
 {
     // HIPÓTESE: 10 tentativas de login por minuto por IP, além do bloqueio por conta (RF07 CA4).
@@ -206,6 +209,8 @@ if (app.Environment.IsProduction() && app.Configuration.GetValue<bool>("Fiscal:U
 
 app.MapAuthEndpoints();
 app.MapPanelEndpoints();
+app.MapPlatformAuthEndpoints();
+app.MapPlatformEndpoints();
 
 // Consultado pelo Caddy antes de emitir certificado on-demand (ADR-0004): só domínios verificados de lojas disponíveis.
 var internalApi = app.MapGroup(InternalEndpointGuard.PathPrefix).AddEndpointFilter<InternalNetworkFilter>().ExcludeFromDescription();

@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1005** |
 
-Progresso: 451 h de 1005 h em tarefas concluídas (45%).
+Progresso: 477 h de 1005 h em tarefas concluídas (47%).
 
 Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -387,13 +387,13 @@ Onboarding, domínio próprio, assinatura, superadmin e LGPD.
 
 ### Superadmin e LGPD — 60 h
 
-#### Painel de superadmin — 26 h  `RF07`
+#### Painel de superadmin — 26 h  `RF07` · **concluído**
 
 **Critérios de aceite:** Gestão de tenants e planos; MFA obrigatório; todo acesso a dados de tenant auditado.
 
-- [ ] Telas de superadmin — 16 h
-- [ ] MFA — 6 h
-- [ ] Auditoria de acesso — 4 h
+- [x] Telas de superadmin — 16 h
+- [x] MFA — 6 h
+- [x] Auditoria de acesso — 4 h
 
 #### LGPD e exportação de dados — 34 h  `RNF04, RF39`
 

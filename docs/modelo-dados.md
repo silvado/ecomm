@@ -63,8 +63,7 @@ erDiagram
         uuid id PK
         string email UK
         string password_hash
-        bool mfa_enabled
-        bool is_platform_admin
+        bool must_change_password
     }
     TENANT_MEMBERSHIP {
         uuid tenant_id PK
@@ -123,8 +122,8 @@ erDiagram
 
 Notas:
 - Identidade fica no catálogo porque o login acontece **antes** de sabermos o tenant; um e-mail pode participar de mais de um tenant.
-- `PLATFORM_AUDIT_LOG` (não desenhado) registra ações de superadmin (RF07 CA3).
-- Implementado no RF07 (E1): `user_account` com `failed_login_count`, `locked_until` e `must_change_password` (sem `mfa_enabled`/`is_platform_admin` até o E4); `tenant.plan_code` → `plan.code` (plano vigente até existir `subscription`); `plan_limit` chaveado por `(plan_code, key)`; `refresh_token` (só o hash SHA-256, `family_id` para revogar a sessão inteira, `tenant_id` da loja escolhida, `used_at`/`revoked_at`). Tabelas com `tenant_id` neste banco não têm RLS: todo acesso filtra o tenant explicitamente e tem teste de isolamento.
+- Superadmin (RF07 CA3, ADR-0007), fora do diagrama: `platform_admins` (conta separada das de loja; `totp_secret_cipher` cifrado com a chave-mestra do cofre e `totp_key_version`, `totp_last_step` contra reuso do código, `mfa_enabled_at`, bloqueio como em `user_account`), `platform_admin_recovery_codes` (só hash SHA-256, `used_at`), `platform_admin_sessions` (hash do token do cookie, validade absoluta de 8 h, `revoked_at`) e `platform_audit_log` (somente inclusão: a migração revoga `UPDATE`/`DELETE`/`TRUNCATE` do `app_user`; sem FK, guarda `admin_email`, `action`, `tenant_id`, `details` redigido, `ip`, `correlation_id`).
+- Implementado no RF07 (E1): `user_account` com `failed_login_count`, `locked_until` e `must_change_password` (superadmin não é `user_account`: tem tabela própria — ADR-0007); `tenant.plan_code` → `plan.code` (plano vigente até existir `subscription`); `plan_limit` chaveado por `(plan_code, key)`; `refresh_token` (só o hash SHA-256, `family_id` para revogar a sessão inteira, `tenant_id` da loja escolhida, `used_at`/`revoked_at`). Tabelas com `tenant_id` neste banco não têm RLS: todo acesso filtra o tenant explicitamente e tem teste de isolamento.
 
 ## Banco `lojas` — todas as tabelas abaixo têm `tenant_id` + RLS
 
