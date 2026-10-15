@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1005** |
 
-Progresso: 477 h de 1005 h em tarefas concluídas (47%).
+Progresso: 511 h de 1005 h em tarefas concluídas (51%).
 
 Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -395,14 +395,14 @@ Onboarding, domínio próprio, assinatura, superadmin e LGPD.
 - [x] MFA — 6 h
 - [x] Auditoria de acesso — 4 h
 
-#### LGPD e exportação de dados — 34 h  `RNF04, RF39`
+#### LGPD e exportação de dados — 34 h  `RNF04, RF39` · **concluído**
 
 **Critérios de aceite:** Termos e política por tenant; anonimização de cliente sob pedido; log de acesso a dados pessoais; exportação completa em ZIP com link que expira em 7 dias.
 
-- [ ] Termos e política de privacidade — 6 h
-- [ ] Anonimização de cliente final — 10 h
-- [ ] Log de acesso a dados pessoais — 6 h
-- [ ] Exportação completa do tenant — 12 h
+- [x] Termos e política de privacidade — 6 h
+- [x] Anonimização de cliente final — 10 h
+- [x] Log de acesso a dados pessoais — 6 h
+- [x] Exportação completa do tenant — 12 h
 
 ## E5 — Primeiros clientes (meses 7–8) — 116 h
 

@@ -549,17 +549,33 @@ erDiagram
         jsonb fiscal "RF19: modo, ambiente, regime, UF e padrões (NCM, CFOP, CSOSN/CST, origem); nulo = emissão desligada"
         jsonb smtp "Q38: SMTP da loja (servidor, porta, segurança, usuário, remetente); senha no cofre (smtp:password); nulo = remetente da plataforma"
     }
-    ACCESS_LOG {
+    PERSONAL_DATA_ACCESS_LOG {
         uuid id PK
-        uuid tenant_id "RLS"
+        uuid tenant_id "RLS; somente inclusão (REVOKE UPDATE/DELETE do app_user)"
         uuid user_id
-        string action "LGPD: acesso a dado pessoal"
-        string subject
+        string user_email
+        string action "pedido.aberto|nfe.baixada|titular.anonimizado|exportacao.gerada|exportacao.baixada"
+        uuid order_id "sem FK"
+        string details "redigido, nunca o dado pessoal"
+        string ip
         timestamptz at
+    }
+    DATA_EXPORT {
+        uuid id PK
+        uuid tenant_id "RLS; único parcial: uma Pending por loja"
+        string status "Pending|Ready|Failed|Expired"
+        uuid requested_by
+        string requested_by_email
+        string storage_key "privado: {tenant}/exportacoes/{id}.zip"
+        bigint size_bytes
+        timestamptz expires_at "RF39: concluída + 7 dias"
+        string error
     }
 ```
 
 **Nota sobre `EXTERNAL_EVENT` e o inbox (RF26, implementado em 13/10/2026):** o aviso de canal chega antes de sabermos a loja (ex.: o ML identifica o vendedor por `user_id`). O webhook responde 2xx e grava em `inbox.external_events` (sem RLS; `UNIQUE (source, idempotency_key)`); o roteamento procura a loja em **`plataforma.channel_accounts`** (canal + conta externa → loja; a consulta por loja em `channel_connection` não serve, pois ela tem RLS e exige a loja definida) e publica o evento já no escopo da loja, onde ele entra em `external_events` (RLS, chave única por loja) antes do processador do canal — reentrega em qualquer ponto não repete o efeito. Conta sem loja fica `unroutable` e gera log crítico.
+
+**LGPD (RNF04, implementado em 15/10/2026):** `store_brandings` ganhou `privacy_policy` e `terms` (vazio = modelo padrão); `customer_orders` ganhou `anonymized_at` e a regra de entrega aceita pedido anonimizado sem CEP.
 
 ## Onde está o `tenant_id` — resumo
 

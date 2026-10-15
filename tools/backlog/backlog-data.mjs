@@ -365,7 +365,7 @@ export const epics = [
             title: 'LGPD e exportação de dados',
             rf: 'RNF04, RF39',
             ac: 'Termos e política por tenant; anonimização de cliente sob pedido; log de acesso a dados pessoais; exportação completa em ZIP com link que expira em 7 dias.',
-            t: [['Termos e política de privacidade', 6], ['Anonimização de cliente final', 10], ['Log de acesso a dados pessoais', 6], ['Exportação completa do tenant', 12]],
+            t: [['Termos e política de privacidade', 6, 'done'], ['Anonimização de cliente final', 10, 'done'], ['Log de acesso a dados pessoais', 6, 'done'], ['Exportação completa do tenant', 12, 'done']],
           },
         ],
       },

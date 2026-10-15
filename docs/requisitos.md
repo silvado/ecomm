@@ -262,6 +262,7 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 - CA1: o Dono gera um pacote (ZIP) com peças, fotos, pedidos, clientes e notas em CSV/JSON + arquivos.
 - CA2: o link de download expira em 7 dias e o acesso é registrado.
 - CA3: segredos do cofre não são exportados.
+- **Implementado (E4):** tela Privacidade (Dono); pacote montado na fila em armazenamento privado (CSV com `;` e decimais com vírgula, fotos originais, XML/DANFE); uma exportação por vez; download pelo painel, registrado; vencida, o arquivo é apagado na retenção diária. Pendente há mais de 2 h vira falha (**HIPÓTESE**).
 
 ---
 
@@ -272,7 +273,7 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 | RNF01 | Isolamento total entre tenants | Teste de integração prova que (a) com filtro EF, (b) **sem** filtro EF (só RLS) e (c) sem `app.tenant_id` definido, nenhuma linha de outro tenant é retornada ou alterada. Teste roda no CI. |
 | RNF02 | Sem venda dupla | Teste de concorrência (N threads, última unidade) → exatamente 1 sucesso, saldo nunca negativo (`CHECK (disponivel >= 0)`). |
 | RNF03 | Propagação ≤ 60 s | Métrica "idade do evento no outbox ao ser concluído" p95 < 60 s; alerta se p95 > 60 s por 5 min. |
-| RNF04 | LGPD | Política de privacidade e termos por tenant; coleta mínima; exclusão/anonimização de cliente final sob pedido em ≤ 15 dias; log de acesso a dados pessoais. |
+| RNF04 | LGPD | Política de privacidade e termos por tenant; coleta mínima; exclusão/anonimização de cliente final sob pedido em ≤ 15 dias; log de acesso a dados pessoais. **Implementado (E4):** textos por loja com modelo padrão (Q42); anonimização pelo Dono na hora (Q43); registro somente inclusão de abertura de pedido, download de nota, exportação e anonimização. |
 | RNF05 | Segredos fora do repositório | Scanner de segredos (gitleaks) no CI bloqueia merge. |
 | RNF06 | Observabilidade | Logs estruturados JSON; `/health/live` e `/health/ready`; métricas de fila (pendentes, idade, falhas); alertas. |
 | RNF07 | Backup diário fora do servidor | `pg_dump` diário + sync do storage para provedor externo; teste de restauração mensal documentado. |
@@ -329,6 +330,8 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q39 | Como o comprador entra na área do cliente e que e-mails recebe? | Só por link no e-mail (sem senha); sessão de 30 dias; e-mails: link de acesso, pedido recebido, pagamento confirmado, pedido enviado (com rastreio) e pedido cancelado. | RF16 |
 | Q40 | Como funciona a opção de site personalizado contratada à parte? | Cobrada por orçamento; a equipe da plataforma cria tema e páginas exclusivos na própria vitrine (dados do tenant, mesmo código); o lojista perde só a edição da aparência (logo, cores, textos, layout), que aparece como "Loja personalizada"; peças, preços, estoque, pedidos, frete e pagamento continuam com ele. | RF40, RF01, RF37 |
 | Q41 | Quais limites e recursos tem cada plano? | **HIPÓTESE** aprovada como ponto de partida (13/10/2026): usuários 2/5/10; peças ativas 500/3.000/sem limite; cadastros com IA 50/300/1.000 por mês; Mercado Livre e IA de cadastro em todos; Instagram, domínio próprio e demais IAs a partir do Profissional; OLX só no Completo; loja virtual, balcão, NF-e e e-mail em todos. Ajustável por migração de dados quando houver tabela de preços. | RF37, RF36, RF07 |
+| Q42 | Quem escreve a política de privacidade e os termos de cada loja? | **HIPÓTESE:** a loja (controladora) escreve; enquanto não escreve, a vitrine mostra um modelo genérico da plataforma com razão social e CNPJ, a revisar por advogado antes do lançamento. Os textos ficam fora da trava da loja personalizada. | RNF04 |
+| Q43 | Até onde vai a anonimização do comprador? | Aprovado (15/10/2026): saem e-mail, telefone, endereço de entrega (ficam cidade/UF) e o acesso a Meus pedidos; sem NF-e, também nome e CPF/CNPJ; com NF-e, nome e CPF/CNPJ ficam (guarda fiscal de 5 anos) e a nota não muda. **HIPÓTESE:** pedido em andamento impede; observações livres não são varridas; o registro de acesso não tem prazo de retenção definido. | RNF04 |
 
 ## Fontes
 
