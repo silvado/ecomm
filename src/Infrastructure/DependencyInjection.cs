@@ -96,6 +96,7 @@ public static class DependencyInjection
         services.AddScoped<Application.Privacy.PanelActor>();
         services.AddScoped<Application.Privacy.IPersonalDataAccessLog, Privacy.PersonalDataAccessLog>();
         services.AddScoped<Application.Privacy.IBuyerAnonymization, Privacy.BuyerAnonymization>();
+        services.AddScoped<Application.Privacy.IDataExports, Privacy.DataExportService>();
         services.AddScoped<IStoreProfileService, StoreProfileService>();
         services.AddScoped<IPartQueries, PartQueries>();
         services.AddScoped<IStoreCatalog, StoreCatalog>();

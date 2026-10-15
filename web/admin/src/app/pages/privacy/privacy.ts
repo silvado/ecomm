@@ -3,15 +3,16 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { problemTitle } from '../../core/auth';
+import { ExportSection } from './export-section';
 import { ACCESS_LABELS, AccessItem, AnonymizationPreview, DataSubject, PrivacyApi } from './privacy.api';
 
 /**
- * Privacidade (RNF04), só para o Dono: atender o pedido de um comprador para apagar os dados dele e ver quem acessou
+ * Privacidade (RNF04, RF39), só para o Dono: atender o pedido de um comprador para apagar os dados dele, exportar os dados da loja e ver quem acessou
  * dados pessoais pelo painel.
  */
 @Component({
   selector: 'app-privacy',
-  imports: [DatePipe, FormsModule, RouterLink],
+  imports: [DatePipe, FormsModule, RouterLink, ExportSection],
   template: `
     <main class="card wide">
       <h1>Privacidade</h1>
@@ -63,6 +64,8 @@ import { ACCESS_LABELS, AccessItem, AnonymizationPreview, DataSubject, PrivacyAp
           <p class="error" role="alert">{{ error() }}</p>
         }
       </section>
+
+      <app-export-section (changed)="load(1)" />
 
       <section data-access-log>
         <h2>Quem acessou dados pessoais</h2>

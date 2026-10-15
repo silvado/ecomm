@@ -24,6 +24,20 @@ export interface AccessItem {
   ip: string | null;
 }
 
+export type ExportStatus = 'pending' | 'ready' | 'failed' | 'expired';
+
+export interface DataExport {
+  id: string;
+  status: ExportStatus;
+  requestedByEmail: string;
+  requestedAt: string;
+  completedAt: string | null;
+  expiresAt: string | null;
+  sizeBytes: number | null;
+  error: string | null;
+  canDownload: boolean;
+}
+
 export interface AccessPage {
   items: AccessItem[];
   page: number;
@@ -52,6 +66,19 @@ export class PrivacyApi {
 
   anonymize(subject: DataSubject): Promise<AnonymizationPreview> {
     return firstValueFrom(this.http.post<AnonymizationPreview>(`${this.base}/titular/anonimizar`, subject));
+  }
+
+  exports(): Promise<DataExport[]> {
+    return firstValueFrom(this.http.get<DataExport[]>(`${this.base}/exportacoes`));
+  }
+
+  requestExport(): Promise<DataExport> {
+    return firstValueFrom(this.http.post<DataExport>(`${this.base}/exportacoes`, null));
+  }
+
+  /** O arquivo vem pelo painel (com o token): o download fica registrado. */
+  downloadExport(id: string): Promise<Blob> {
+    return firstValueFrom(this.http.get(`${this.base}/exportacoes/${id}/arquivo`, { responseType: 'blob' }));
   }
 
   accesses(acao: string, pagina: number): Promise<AccessPage> {

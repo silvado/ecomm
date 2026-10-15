@@ -72,6 +72,15 @@ public sealed partial class IntegrationLogRetention(IServiceScopeFactory scopes,
                 var dayAgo = clock.GetUtcNow().AddDays(-1);
                 removed += await db.CustomerAccessLinks.Where(l => l.CreatedAt < dayAgo).ExecuteDeleteAsync(ct);
                 removed += await db.CustomerSessions.Where(s => s.ExpiresAt < dayAgo || s.EndedAt < dayAgo).ExecuteDeleteAsync(ct);
+                // Exportações (RF39 CA2): passados os 7 dias, o arquivo sai do armazenamento e a exportação fica "expirada".
+                var now = clock.GetUtcNow();
+                var storage = scope.ServiceProvider.GetRequiredService<Application.Storage.IFileStorage>();
+                foreach (var export in await db.DataExports.Where(e => e.Status == Domain.Privacy.DataExportStatus.Ready && e.ExpiresAt < now).ToListAsync(ct))
+                {
+                    await storage.DeleteAsync(Application.Storage.StorageArea.Private, export.StorageKey!, ct);
+                    removed += await db.DataExports.Where(e => e.Id == export.Id)
+                        .ExecuteUpdateAsync(s => s.SetProperty(e => e.Status, Domain.Privacy.DataExportStatus.Expired), ct);
+                }
             }
             catch (Exception e) when (e is DbUpdateException or Npgsql.NpgsqlException or InvalidOperationException)
             {

@@ -33,6 +33,26 @@ public static class PrivacyEndpoints
                 : AuthEndpoints.Problem(StatusCodes.Status409Conflict, result.Error!);
         });
 
+        // Exportação completa da loja (RF39): gerada na fila; o download passa por aqui (registrado) e vale 7 dias.
+        privacy.MapGet("/exportacoes", async (IDataExports exports, CancellationToken ct) => TypedResults.Ok(await exports.ListAsync(ct)));
+
+        privacy.MapPost("/exportacoes", async Task<Results<Accepted<DataExportView>, ProblemHttpResult>> (IDataExports exports, CancellationToken ct) =>
+        {
+            var (export, error) = await exports.RequestAsync(ct);
+            return export is not null
+                ? TypedResults.Accepted((string?)null, export)
+                : AuthEndpoints.Problem(StatusCodes.Status409Conflict, error!);
+        });
+
+        privacy.MapGet("/exportacoes/{id:guid}/arquivo", async Task<Results<FileStreamHttpResult, ProblemHttpResult>> (
+            Guid id, IDataExports exports, HttpResponse response, CancellationToken ct) =>
+        {
+            if (await exports.DownloadAsync(id, ct) is not { } download)
+                return AuthEndpoints.Problem(StatusCodes.Status404NotFound, "Exportação não encontrada ou vencida. Gere uma nova.");
+            response.Headers.CacheControl = "no-store";
+            return TypedResults.Stream(download.File.Content, download.File.ContentType, download.FileName);
+        });
+
         privacy.MapGet("/acessos", async (string? acao, Guid? pedido, int? pagina, IPersonalDataAccessLog log, CancellationToken ct) =>
             TypedResults.Ok(await log.ListAsync(new PersonalDataAccessFilter(acao, pedido, pagina ?? 1), ct)));
     }

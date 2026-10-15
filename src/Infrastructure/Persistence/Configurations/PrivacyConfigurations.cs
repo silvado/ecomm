@@ -19,3 +19,18 @@ internal sealed class PersonalDataAccessConfiguration : IEntityTypeConfiguration
         builder.HasIndex(a => new { a.TenantId, a.OrderId });
     }
 }
+
+/// <summary>RF39: uma exportação pendente por loja (índice único parcial decide a corrida entre dois pedidos).</summary>
+internal sealed class DataExportConfiguration : IEntityTypeConfiguration<DataExport>
+{
+    public void Configure(EntityTypeBuilder<DataExport> builder)
+    {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.RequestedByEmail).HasMaxLength(254).IsRequired();
+        builder.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(e => e.StorageKey).HasMaxLength(200);
+        builder.Property(e => e.Error).HasMaxLength(DataExport.ErrorMaxLength);
+        builder.HasIndex(e => e.TenantId).IsUnique().HasFilter("status = 'Pending'").HasDatabaseName("ux_data_exports_one_pending");
+        builder.HasIndex(e => new { e.TenantId, e.RequestedAt });
+    }
+}
