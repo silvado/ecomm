@@ -118,11 +118,13 @@ public static class FiscalEndpoints
 
         // XML e DANFE só pelo painel (storage privado), como anexo.
         invoices.MapGet("/{documentId:guid}/{arquivo:regex(^(xml|danfe)$)}", async Task<Results<FileStreamHttpResult, ProblemHttpResult>> (
-            Guid id, Guid documentId, string arquivo, IFiscalService fiscal, HttpResponse response, CancellationToken ct) =>
+            Guid id, Guid documentId, string arquivo, IFiscalService fiscal, Application.Privacy.IPersonalDataAccessLog access, HttpResponse response, CancellationToken ct) =>
         {
             var draft = await fiscal.DraftAsync(id, ct);
             if (draft is null || draft.Documents.All(d => d.Id != documentId) || await fiscal.FileAsync(documentId, arquivo == "xml" ? FiscalFile.Xml : FiscalFile.Danfe, ct) is not { } found)
                 return AuthEndpoints.Problem(StatusCodes.Status404NotFound, "Arquivo não encontrado.");
+            // RNF04: a nota traz nome, documento e endereço do destinatário.
+            await access.RecordAsync(Domain.Privacy.PersonalDataActions.InvoiceDownloaded, id, arquivo == "xml" ? "XML" : "DANFE", ct);
             response.Headers.CacheControl = "no-store";
             response.Headers.XContentTypeOptions = "nosniff";
             return TypedResults.Stream(found.File.Content, found.File.ContentType, found.FileName);

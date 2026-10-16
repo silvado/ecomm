@@ -134,6 +134,50 @@ public sealed class StoreProfileService(
     }
 
     /// <summary>Garante a linha (gravações simultâneas da primeira vez não colidem) e devolve a versão rastreada.</summary>
+    public async Task<StoreLegalTextsEditor> GetLegalTextsAsync(CancellationToken ct = default)
+    {
+        var tenantId = db.RequireTenantId();
+        return await LegalEditorAsync(tenantId, await LoadBrandingAsync(tenantId, ct), ct);
+    }
+
+    public async Task<(StoreLegalTextsEditor? Texts, string? Error)> UpdateLegalTextsAsync(string? privacyPolicy, string? terms, CancellationToken ct = default)
+    {
+        var tenantId = db.RequireTenantId();
+        var branding = await TrackedBrandingAsync(tenantId, ct);
+        try
+        {
+            branding.UpdateLegalTexts(privacyPolicy, terms, clock.GetUtcNow());
+        }
+        catch (ArgumentException e)
+        {
+            return (null, e.Message.Split(" (Parameter", 2)[0]);
+        }
+        await db.SaveChangesAsync(ct);
+        return (await LegalEditorAsync(tenantId, branding, ct), null);
+    }
+
+    public async Task<StoreLegalTexts> GetPublicLegalTextsAsync(CancellationToken ct = default)
+    {
+        var tenantId = db.RequireTenantId();
+        var editor = await LegalEditorAsync(tenantId, await LoadBrandingAsync(tenantId, ct), ct);
+        return new StoreLegalTexts(
+            editor.PrivacyPolicy.Length > 0 ? editor.PrivacyPolicy : editor.DefaultPrivacyPolicy,
+            editor.Terms.Length > 0 ? editor.Terms : editor.DefaultTerms);
+    }
+
+    private async Task<StoreLegalTextsEditor> LegalEditorAsync(Guid tenantId, StoreBranding branding, CancellationToken ct)
+    {
+        var tenant = await platform.Tenants.AsNoTracking().Where(t => t.Id == tenantId)
+            .Select(t => new { t.TradeName, t.LegalName, t.Cnpj }).SingleAsync(ct);
+        var cnpj = FormatCnpj(tenant.Cnpj.Value);
+        return new StoreLegalTextsEditor(branding.PrivacyPolicy, branding.Terms,
+            LegalTemplates.PrivacyPolicy(tenant.TradeName, tenant.LegalName, cnpj), LegalTemplates.Terms(tenant.TradeName, tenant.LegalName, cnpj));
+    }
+
+    /// <summary>00.000.000/0000-00 (vale também para o CNPJ alfanumérico: mesmas posições).</summary>
+    private static string FormatCnpj(string value) =>
+        value.Length == 14 ? $"{value[..2]}.{value[2..5]}.{value[5..8]}/{value[8..12]}-{value[12..]}" : value;
+
     private async Task<StoreBranding> TrackedBrandingAsync(Guid tenantId, CancellationToken ct)
     {
         var now = clock.GetUtcNow();

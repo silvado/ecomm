@@ -12,6 +12,8 @@ namespace Ecommerce.Api.Panel;
 public sealed record AddUserRequest(string Email, TenantRole Role, string? TemporaryPassword);
 public sealed record ChangeRoleRequest(TenantRole Role);
 public sealed record MeResponse(Guid UserId, TenantAccessResponse Tenant);
+/// <summary>RNF04: política de privacidade e termos da loja; vazio = modelo padrão.</summary>
+public sealed record LegalTextsRequest(string? Politica, string? Termos);
 
 /// <summary>Painel do lojista: rotas com tenant vindo do token e conferido no banco (<see cref="PanelTenantFilter"/>).</summary>
 public static class PanelEndpoints
@@ -106,6 +108,15 @@ public static class PanelEndpoints
 
         store.MapDelete("/logo", async (IStoreProfileService profiles, CancellationToken ct) => TypedResults.Ok(await profiles.RemoveLogoAsync(ct)));
 
+        // RNF04: política de privacidade e termos da loja (vazio = modelo padrão). Não é aparência: vale com loja personalizada.
+        store.MapGet("/privacidade", async (IStoreProfileService profiles, CancellationToken ct) => TypedResults.Ok(await profiles.GetLegalTextsAsync(ct)));
+        store.MapPut("/privacidade", async Task<Results<Ok<StoreLegalTextsEditor>, ProblemHttpResult>> (
+            LegalTextsRequest request, IStoreProfileService profiles, CancellationToken ct) =>
+        {
+            var (texts, error) = await profiles.UpdateLegalTextsAsync(request.Politica, request.Termos, ct);
+            return texts is not null ? TypedResults.Ok(texts) : AuthEndpoints.Problem(StatusCodes.Status400BadRequest, error!);
+        });
+
         // Prévia no painel (a URL pública só responde no domínio da loja).
         store.MapGet("/logo", async Task<Results<FileStreamHttpResult, NotFound>> (
             HttpResponse response, IStoreProfileService profiles, CancellationToken ct) =>
@@ -118,6 +129,7 @@ public static class PanelEndpoints
         // RF06 CA3: só metadados (tipo, últimos 4 caracteres, validade).
         panel.MapVaultEndpoints();
         panel.MapDomainEndpoints();
+        panel.MapPrivacyEndpoints();
 
         // RF37: plano da loja e uso dos limites (cartão "Seu plano", só o Dono).
         panel.MapGet("/plano", async (Application.Platform.IPlanUsage plans, CancellationToken ct) => TypedResults.Ok(await plans.CurrentAsync(ct)))

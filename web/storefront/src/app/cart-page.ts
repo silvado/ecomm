@@ -141,7 +141,7 @@ const PROBLEM_LABELS = {
             </div>
           }
 
-          <p class="muted">Usamos estes dados só para este pedido: entrega e nota fiscal.</p>
+          <p class="muted">Usamos estes dados só para este pedido: entrega e nota fiscal. Ao confirmar, você concorda com os <a routerLink="/termos" target="_blank">termos de uso</a> e a <a routerLink="/privacidade" target="_blank">política de privacidade</a> da loja.</p>
           <button type="submit" [disabled]="placing()">{{ placing() ? 'Enviando…' : 'Confirmar pedido' }}</button>
         </form>
       }

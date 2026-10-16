@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 15/10/2026 (RF07: painel da plataforma, superadmin).
+> Última atualização: 15/10/2026 (LGPD: privacidade e termos, apagar dados de comprador, registro de acesso e exportação).
 
 ## Sumário
 
@@ -20,6 +20,7 @@
    - 4.7 [Pagamentos](#47-pagamentos)
    - 4.7.1 [Cofre e certificado digital](#471-cofre-e-certificado-digital)
    - 4.8 [Usuários](#48-usuários)
+   - 4.9 [Privacidade (LGPD) e exportação](#49-privacidade-lgpd-e-exportação)
 5. [Loja virtual (o que o comprador vê)](#5-loja-virtual-o-que-o-comprador-vê)
 6. [Painel da plataforma (superadmin)](#6-painel-da-plataforma-superadmin)
 7. [Ainda não disponível](#7-ainda-não-disponível)
@@ -66,6 +67,8 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Pagamentos (chaves dos gateways) | ✔ | — |
 | Cofre (certificado digital A1 e chaves guardadas) | ✔ | — |
 | Usuários | ✔ | — |
+| Privacidade: apagar dados de comprador, registro de acesso e exportação | ✔ | — |
+| Privacidade e termos da loja (Dados da loja) | ✔ | — |
 
 O menu mostra só os módulos que o perfil pode usar.
 
@@ -407,6 +410,14 @@ A loja sempre funciona no endereço da plataforma (mostrado na tela). Com domín
 - Um domínio só pode estar em uma loja.
 - Nos outros planos, a seção mostra como mudar de plano.
 
+**Privacidade e termos** (LGPD)
+
+A loja virtual sempre tem as páginas **Política de privacidade** e **Termos de uso**, com links no rodapé e no momento de confirmar o pedido.
+- Em branco, a loja mostra um **modelo padrão** já com a razão social e o CNPJ (aparece como sugestão no campo).
+- **Começar pelo modelo** copia o texto padrão para você ajustar; **Voltar ao modelo padrão** apaga o seu texto.
+- Recomendamos revisar os textos com um advogado.
+- Vale também para a loja personalizada: são textos jurídicos da loja, não aparência.
+
 ### 4.7 Pagamentos
 
 **Acesso:** menu **Pagamentos** (só Dono).
@@ -467,6 +478,32 @@ Chaves e certificados ficam guardados **cifrados**. Depois de salvos, nunca apar
 - **Desbloquear**: libera quem errou a senha 5 vezes, sem esperar os 15 minutos.
 - **Remover**: tira o acesso a esta loja (a conta continua nas outras lojas).
 
+### 4.9 Privacidade (LGPD) e exportação
+
+**Acesso:** menu **Privacidade** (só Dono).
+
+**Apagar dados de um comprador** — quando um comprador pedir (a lei dá até 15 dias para atender):
+1. Digite o **e-mail** ou o **CPF/CNPJ** que ele usou nos pedidos e clique em **Procurar pedidos**.
+2. A tela mostra quantos pedidos foram encontrados e quantos têm nota fiscal.
+3. Se houver pedido **em andamento** (aguardando pagamento, pago, em análise ou enviado), a tela mostra os números: conclua ou cancele antes.
+4. Clique em **Apagar dados deste comprador** e confirme. **Não dá para desfazer.**
+
+O que acontece:
+- Saem e-mail, telefone e endereço de entrega (ficam só cidade e UF) e o acesso dele a **Meus pedidos**.
+- Pedidos **sem nota fiscal**: o nome vira "Titular anonimizado" e o CPF/CNPJ sai.
+- Pedidos **com nota fiscal**: nome e CPF/CNPJ ficam, porque a lei fiscal obriga a guardar por 5 anos. A nota em si não muda.
+- Pedido, peças, valores e histórico continuam.
+
+**Exportar dados da loja**
+1. Clique em **Gerar exportação**. O pacote é montado em segundo plano; a lista atualiza sozinha.
+2. Quando a situação for **Pronta**, clique em **Baixar**. O arquivo (ZIP) pode ser baixado por **7 dias**; depois, gere outro.
+- O pacote tem planilhas (abrem no Excel) de peças, códigos OEM, compatibilidade, veículos doadores, movimentos de estoque, pedidos e itens, histórico, devoluções, clientes, notas fiscais, anúncios e dados da loja, além das fotos originais e dos arquivos XML/DANFE das notas.
+- Senhas, chaves de pagamento e o certificado digital **não** vão no pacote.
+- O pacote tem dados pessoais de compradores: guarde em local seguro.
+- Uma exportação por vez.
+
+**Quem acessou dados pessoais** — lista, que não pode ser alterada nem apagada, de cada vez que alguém da loja abriu um pedido, baixou o XML ou o DANFE de uma nota, gerou ou baixou uma exportação ou apagou dados de um comprador: quando, quem, o pedido e o IP. Filtre por ação.
+
 ## 5. Loja virtual (o que o comprador vê)
 
 **Navegar e buscar**
@@ -504,6 +541,8 @@ Limites para evitar abuso:
 - até 10 pedidos de link por minuto do mesmo computador.
 
 **Trocas e devoluções:** página com o texto da loja.
+
+**Política de privacidade** e **Termos de uso:** páginas com os textos da loja (ou o modelo padrão), com links no rodapé. Ao confirmar o pedido, o comprador vê o aviso de que concorda com os termos e a política.
 
 ## 6. Painel da plataforma (superadmin)
 
@@ -559,6 +598,7 @@ Itens previstos que **ainda não estão no sistema**:
 - NF-e de devolução e estorno automático do reembolso.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
+- LGPD: o comprador pedir a exclusão sozinho pela loja virtual (hoje pede à loja, que apaga em **Privacidade**); observações digitadas à mão nos pedidos não são apagadas na anonimização.
 - Painel da plataforma: criar outros superadmins pela tela (hoje, só a equipe técnica, pelo servidor); trocar o app autenticador ou gerar novos códigos de recuperação (hoje não há como — sem o celular e sem códigos, a equipe técnica cria outra conta); QR code no cadastro do app; ver peças e pedidos de uma loja; tela do tema exclusivo da loja personalizada; importar a tabela de veículos pela tela.
 
 ## 8. Histórico do manual
@@ -580,3 +620,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 13/10/2026 | Planos e limites (RF37): cartão Seu plano e limites em 4.2; comando de troca de plano em 6. |
 | 13/10/2026 | Domínio próprio (RF03): passo a passo em 4.6 Dados da loja. |
 | 15/10/2026 | Painel da plataforma (RF07): seção 6 reescrita (primeiro acesso com app autenticador, lojas, planos, auditoria); endereço em 2 e visão geral. |
+| 15/10/2026 | LGPD (RNF04/RF39): privacidade e termos em 4.6 e na loja virtual (5); nova seção 4.9 Privacidade (apagar dados de comprador, exportação, registro de acesso); perfis. |

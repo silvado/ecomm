@@ -54,10 +54,13 @@ public static class OrderEndpoints
             return TypedResults.Ok(await queries.SearchAsync(new OrderSearch(statuses, origin, from, to, busca, pagina ?? 1, tamanho ?? 25), ct));
         });
 
-        orders.MapGet("/{id:guid}", async Task<Results<Ok<OrderView>, ProblemHttpResult>> (Guid id, IOrderQueries queries, CancellationToken ct) =>
-            await queries.GetAsync(id, ct) is { } order
-                ? TypedResults.Ok(order)
-                : AuthEndpoints.Problem(StatusCodes.Status404NotFound, "Pedido não encontrado."));
+        orders.MapGet("/{id:guid}", async Task<Results<Ok<OrderView>, ProblemHttpResult>> (Guid id, IOrderQueries queries, Application.Privacy.IPersonalDataAccessLog access, CancellationToken ct) =>
+        {
+            if (await queries.GetAsync(id, ct) is not { } order) return AuthEndpoints.Problem(StatusCodes.Status404NotFound, "Pedido não encontrado.");
+            // RNF04: o detalhe mostra nome, contato, documento e endereço do comprador.
+            await access.RecordAsync(Domain.Privacy.PersonalDataActions.OrderViewed, id, ct: ct);
+            return TypedResults.Ok(order);
+        });
 
         orders.MapPost("/{id:guid}/aprovar", (Guid id, HttpContext http, IMessageBus bus, IOrderQueries queries, CancellationToken ct) =>
             ChangeAsync(new ChangeOrder(id, OrderAction.Approve, http.GetPanelUser().UserId), http, bus, queries, ct));

@@ -92,6 +92,11 @@ public static class DependencyInjection
         services.AddSingleton<TotpSecretProtector>();
         services.AddScoped<Application.Platform.IPlatformAdminAuth, PlatformAdminAuth>();
         services.AddScoped<Application.Platform.IPlatformConsole, PlatformConsoleService>();
+        // RNF04: registro de acesso a dados pessoais e anonimização do comprador.
+        services.AddScoped<Application.Privacy.PanelActor>();
+        services.AddScoped<Application.Privacy.IPersonalDataAccessLog, Privacy.PersonalDataAccessLog>();
+        services.AddScoped<Application.Privacy.IBuyerAnonymization, Privacy.BuyerAnonymization>();
+        services.AddScoped<Application.Privacy.IDataExports, Privacy.DataExportService>();
         services.AddScoped<IStoreProfileService, StoreProfileService>();
         services.AddScoped<IPartQueries, PartQueries>();
         services.AddScoped<IStoreCatalog, StoreCatalog>();

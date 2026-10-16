@@ -57,6 +57,8 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<StoreBranding> StoreBrandings => Set<StoreBranding>();
     public DbSet<TenantSecret> TenantSecrets => Set<TenantSecret>();
     public DbSet<TenantDataKey> TenantDataKeys => Set<TenantDataKey>();
+    public DbSet<Domain.Privacy.PersonalDataAccess> PersonalDataAccesses => Set<Domain.Privacy.PersonalDataAccess>();
+    public DbSet<Domain.Privacy.DataExport> DataExports => Set<Domain.Privacy.DataExport>();
 
     /// <summary>Tenant visto por este contexto (o mesmo usado pelo filtro global e pelo interceptor de RLS).</summary>
     public Guid? TenantId => tenant.TenantId;

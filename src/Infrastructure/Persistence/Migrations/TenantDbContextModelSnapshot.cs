@@ -1239,6 +1239,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("bytea")
                         .HasColumnName("access_token_hash");
 
+                    b.Property<DateTimeOffset?>("AnonymizedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("anonymized_at");
+
                     b.Property<string>("BuyerCnpj")
                         .HasMaxLength(14)
                         .HasColumnType("character varying(14)")
@@ -1459,7 +1463,7 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_customer_orders_counter_payment", "(origin = 'Counter') = (payment_method IS NOT NULL)");
 
-                            t.HasCheckConstraint("ck_customer_orders_delivery", "(delivery_method = 'Shipping' AND delivery_postal_code IS NOT NULL AND shipping_service_id IS NOT NULL) OR (delivery_method = 'Pickup' AND pickup_address IS NOT NULL)");
+                            t.HasCheckConstraint("ck_customer_orders_delivery", "(delivery_method = 'Shipping' AND (delivery_postal_code IS NOT NULL OR anonymized_at IS NOT NULL) AND shipping_service_id IS NOT NULL) OR (delivery_method = 'Pickup' AND pickup_address IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_customer_orders_totals", "items_total > 0 AND shipping_total >= 0 AND total = items_total + shipping_total");
                         });
@@ -1786,6 +1790,130 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.ToTable("payments", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Privacy.DataExport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("error");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by");
+
+                    b.Property<string>("RequestedByEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("requested_by_email");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StorageKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("storage_key");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_data_exports");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_data_exports_one_pending")
+                        .HasFilter("status = 'Pending'");
+
+                    b.HasIndex("TenantId", "RequestedAt")
+                        .HasDatabaseName("ix_data_exports_tenant_id_requested_at");
+
+                    b.ToTable("data_exports", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Privacy.PersonalDataAccess", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("action");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("details");
+
+                    b.Property<string>("Ip")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)")
+                        .HasColumnName("ip");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UserEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("user_email");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_personal_data_access_log");
+
+                    b.HasIndex("TenantId", "At")
+                        .HasDatabaseName("ix_personal_data_access_log_tenant_id_at");
+
+                    b.HasIndex("TenantId", "OrderId")
+                        .HasDatabaseName("ix_personal_data_access_log_tenant_id_order_id");
+
+                    b.ToTable("personal_data_access_log", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Store.StoreBranding", b =>
                 {
                     b.Property<Guid>("TenantId")
@@ -1826,11 +1954,27 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(7)")
                         .HasColumnName("primary_color");
 
+                    b.Property<string>("PrivacyPolicy")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("privacy_policy");
+
                     b.Property<string>("ReturnPolicy")
                         .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)")
                         .HasColumnName("return_policy");
+
+                    b.Property<string>("Terms")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("terms");
 
                     b.Property<string>("TextColor")
                         .IsRequired()
