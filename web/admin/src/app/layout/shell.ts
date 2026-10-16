@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter } from 'rxjs';
 import { AuthStore } from '../core/auth';
 import { IntegrationsApi } from '../pages/integrations/integrations.api';
+import { standingText, SubscriptionApi } from '../pages/subscription/subscription.api';
 import { alertText, CertificateAlert, VaultApi } from '../pages/vault/vault.api';
 import { RoleLabelPipe } from '../shared/role-label';
 
@@ -57,6 +58,14 @@ const FAILURE_CHECK_MS = 2 * 60 * 1000;
         <button type="button" class="link" (click)="logout()">Sair</button>
       </div>
     </header>
+    @if (billingAlert(); as text) {
+      <p class="alert-bar" role="alert" data-billing-alert>
+        {{ text }}
+        @if (auth.can('planManage')) {
+          <a routerLink="/assinatura">Ver faturas</a>
+        }
+      </p>
+    }
     @if (pendingFailures(); as n) {
       <p class="alert-bar" role="alert" data-failure-alert>
         {{ n === 1 ? '1 integração falhou' : n + ' integrações falharam' }} e precisa{{ n === 1 ? '' : 'm' }} de atenção.
@@ -81,8 +90,14 @@ export class Shell implements OnInit {
   protected readonly pendingFailures = signal(0);
   protected readonly certificateAlert = signal<CertificateAlert | null>(null);
   protected readonly certificateText = alertText;
+  private readonly subscription = inject(SubscriptionApi);
+  /** RF38: fatura vencida, painel somente leitura ou loja suspensa — para todos os perfis. */
+  protected readonly billingAlert = signal<string | null>(null);
 
   ngOnInit(): void {
+    void this.checkBilling();
+    // Depois de pagar (volta do gateway) ou de navegar, a faixa acompanha a situação.
+    this.router.events.pipe(filter((e) => e instanceof NavigationEnd), takeUntilDestroyed(this.destroyRef)).subscribe(() => void this.checkBilling());
     // RF06 CA5: o Dono vê o aviso de vencimento do A1 em qualquer página (uma vez por entrada no painel).
     if (this.auth.can('vaultManage'))
       this.vault.alert().then((a) => this.certificateAlert.set(a), () => undefined);
@@ -97,6 +112,14 @@ export class Shell implements OnInit {
   async logout(): Promise<void> {
     await this.auth.logout();
     await this.router.navigateByUrl('/entrar');
+  }
+
+  private async checkBilling(): Promise<void> {
+    try {
+      this.billingAlert.set(standingText(await this.subscription.standing()));
+    } catch {
+      // Só um aviso: se a consulta falhar, o painel segue normal.
+    }
   }
 
   private async checkFailures(): Promise<void> {

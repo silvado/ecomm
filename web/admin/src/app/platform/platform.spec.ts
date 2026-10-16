@@ -36,6 +36,7 @@ const detail: PlatformTenantDetail = {
   customStorefrontSince: null,
   domains: [{ host: 'pecas.plataforma.test', kind: 'PlatformSubdomain', status: 'Verified', isPrimary: true }],
   users: [{ email: 'dono@pecas.test', role: 'Owner', mustChangePassword: false, lockedOut: false }],
+  billingHold: false,
 };
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {

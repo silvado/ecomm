@@ -42,13 +42,18 @@ import { PlatformBillingSection } from './tenant-billing';
         <app-platform-billing [tenantId]="t.id" />
 
         <h2>Situação</h2>
-        @if (t.status === 'Suspended') {
-          <p>A loja está suspensa: a vitrine fica fora do ar e a sincronização parada.</p>
+        @if (t.billingHold) {
+          <p data-billing-hold>
+            Bloqueada pela cobrança ({{ labels[t.status] }}): fatura em atraso. Registre o pagamento ou cancele a fatura em
+            Cobrança; a loja volta sozinha. A vitrine e os anúncios nos canais saem do ar a partir da suspensão.
+          </p>
+        } @else if (t.status === 'Suspended') {
+          <p>A loja está suspensa pela equipe: a vitrine fica fora do ar e os anúncios nos canais ficam pausados.</p>
           <button type="button" (click)="act('reactivate')" [disabled]="busy()" data-reactivate>Reativar loja</button>
         } @else if (t.status !== 'Closed') {
           @if (confirming()) {
             <form class="confirm" (ngSubmit)="act('suspend')">
-              <p>Suspender tira a vitrine do ar e para a sincronização com os canais. Confirma?</p>
+              <p>Suspender tira a vitrine do ar, pausa os anúncios nos canais e deixa o painel da loja só para consulta. Confirma?</p>
               <button type="submit" class="danger" [disabled]="busy()" data-confirm-suspend>Suspender</button>
               <button type="button" class="link" (click)="confirming.set(false)">Cancelar</button>
             </form>
