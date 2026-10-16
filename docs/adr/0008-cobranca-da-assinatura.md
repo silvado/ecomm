@@ -31,7 +31,14 @@ Assinatura e faturas são da relação plataforma–loja, como plano e domínio:
 
 ### 5. Job de hora em hora no Worker
 
-`SubscriptionBillingJob`: inicia assinaturas que faltam, gera mensalidades e reenfileira avisos parados. Tudo idempotente (índice único por competência). A régua de inadimplência (RF38 CA2/CA3) entra no mesmo job, na etapa seguinte.
+`SubscriptionBillingJob`: inicia assinaturas que faltam, gera mensalidades, reenfileira avisos parados e aplica a régua. Tudo idempotente (índice único por competência).
+
+### 6. Régua de inadimplência (RF38 CA2/CA3)
+
+- `DunningPolicy` (Domain) dá o estágio pelo atraso da fatura em aberto mais antiga (3/10/20/60 dias — HIPÓTESE, Q13); `Tenant.ApplyBillingStage` muda a situação e marca `billing_hold`. Loja suspensa pela equipe, em implantação ou encerrada não é tocada.
+- A régua roda no job e logo depois de cada baixa ou cancelamento de fatura (volta automática). Depois de salvar, o catálogo e o perfil público em cache são invalidados no processo; nos outros, valem em até 60 s.
+- **Painel somente leitura** (`ReadOnly`, `Suspended`, `Closing`): `PanelReadOnlyFilter` recusa o que não é GET/HEAD, menos rotas marcadas com `AllowWhenPanelReadOnly` (Assinatura e Privacidade).
+- **Canais** (decisão do usuário, 16/10/2026): loja suspensa ou em encerramento conta como saldo zero na sincronização (`ChannelSyncHandler.StockAndPriceAsync`), então os anúncios pausam e voltam sozinhos com a reativação. A mudança publica `ResyncStoreListings` para a loja; a reconciliação horária segue a mesma regra. Vale também para a suspensão pela equipe.
 
 ## Consequências
 

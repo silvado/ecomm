@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 16/10/2026 (assinatura da loja: mensalidade e faturas).
+> Última atualização: 16/10/2026 (bloqueio por fatura em atraso).
 
 ## Sumário
 
@@ -542,6 +542,19 @@ Mostra o plano da loja, o valor da mensalidade e as faturas da plataforma (mensa
 - **Pagou por Pix ou transferência direto para a plataforma?** A equipe registra o pagamento e a fatura aparece como **Paga (registrada pela equipe)**.
 - Se a tela avisar que o pagamento pelo painel não está disponível, fale com a equipe da plataforma.
 
+**Fatura em atraso:** contando do vencimento da fatura em aberto mais antiga:
+
+| Atraso | O que acontece |
+|---|---|
+| 3 dias | Uma faixa no topo de todas as telas do painel avisa a fatura vencida. |
+| 10 dias | **Painel somente leitura**: dá para ver tudo, mas não alterar (peças, pedidos, dados da loja…). A loja virtual e os canais **continuam vendendo** e os pedidos continuam chegando. |
+| 20 dias | **Loja suspensa**: a loja virtual sai do ar e os anúncios no Mercado Livre, Instagram e OLX ficam pausados. |
+| 60 dias | A loja fica **em encerramento** (a equipe da plataforma entra em contato; nada é apagado sozinho). |
+
+- Mesmo com o painel somente leitura, continuam valendo: **Assinatura** (ver e pagar faturas), **Privacidade** (exportação e pedidos dos compradores sobre dados pessoais), trocar a senha e sair.
+- **Pagou, voltou:** assim que o pagamento é confirmado (ou registrado pela equipe) e não sobra fatura vencida, a loja volta ao normal na hora — painel liberado, loja virtual no ar e anúncios retomados.
+- Todos os perfis veem a faixa; só o Dono vê as faturas e paga.
+
 ## 5. Loja virtual (o que o comprador vê)
 
 **Loja em breve:** enquanto o Dono não publica a loja (4.2.1), o endereço mostra só "Loja em breve". Loja suspensa mostra "Loja indisponível no momento".
@@ -610,7 +623,8 @@ Cinco erros seguidos (senha ou código) bloqueiam a conta por 15 minutos. Um mes
 - **Nova loja**: nome fantasia, razão social, CNPJ, endereço (o começo do endereço da loja: letras minúsculas, números e hífen) e e-mail do Dono. Ao criar, aparece a **senha provisória do Dono** — só nesse momento. Repasse ao Dono por um canal seguro; no primeiro acesso ele cria a própria senha. Se o e-mail já tinha conta na plataforma, o Dono entra com a senha que já usa. A loja nasce **Em implantação**: a loja virtual mostra "Loja em breve" até o Dono publicar pelos **Primeiros passos** (4.2.1).
 - **Abrir uma loja** mostra dados cadastrais, endereços (subdomínio e domínio próprio), usuários e perfis. Peças, pedidos e clientes da loja **não** aparecem aqui.
   - **Plano**: escolha e clique em **Trocar plano**. Vale na hora; ao baixar de plano, o que já passou do novo limite continua, só não dá para acrescentar mais.
-  - **Suspender loja** (pede confirmação): a loja virtual sai do ar e a sincronização com os canais para. **Reativar loja** desfaz. Loja em implantação não pode ser suspensa: a loja virtual dela já está fechada, e reativar a publicaria sem os passos obrigatórios.
+  - **Suspender loja** (pede confirmação): a loja virtual sai do ar, os anúncios nos canais são pausados e o painel da loja fica somente para consulta. **Reativar loja** desfaz (os anúncios voltam). Loja em implantação não pode ser suspensa: a loja virtual dela já está fechada, e reativar a publicaria sem os passos obrigatórios. A suspensão pela equipe não sai sozinha com pagamento.
+  - **Bloqueada pela cobrança**: quando a situação (somente leitura, suspensa ou em encerramento) veio do atraso de fatura (veja 4.10), a tela avisa e **Reativar** não vale: registre o pagamento ou cancele a fatura em **Cobrança** e a loja volta sozinha.
   - **Loja personalizada** (RF40): **Ligar** depois de fechado o orçamento; o Dono deixa de mudar logo, nome, cores e textos. **Desligar** devolve a edição ao Dono e a loja volta ao visual padrão na hora.
   - **Tema e páginas exclusivos**: abre o editor do visual sob medida (veja 6.3.1).
   - **Cobrança**: plano, mensalidade, desde quando a loja é cobrada e o dia do vencimento, e as faturas da loja.
@@ -662,7 +676,7 @@ Itens previstos que **ainda não estão no sistema**:
 - NF-e de devolução e estorno automático do reembolso.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
-- Assinatura: pagamento real pelo painel (o gateway da plataforma ainda será escolhido; em teste, a página de pagamento é simulada), aviso por e-mail da fatura e bloqueio gradual por atraso (aviso, painel só leitura, suspensão).
+- Assinatura: pagamento real pelo painel (o gateway da plataforma ainda será escolhido; em teste, a página de pagamento é simulada) e aviso da fatura por e-mail (hoje o aviso é a faixa no painel).
 - Primeiros passos: ver a loja virtual antes de publicar e "despublicar" a loja pelo painel.
 - LGPD: o comprador pedir a exclusão sozinho pela loja virtual (hoje pede à loja, que apaga em **Privacidade**); observações digitadas à mão nos pedidos não são apagadas na anonimização.
 - Painel da plataforma: criar outros superadmins pela tela (hoje, só a equipe técnica, pelo servidor); trocar o app autenticador ou gerar novos códigos de recuperação (hoje não há como — sem o celular e sem códigos, a equipe técnica cria outra conta); QR code no cadastro do app; ver peças e pedidos de uma loja; enviar imagens do tema exclusivo pela tela (hoje, só por endereço `https`); importar a tabela de veículos pela tela.
@@ -690,3 +704,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Tema e páginas exclusivos da loja personalizada (RF40): nova seção 6.3.1; loja virtual (5); auditoria em 6.5. |
 | 16/10/2026 | Primeiros passos (RF05): nova seção 4.2.1, cartão no Início, "Loja em breve" na loja virtual (5), loja nova em implantação e suspensão em 6.3; perfis. |
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
+| 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
