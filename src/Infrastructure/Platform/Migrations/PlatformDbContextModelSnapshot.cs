@@ -22,6 +22,174 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Ecommerce.Domain.Billing.Subscription", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("DueDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("due_day");
+
+                    b.Property<DateOnly>("StartedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("started_on");
+
+                    b.HasKey("TenantId")
+                        .HasName("pk_subscriptions");
+
+                    b.ToTable("subscriptions", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Billing.SubscriptionEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ChargeId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("charge_id");
+
+                    b.Property<string>("Gateway")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("gateway");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processed_at");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_subscription_events");
+
+                    b.HasIndex("ReceivedAt")
+                        .HasDatabaseName("ix_subscription_events_received_at")
+                        .HasFilter("status = 'Received'");
+
+                    b.HasIndex("Gateway", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_subscription_events_gateway_idempotency_key");
+
+                    b.ToTable("subscription_events", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Billing.SubscriptionInvoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("ChargeId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("charge_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("note");
+
+                    b.Property<decimal?>("PaidAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("paid_amount");
+
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("paid_at");
+
+                    b.Property<string>("PaidVia")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("paid_via");
+
+                    b.Property<string>("PaymentUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("payment_url");
+
+                    b.Property<DateOnly?>("Period")
+                        .HasColumnType("date")
+                        .HasColumnName("period");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_subscription_invoices");
+
+                    b.HasIndex("ChargeId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_subscription_invoices_charge_id");
+
+                    b.HasIndex("TenantId", "DueDate")
+                        .HasDatabaseName("ix_subscription_invoices_tenant_id_due_date");
+
+                    b.HasIndex("TenantId", "Period")
+                        .IsUnique()
+                        .HasDatabaseName("ix_subscription_invoices_tenant_id_period")
+                        .HasFilter("kind = 'Monthly'");
+
+                    b.ToTable("subscription_invoices", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Identity.PlatformAdmin", b =>
                 {
                     b.Property<Guid>("Id")
@@ -341,6 +509,11 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         .HasColumnType("character varying(30)")
                         .HasColumnName("code");
 
+                    b.Property<decimal>("MonthlyPrice")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("monthly_price");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(60)
@@ -360,18 +533,21 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         {
                             Id = new Guid("0199c4a0-0000-7000-8000-000000000001"),
                             Code = "essencial",
+                            MonthlyPrice = 0m,
                             Name = "Essencial"
                         },
                         new
                         {
                             Id = new Guid("0199c4a0-0000-7000-8000-000000000002"),
                             Code = "profissional",
+                            MonthlyPrice = 0m,
                             Name = "Profissional"
                         },
                         new
                         {
                             Id = new Guid("0199c4a0-0000-7000-8000-000000000003"),
                             Code = "completo",
+                            MonthlyPrice = 0m,
                             Name = "Completo"
                         });
                 });
@@ -946,6 +1122,26 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         {
                             t.HasCheckConstraint("ck_vehicle_versions_years", "year_to IS NULL OR year_to >= year_from");
                         });
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Billing.Subscription", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Platform.Tenant", null)
+                        .WithOne()
+                        .HasForeignKey("Ecommerce.Domain.Billing.Subscription", "TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_subscriptions_tenants_tenant_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Billing.SubscriptionInvoice", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Platform.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_subscription_invoices_tenants_tenant_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Identity.PlatformAdminRecoveryCode", b =>

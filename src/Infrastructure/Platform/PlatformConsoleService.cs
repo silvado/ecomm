@@ -119,7 +119,7 @@ public sealed class PlatformConsoleService(
         return plans.Select(p => new PlatformPlan(p.Code, p.Name,
             p.Limits.OrderBy(l => l.Key).ToDictionary(l => l.Key, l => l.Value),
             features.Where(f => f.PlanCode == p.Code).Select(f => f.Feature).Order().ToList(),
-            counts.GetValueOrDefault(p.Code))).ToList();
+            counts.GetValueOrDefault(p.Code), p.MonthlyPrice)).ToList();
     }
 
     public async Task<PlatformAuditPage> AuditAsync(PlatformAuditFilter filter, CancellationToken ct = default)

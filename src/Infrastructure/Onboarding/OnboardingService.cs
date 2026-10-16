@@ -1,6 +1,8 @@
 using Ecommerce.Application.Onboarding;
 using Ecommerce.Application.Tenancy;
+using Ecommerce.Domain.Billing;
 using Ecommerce.Domain.Channels;
+using Ecommerce.Infrastructure.Billing;
 using Ecommerce.Domain.Onboarding;
 using Ecommerce.Domain.Platform;
 using Ecommerce.Infrastructure.Payments;
@@ -57,6 +59,16 @@ public sealed class OnboardingService(
         if (!view.CanPublish) return new PublishResult(PublishOutcome.Incomplete, view);
 
         tenant.Publish();
+        // RF38 (decisão do usuário, 16/10/2026): a mensalidade começa na publicação e a 1ª vence hoje.
+        if (!await platform.Subscriptions.AnyAsync(s => s.TenantId == tenantId, ct))
+        {
+            var now = clock.GetUtcNow();
+            var today = BillingCalendar.Today(clock);
+            var subscription = Subscription.Start(tenantId, today, now);
+            platform.Subscriptions.Add(subscription);
+            var plan = await platform.Plans.AsNoTracking().SingleAsync(p => p.Code == tenant.PlanCode, ct);
+            await SubscriptionInvoicing.AddMissingAsync(platform, subscription, plan, today, today, now, ct);
+        }
         await platform.SaveChangesAsync(ct);
         // A vitrine e a validação de certificado leem a situação pelo catálogo em cache: vale na hora.
         catalog.Invalidate(tenantId);

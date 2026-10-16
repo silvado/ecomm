@@ -95,6 +95,15 @@ public static class DependencyInjection
         services.AddSingleton<Application.Platform.ICustomContentSanitizer, CustomContentSanitizer>();
         services.AddScoped<Application.Platform.IPlatformThemeService, PlatformThemeService>();
         services.AddScoped<Application.Onboarding.IOnboardingService, Onboarding.OnboardingService>();
+        // RF38: cobrança da assinatura pelo gateway da plataforma (Q05 em aberto: só o simulado, em dev/testes). Sem gateway,
+        // a equipe registra os pagamentos à mão.
+        services.Configure<Billing.BillingOptions>(configuration.GetSection(Billing.BillingOptions.Section));
+        if (configuration.GetValue<bool>($"{Billing.BillingOptions.Section}:UseFakeGateway"))
+            services.AddSingleton<Application.Billing.ISubscriptionBilling, Billing.FakeSubscriptionBilling>();
+        services.AddScoped<Application.Billing.ISubscriptionPanel, Billing.SubscriptionPanel>();
+        services.AddScoped<Application.Billing.ISubscriptionAdmin, Billing.SubscriptionAdmin>();
+        services.AddScoped<Application.Billing.ISubscriptionWebhook, Billing.SubscriptionWebhook>();
+        services.AddScoped<Billing.SubscriptionPayments>();
         // RNF04: registro de acesso a dados pessoais e anonimização do comprador.
         services.AddScoped<Application.Privacy.PanelActor>();
         services.AddScoped<Application.Privacy.IPersonalDataAccessLog, Privacy.PersonalDataAccessLog>();

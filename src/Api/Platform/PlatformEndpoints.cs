@@ -1,4 +1,5 @@
 using Ecommerce.Api.Auth;
+using Ecommerce.Application.Billing;
 using Ecommerce.Application.Platform;
 using Ecommerce.Application.Tenancy;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -10,6 +11,9 @@ public sealed record PlatformCreatedTenantResponse(Guid Id, string Slug, string 
 public sealed record PlatformPlanRequest(string Plano);
 public sealed record PlatformCustomStorefrontRequest(bool Ligada);
 public sealed record PlatformMeResponse(string Email);
+public sealed record PlatformPriceRequest(decimal Valor);
+public sealed record PlatformSetupFeeRequest(decimal Valor, DateOnly Vencimento);
+public sealed record PlatformInvoiceNoteRequest(string? Observacao);
 
 public sealed record PlatformThemeRequest(string? Css, string? Cabecalho, string? Rodape)
 {
@@ -115,9 +119,38 @@ public static class PlatformEndpoints
 
         platform.MapGet("/planos",async (IPlatformConsole console, CancellationToken ct) => TypedResults.Ok(await console.PlansAsync(ct)));
 
+        // RF38: mensalidade do plano (vale para as faturas geradas depois).
+        platform.MapPut("/planos/{code}/preco", async Task<Results<Ok<IReadOnlyList<PlatformPlan>>, ProblemHttpResult>> (
+            string code, PlatformPriceRequest request, ISubscriptionAdmin billing, IPlatformConsole console, CancellationToken ct) =>
+            await billing.SetPlanPriceAsync(code, request.Valor, ct) is { } error
+                ? AuthEndpoints.Problem(StatusCodes.Status400BadRequest, error)
+                : TypedResults.Ok(await console.PlansAsync(ct)));
+
+        // RF38: cobrança da loja — faturas, taxa de implantação, pagamento manual e cancelamento.
+        var billing = platform.MapGroup("/lojas/{id:guid}/cobranca");
+
+        billing.MapGet("/", async Task<Results<Ok<PlatformBillingView>, NotFound>> (Guid id, ISubscriptionAdmin service, CancellationToken ct) =>
+            await service.GetAsync(id, ct) is { } view ? TypedResults.Ok(view) : TypedResults.NotFound());
+
+        billing.MapPost("/implantacao", async (Guid id, PlatformSetupFeeRequest request, ISubscriptionAdmin service, CancellationToken ct) =>
+            RespondBilling(await service.AddSetupFeeAsync(id, request.Valor, request.Vencimento, ct)));
+
+        billing.MapPost("/faturas/{invoiceId:guid}/pagamento-manual", async (Guid id, Guid invoiceId, PlatformInvoiceNoteRequest request,
+            ISubscriptionAdmin service, CancellationToken ct) =>
+            RespondBilling(await service.RecordManualPaymentAsync(id, invoiceId, request.Observacao, ct)));
+
+        billing.MapPost("/faturas/{invoiceId:guid}/cancelar", async (Guid id, Guid invoiceId, PlatformInvoiceNoteRequest request,
+            ISubscriptionAdmin service, CancellationToken ct) =>
+            RespondBilling(await service.CancelInvoiceAsync(id, invoiceId, request.Observacao, ct)));
+
         platform.MapGet("/auditoria", async (Guid? loja, string? acao, string? email, int? pagina, IPlatformConsole console, CancellationToken ct) =>
             TypedResults.Ok(await console.AuditAsync(new PlatformAuditFilter(loja, acao, email, pagina ?? 1), ct)));
     }
+
+    private static Results<Ok<PlatformBillingView>, ProblemHttpResult> RespondBilling(PlatformBillingResult result) =>
+        result.Billing is { } billing
+            ? TypedResults.Ok(billing)
+            : AuthEndpoints.Problem(result.NotFound ? StatusCodes.Status404NotFound : StatusCodes.Status400BadRequest, result.Error!);
 
     private static Results<Ok<PlatformThemeSaved>, ProblemHttpResult> RespondTheme(PlatformThemeResult result) =>
         result.Theme is { } theme

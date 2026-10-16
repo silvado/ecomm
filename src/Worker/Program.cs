@@ -23,6 +23,8 @@ builder.Services.AddHostedService<Ecommerce.Infrastructure.Vault.CertificateExpi
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Channels.ChannelReconciliationScheduler>();
 // RF03: verificação dos domínios próprios a cada 5 min.
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Platform.DomainVerificationJob>();
+// RF38: mensalidades da assinatura (a cada hora, idempotente).
+builder.Services.AddHostedService<Ecommerce.Infrastructure.Billing.SubscriptionBillingJob>();
 
 var host = builder.Build();
 host.Run();
