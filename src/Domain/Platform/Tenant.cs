@@ -67,7 +67,17 @@ public sealed class Tenant
         return tenant;
     }
 
-    public void Activate() => Status = TenantStatus.Active;
+    /// <summary>
+    /// A situação atual (somente leitura, suspensa ou em encerramento) foi posta pela régua de inadimplência (RF38): o
+    /// pagamento a desfaz sozinho. Falso numa suspensão da equipe, que só a equipe desfaz.
+    /// </summary>
+    public bool BillingHold { get; private set; }
+
+    public void Activate()
+    {
+        Status = TenantStatus.Active;
+        BillingHold = false;
+    }
 
     /// <summary>
     /// RF05 CA3: a loja em implantação abre a vitrine. Quem chama confere antes os passos obrigatórios
@@ -79,7 +89,39 @@ public sealed class Tenant
         Status = TenantStatus.Active;
     }
 
-    public void Suspend() => Status = TenantStatus.Suspended;
+    /// <summary>Suspensão pela equipe da plataforma: prevalece sobre a régua e não volta sozinha com o pagamento.</summary>
+    public void Suspend()
+    {
+        Status = TenantStatus.Suspended;
+        BillingHold = false;
+    }
+
+    /// <summary>
+    /// Aplica o estágio da régua (RF38 CA2/CA3). Só mexe em loja publicada que não foi suspensa pela equipe: em
+    /// implantação, encerrada ou suspensa à mão, nada muda. Devolve true se a situação mudou.
+    /// </summary>
+    public bool ApplyBillingStage(Billing.DunningStage stage)
+    {
+        if (Status is TenantStatus.Onboarding or TenantStatus.Closed) return false;
+        if (Status is not TenantStatus.Active && !BillingHold) return false;
+        var target = stage switch
+        {
+            Billing.DunningStage.ReadOnly => TenantStatus.ReadOnly,
+            Billing.DunningStage.Suspended => TenantStatus.Suspended,
+            Billing.DunningStage.Closing => TenantStatus.Closing,
+            _ => TenantStatus.Active,
+        };
+        if (target == Status) return false;
+        Status = target;
+        BillingHold = target != TenantStatus.Active;
+        return true;
+    }
+
+    /// <summary>Painel só para consulta (RF38): só leitura, suspensa ou em encerramento. Pagar e exportar continuam.</summary>
+    public static bool IsPanelReadOnly(TenantStatus status) => status is TenantStatus.ReadOnly or TenantStatus.Suspended or TenantStatus.Closing;
+
+    /// <summary>Os anúncios nos canais podem ficar ativos (decisão do usuário, 16/10/2026: loja suspensa pausa tudo).</summary>
+    public static bool IsSellingOnChannels(TenantStatus status) => status is not (TenantStatus.Suspended or TenantStatus.Closing or TenantStatus.Closed);
 
     /// <summary>Nome fantasia exibido na loja. CNPJ e razão social não mudam por aqui (dados fiscais).</summary>
     public void Rename(string tradeName)

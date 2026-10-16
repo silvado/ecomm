@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { SubscriptionInvoice } from '../shared/invoice';
 
-export type TenantStatus = 'Onboarding' | 'Active' | 'ReadOnly' | 'Suspended' | 'Closed';
+export type TenantStatus = 'Onboarding' | 'Active' | 'ReadOnly' | 'Suspended' | 'Closing' | 'Closed';
 
 export interface PlatformTenantItem {
   id: string;
@@ -30,6 +30,8 @@ export interface PlatformTenantDetail {
   customStorefrontSince: string | null;
   domains: { host: string; kind: string; status: string; isPrimary: boolean }[];
   users: { email: string; role: string; mustChangePassword: boolean; lockedOut: boolean }[];
+  /** Situação posta pela régua de inadimplência (RF38): volta sozinha com o pagamento. */
+  billingHold: boolean;
 }
 
 export interface NewTenant {
@@ -89,6 +91,7 @@ export const STATUS_LABELS: Record<TenantStatus, string> = {
   Active: 'Ativa',
   ReadOnly: 'Somente leitura',
   Suspended: 'Suspensa',
+  Closing: 'Em encerramento',
   Closed: 'Encerrada',
 };
 

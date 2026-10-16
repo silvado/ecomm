@@ -25,7 +25,7 @@ public sealed class PlatformAudit(PlatformDbContext db, PlatformActor actor, Tim
 /// <summary>Painel da plataforma (RF07 CA3): lojas, planos e auditoria — só o banco <c>plataforma</c>.</summary>
 public sealed class PlatformConsoleService(
     PlatformDbContext db, ITenantProvisioning provisioning, IPlatformAudit audit, ITenantCatalog catalog, IMemoryCache cache,
-    TimeProvider clock) : IPlatformConsole
+    Wolverine.IMessageBus bus, TimeProvider clock) : IPlatformConsole
 {
     public async Task<IReadOnlyList<PlatformTenantItem>> ListTenantsAsync(string? search, string? status, CancellationToken ct = default)
     {
@@ -88,6 +88,7 @@ public sealed class PlatformConsoleService(
             var previous = tenant.Status;
             tenant.Suspend();
             await audit.RecordAsync(PlatformAuditActions.TenantSuspended, tenant.Id, $"antes: {previous}", ct);
+            await Billing.BillingStanding.PublishChannelResyncAsync(bus, tenant.Id, previous, tenant.Status);
             return null;
         }, ct);
 
@@ -95,9 +96,14 @@ public sealed class PlatformConsoleService(
         ChangeAsync(tenantId, async tenant =>
         {
             if (tenant.Status is TenantStatus.Active) return null;
+            // Bloqueio da régua (RF38) sai com o pagamento: reativar à mão seria desfeito na próxima rodada.
+            if (tenant.BillingHold)
+                return "A loja está bloqueada por fatura em atraso. Registre o pagamento ou cancele a fatura em Cobrança: ela volta sozinha.";
             if (tenant.Status is not TenantStatus.Suspended) return "Só uma loja suspensa pode ser reativada por aqui.";
+            var previous = tenant.Status;
             tenant.Activate();
             await audit.RecordAsync(PlatformAuditActions.TenantReactivated, tenant.Id, ct: ct);
+            await Billing.BillingStanding.PublishChannelResyncAsync(bus, tenant.Id, previous, tenant.Status);
             return null;
         }, ct);
 
@@ -171,6 +177,7 @@ public sealed class PlatformConsoleService(
             tenant.Status.ToString(), tenant.PlanCode, planName, tenant.CreatedAt, tenant.CustomStorefrontSince,
             tenant.Domains.OrderByDescending(d => d.IsPrimary).ThenBy(d => d.Host)
                 .Select(d => new PlatformTenantDomain(d.Host, d.Kind.ToString(), d.VerificationStatus.ToString(), d.IsPrimary)).ToList(),
-            users.Select(u => new PlatformTenantUser(u.Email, u.Role.ToString(), u.MustChangePassword, u.LockedUntil > now)).ToList());
+            users.Select(u => new PlatformTenantUser(u.Email, u.Role.ToString(), u.MustChangePassword, u.LockedUntil > now)).ToList(),
+            tenant.BillingHold);
     }
 }

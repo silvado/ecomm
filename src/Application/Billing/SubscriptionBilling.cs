@@ -77,10 +77,17 @@ public enum PayInvoiceOutcome
 
 public sealed record PayInvoiceResult(PayInvoiceOutcome Outcome, string? PaymentUrl);
 
+/// <summary>Situação da loja na régua (faixa do painel, para todos os perfis — RF38 CA2).</summary>
+/// <param name="OverdueSince">Vencimento da fatura em aberto mais antiga já vencida; nulo = em dia.</param>
+/// <param name="ReadOnly">O painel só consulta (gravações são recusadas), pela régua ou por suspensão da equipe.</param>
+public sealed record BillingStandingView(Domain.Platform.TenantStatus Status, DunningStage Stage, DateOnly? OverdueSince, bool ReadOnly);
+
 /// <summary>Tela Assinatura do painel (Dono): plano, mensalidade e faturas da loja do escopo.</summary>
 public interface ISubscriptionPanel
 {
     Task<SubscriptionView> GetAsync(CancellationToken ct = default);
+
+    Task<BillingStandingView> StandingAsync(CancellationToken ct = default);
 
     /// <summary>Cria (ou reaproveita) a cobrança da fatura no gateway e devolve a página de pagamento.</summary>
     /// <param name="returnUrl">Tela Assinatura no endereço do painel.</param>

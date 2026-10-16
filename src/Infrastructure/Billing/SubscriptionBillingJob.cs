@@ -1,4 +1,6 @@
 using Ecommerce.Application.Billing;
+using Ecommerce.Application.Tenancy;
+using Microsoft.Extensions.Caching.Memory;
 using Ecommerce.Domain.Billing;
 using Ecommerce.Domain.Platform;
 using Ecommerce.Infrastructure.Platform;
@@ -14,11 +16,12 @@ namespace Ecommerce.Infrastructure.Billing;
 /// <param name="Started">Lojas publicadas antes da cobrança que ganharam assinatura (começa no dia da rodada).</param>
 /// <param name="Invoices">Mensalidades geradas.</param>
 /// <param name="Requeued">Avisos do gateway gravados e não processados, postos de novo na fila.</param>
-public sealed record SubscriptionBillingRun(int Started, int Invoices, int Requeued);
+/// <param name="Changes">Lojas que mudaram de situação pela régua de inadimplência.</param>
+public sealed record SubscriptionBillingRun(int Started, int Invoices, int Requeued, IReadOnlyList<StandingChange> Changes);
 
 /// <summary>
-/// Cobrança da assinatura (RF38) a cada hora (tudo é idempotente): gera as mensalidades com antecedência e reenfileira
-/// avisos do gateway que ficaram parados. Roda só no Worker.
+/// Cobrança da assinatura (RF38) a cada hora (tudo é idempotente): gera as mensalidades com antecedência, reenfileira
+/// avisos do gateway que ficaram parados e aplica a régua de inadimplência. Roda só no Worker.
 /// </summary>
 public sealed partial class SubscriptionBillingJob(IServiceScopeFactory scopes, IOptions<BillingOptions> options, TimeProvider clock,
     ILogger<SubscriptionBillingJob> logger) : BackgroundService
@@ -86,8 +89,14 @@ public sealed partial class SubscriptionBillingJob(IServiceScopeFactory scopes, 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         foreach (var id in stale) await bus.PublishAsync(new ProcessSubscriptionEvent(id));
 
+        // Régua de inadimplência (RF38 CA2): depois dos avisos, para um pagamento que acabou de entrar já contar.
+        var changes = await BillingStanding.ApplyAsync(db, null, today, ct);
+        await db.SaveChangesAsync(ct);
+        await BillingStanding.AnnounceAsync(changes, scope.ServiceProvider.GetRequiredService<ITenantCatalog>(),
+            scope.ServiceProvider.GetRequiredService<IMemoryCache>(), bus, logger);
+
         if (unstarted.Count + invoices + stale.Count > 0) LogRun(logger, unstarted.Count, invoices, stale.Count);
-        return new SubscriptionBillingRun(unstarted.Count, invoices, stale.Count);
+        return new SubscriptionBillingRun(unstarted.Count, invoices, stale.Count, changes);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Cobrança da assinatura: {Started} assinaturas iniciadas, {Invoices} mensalidades geradas, {Requeued} avisos reenfileirados")]

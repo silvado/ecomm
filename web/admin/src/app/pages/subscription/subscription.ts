@@ -1,34 +1,10 @@
 import { CurrencyPipe, DatePipe, DOCUMENT } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component, inject, Injectable, OnInit, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { problemTitle } from '../../core/auth';
 import { invoiceStatusLabel, SubscriptionInvoice } from '../../shared/invoice';
+import { SubscriptionApi, SubscriptionView } from './subscription.api';
 
-export interface SubscriptionView {
-  planCode: string;
-  planName: string;
-  monthlyPrice: number;
-  startedOn: string | null;
-  dueDay: number | null;
-  onlinePayment: boolean;
-  invoices: SubscriptionInvoice[];
-}
-
-@Injectable({ providedIn: 'root' })
-export class SubscriptionApi {
-  private readonly http = inject(HttpClient);
-  private readonly base = '/api/painel/assinatura';
-
-  get(): Promise<SubscriptionView> {
-    return firstValueFrom(this.http.get<SubscriptionView>(this.base));
-  }
-
-  /** Página de pagamento do gateway da plataforma para a fatura. */
-  pay(invoiceId: string): Promise<{ redirectUrl: string }> {
-    return firstValueFrom(this.http.post<{ redirectUrl: string }>(`${this.base}/faturas/${invoiceId}/pagar`, null));
-  }
-}
+export type { SubscriptionView } from './subscription.api';
 
 /**
  * Assinatura da loja com a plataforma (RF38), só para o Dono: plano, mensalidade e faturas. Pagar leva à página do
