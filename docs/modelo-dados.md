@@ -576,6 +576,8 @@ erDiagram
 
 **Nota sobre `EXTERNAL_EVENT` e o inbox (RF26, implementado em 13/10/2026):** o aviso de canal chega antes de sabermos a loja (ex.: o ML identifica o vendedor por `user_id`). O webhook responde 2xx e grava em `inbox.external_events` (sem RLS; `UNIQUE (source, idempotency_key)`); o roteamento procura a loja em **`plataforma.channel_accounts`** (canal + conta externa → loja; a consulta por loja em `channel_connection` não serve, pois ela tem RLS e exige a loja definida) e publica o evento já no escopo da loja, onde ele entra em `external_events` (RLS, chave única por loja) antes do processador do canal — reentrega em qualquer ponto não repete o efeito. Conta sem loja fica `unroutable` e gera log crítico.
 
+**Primeiros passos (RF05, implementado em 16/10/2026):** `onboarding_skips` (`tenant_id`, `step` texto, `skipped_at`; PK `(tenant_id, step)`; RLS) guarda só os passos opcionais pulados — a situação de cada passo é calculada das configurações já existentes. A loja nasce com `tenants.status = 'Onboarding'` e passa a `Active` ao publicar.
+
 **LGPD (RNF04, implementado em 15/10/2026):** `store_brandings` ganhou `privacy_policy` e `terms` (vazio = modelo padrão); `customer_orders` ganhou `anonymized_at` e a regra de entrega aceita pedido anonimizado sem CEP.
 
 ## Onde está o `tenant_id` — resumo

@@ -319,7 +319,7 @@ export const epics = [
             title: 'Assistente de onboarding',
             rf: 'RF05',
             ac: 'Passos salvos parcialmente e retomáveis; canais aparecem conforme o plano; loja só publica com empresa, gateway e frete concluídos.',
-            t: [['Fluxo e estado do onboarding', 8], ['Telas dos passos', 16]],
+            t: [['Fluxo e estado do onboarding', 8, 'done'], ['Telas dos passos', 16, 'done']],
           },
           {
             title: 'Domínio próprio com SSL automático',
