@@ -358,7 +358,7 @@ A loja conversa com serviços externos: gateway de pagamento (Mercado Pago ou Ci
 
 **Loja personalizada** (site feito sob medida, contratado à parte)
 - A página mostra o selo **Loja personalizada**.
-- O visual foi feito pela equipe da plataforma: **logo, nome, cores e textos** (sobre, trocas e devoluções, rodapé) aparecem só para consulta. Para mudar, fale com o suporte.
+- O visual foi feito pela equipe da plataforma: **logo, nome, cores e textos** (sobre, trocas e devoluções, rodapé) aparecem só para consulta. Para mudar, fale com o suporte. O tema e as páginas exclusivas (como "Quem somos") também são cuidados pela equipe.
 - Continuam com a loja: entrega e retirada, ocultar peças sem estoque, rastreabilidade, nota fiscal, e-mail de envio e todo o resto do painel (peças, preços, estoque, pedidos, pagamentos).
 
 **Nota fiscal (NF-e)**
@@ -544,6 +544,8 @@ Limites para evitar abuso:
 
 **Política de privacidade** e **Termos de uso:** páginas com os textos da loja (ou o modelo padrão), com links no rodapé. Ao confirmar o pedido, o comprador vê o aviso de que concorda com os termos e a política.
 
+**Loja personalizada:** o comprador vê o visual sob medida (cabeçalho, rodapé e cores próprias) e as páginas exclusivas, com links no rodapé. Carrinho, checkout e **Meus pedidos** mantêm o layout padrão da plataforma.
+
 ## 6. Painel da plataforma (superadmin)
 
 *Usado pela equipe da plataforma, não pela loja.* É um painel separado: a conta de superadmin não é a mesma conta de nenhuma loja, e quem entra no painel de uma loja não vê nada daqui (nem o contrário).
@@ -569,7 +571,22 @@ Cinco erros seguidos (senha ou código) bloqueiam a conta por 15 minutos. Um mes
 - **Abrir uma loja** mostra dados cadastrais, endereços (subdomínio e domínio próprio), usuários e perfis. Peças, pedidos e clientes da loja **não** aparecem aqui.
   - **Plano**: escolha e clique em **Trocar plano**. Vale na hora; ao baixar de plano, o que já passou do novo limite continua, só não dá para acrescentar mais.
   - **Suspender loja** (pede confirmação): a loja virtual sai do ar e a sincronização com os canais para. **Reativar loja** desfaz.
-  - **Loja personalizada** (RF40): **Ligar** depois de fechado o orçamento; o Dono deixa de mudar logo, nome, cores e textos. **Desligar** devolve a edição ao Dono.
+  - **Loja personalizada** (RF40): **Ligar** depois de fechado o orçamento; o Dono deixa de mudar logo, nome, cores e textos. **Desligar** devolve a edição ao Dono e a loja volta ao visual padrão na hora.
+  - **Tema e páginas exclusivos**: abre o editor do visual sob medida (veja 6.3.1).
+
+#### 6.3.1 Tema e páginas exclusivos
+
+Onde a equipe monta o site sob medida da loja personalizada. Pode ser preparado antes de ligar a opção: a loja virtual só usa o tema e as páginas enquanto a **Loja personalizada** estiver ligada.
+
+- **Tema**:
+  - **CSS**: o visual (cores, fontes, espaçamentos, imagens de fundo). Vale no cabeçalho, no rodapé e nas páginas da loja; **carrinho, checkout e Meus pedidos** continuam com o layout padrão (só com as cores da loja), para não atrapalhar a venda.
+  - **Cabeçalho**: aparece acima do menu da loja (faixa de promoção, banner).
+  - **Rodapé**: substitui o texto do rodapé. Os links de termos, privacidade e trocas continuam.
+- **Pré-visualizar** mostra como fica, num quadro isolado, sem salvar. **Salvar tema** grava; a loja mostra a mudança em até 1 minuto.
+- **Páginas** (até 20): título, endereço (a página abre em `/p/endereço`, por exemplo `/p/quem-somos`), ordem no rodapé, conteúdo e **Publicada**. Rascunho não aparece na loja. **Remover página** pede confirmação.
+- **O que é aceito**: títulos, textos, imagens, links, listas e tabelas. Links e imagens só com `https`, `mailto:`, `tel:` ou endereços da própria loja. O visual vem do CSS; não há estilo dentro do HTML.
+- **O que é removido ao salvar**: script, eventos (como `onclick`), iframes, formulários, links `javascript:` ou sem `https`, `@import` e qualquer regra de CSS fora da lista permitida. A tela mostra **o que a limpeza removeu**.
+- Cada gravação fica na auditoria, com o que foi removido.
 
 ### 6.4 Planos
 
@@ -577,7 +594,7 @@ Mostra os limites (usuários, peças ativas, cadastros por IA no mês) e os recu
 
 ### 6.5 Auditoria
 
-Tudo o que os superadmins fazem fica registrado e não pode ser alterado nem apagado: entradas (e tentativas recusadas), cadastro do app, uso de código de recuperação, troca de senha, **cada abertura de uma loja** e cada ação (criar, plano, suspender, reativar, loja personalizada). Filtre por ação ou e-mail; na tela de uma loja, **Ver o que a plataforma fez nesta loja** mostra só os registros dela.
+Tudo o que os superadmins fazem fica registrado e não pode ser alterado nem apagado: entradas (e tentativas recusadas), cadastro do app, uso de código de recuperação, troca de senha, **cada abertura de uma loja** e cada ação (criar, plano, suspender, reativar, loja personalizada, tema e páginas exclusivos). Filtre por ação ou e-mail; na tela de uma loja, **Ver o que a plataforma fez nesta loja** mostra só os registros dela.
 
 ### 6.6 Comandos do servidor
 
@@ -599,7 +616,7 @@ Itens previstos que **ainda não estão no sistema**:
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
 - LGPD: o comprador pedir a exclusão sozinho pela loja virtual (hoje pede à loja, que apaga em **Privacidade**); observações digitadas à mão nos pedidos não são apagadas na anonimização.
-- Painel da plataforma: criar outros superadmins pela tela (hoje, só a equipe técnica, pelo servidor); trocar o app autenticador ou gerar novos códigos de recuperação (hoje não há como — sem o celular e sem códigos, a equipe técnica cria outra conta); QR code no cadastro do app; ver peças e pedidos de uma loja; tela do tema exclusivo da loja personalizada; importar a tabela de veículos pela tela.
+- Painel da plataforma: criar outros superadmins pela tela (hoje, só a equipe técnica, pelo servidor); trocar o app autenticador ou gerar novos códigos de recuperação (hoje não há como — sem o celular e sem códigos, a equipe técnica cria outra conta); QR code no cadastro do app; ver peças e pedidos de uma loja; enviar imagens do tema exclusivo pela tela (hoje, só por endereço `https`); importar a tabela de veículos pela tela.
 
 ## 8. Histórico do manual
 
@@ -621,3 +638,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 13/10/2026 | Domínio próprio (RF03): passo a passo em 4.6 Dados da loja. |
 | 15/10/2026 | Painel da plataforma (RF07): seção 6 reescrita (primeiro acesso com app autenticador, lojas, planos, auditoria); endereço em 2 e visão geral. |
 | 15/10/2026 | LGPD (RNF04/RF39): privacidade e termos em 4.6 e na loja virtual (5); nova seção 4.9 Privacidade (apagar dados de comprador, exportação, registro de acesso); perfis. |
+| 16/10/2026 | Tema e páginas exclusivos da loja personalizada (RF40): nova seção 6.3.1; loja virtual (5); auditoria em 6.5. |

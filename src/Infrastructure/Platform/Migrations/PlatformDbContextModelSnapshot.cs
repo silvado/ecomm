@@ -757,6 +757,103 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                     b.ToTable("tenant_domains", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Platform.TenantPage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Html")
+                        .IsRequired()
+                        .HasMaxLength(50000)
+                        .HasColumnType("character varying(50000)")
+                        .HasColumnName("html");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<bool>("Published")
+                        .HasColumnType("boolean")
+                        .HasColumnName("published");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("slug");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tenant_pages");
+
+                    b.HasIndex("TenantId", "Slug")
+                        .IsUnique()
+                        .HasDatabaseName("ix_tenant_pages_tenant_id_slug");
+
+                    b.ToTable("tenant_pages", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Platform.TenantTheme", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Css")
+                        .IsRequired()
+                        .HasMaxLength(100000)
+                        .HasColumnType("character varying(100000)")
+                        .HasColumnName("css");
+
+                    b.Property<string>("FooterHtml")
+                        .IsRequired()
+                        .HasMaxLength(50000)
+                        .HasColumnType("character varying(50000)")
+                        .HasColumnName("footer_html");
+
+                    b.Property<string>("HeaderHtml")
+                        .IsRequired()
+                        .HasMaxLength(50000)
+                        .HasColumnType("character varying(50000)")
+                        .HasColumnName("header_html");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("TenantId")
+                        .HasName("pk_tenant_themes");
+
+                    b.ToTable("tenant_themes", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Vehicles.VehicleBrand", b =>
                 {
                     b.Property<Guid>("Id")
@@ -949,6 +1046,26 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_tenant_domains_tenants_tenant_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Platform.TenantPage", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Platform.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tenant_pages_tenants_tenant_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Platform.TenantTheme", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Platform.Tenant", null)
+                        .WithOne()
+                        .HasForeignKey("Ecommerce.Domain.Platform.TenantTheme", "TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tenant_themes_tenants_tenant_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Vehicles.VehicleModel", b =>

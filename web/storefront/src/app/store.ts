@@ -22,6 +22,16 @@ export interface PublicStore {
   logoUrl: string | null;
   /** Host principal (domínio próprio verificado ou subdomínio da plataforma); os outros redirecionam para ele. */
   primaryHost?: string | null;
+  /** Tema exclusivo da loja personalizada (RF40 CA1); só vem com a opção ligada. */
+  custom?: CustomTheme | null;
+}
+
+/** Já limpo no servidor ao salvar; o CSS vem dentro de `.custom-theme { ... }`. */
+export interface CustomTheme {
+  css: string;
+  headerHtml: string;
+  footerHtml: string;
+  pages: { slug: string; title: string }[];
 }
 
 /** Resultado de resolver a loja pelo Host (RF04): aberta, inexistente, suspensa ou API fora do ar. */

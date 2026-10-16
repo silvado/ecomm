@@ -28,6 +28,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<PlatformAdminRecoveryCode> PlatformAdminRecoveryCodes => Set<PlatformAdminRecoveryCode>();
     public DbSet<PlatformAdminSession> PlatformAdminSessions => Set<PlatformAdminSession>();
     public DbSet<PlatformAuditEntry> PlatformAuditLog => Set<PlatformAuditEntry>();
+    public DbSet<TenantTheme> TenantThemes => Set<TenantTheme>();
+    public DbSet<TenantPage> TenantPages => Set<TenantPage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -178,6 +180,28 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             b.HasIndex(s => s.TokenHash).IsUnique();
             b.HasIndex(s => s.AdminId);
             b.HasOne<PlatformAdmin>().WithMany().HasForeignKey(s => s.AdminId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Tema e páginas exclusivos da loja personalizada (RF40 CA1): editados só pelo superadmin, lidos pela vitrine.
+        modelBuilder.Entity<TenantTheme>(b =>
+        {
+            b.HasKey(t => t.TenantId);
+            b.Property(t => t.Css).HasMaxLength(TenantTheme.CssMaxLength).IsRequired();
+            b.Property(t => t.HeaderHtml).HasMaxLength(TenantTheme.HtmlMaxLength).IsRequired();
+            b.Property(t => t.FooterHtml).HasMaxLength(TenantTheme.HtmlMaxLength).IsRequired();
+            b.Property(t => t.UpdatedBy).HasMaxLength(254).IsRequired();
+            b.HasOne<Tenant>().WithOne().HasForeignKey<TenantTheme>(t => t.TenantId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<TenantPage>(b =>
+        {
+            b.HasKey(p => p.Id);
+            b.Property(p => p.Slug).HasMaxLength(TenantPage.SlugMaxLength).IsRequired();
+            b.HasIndex(p => new { p.TenantId, p.Slug }).IsUnique();
+            b.Property(p => p.Title).HasMaxLength(TenantPage.TitleMaxLength).IsRequired();
+            b.Property(p => p.Html).HasMaxLength(TenantTheme.HtmlMaxLength).IsRequired();
+            b.Property(p => p.UpdatedBy).HasMaxLength(254).IsRequired();
+            b.HasOne<Tenant>().WithMany().HasForeignKey(p => p.TenantId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // Somente inclusão: a migração tira UPDATE/DELETE/TRUNCATE do papel da aplicação. Sem FK: sobrevive à conta e à loja.

@@ -1,6 +1,7 @@
 using Ecommerce.Application.Storage;
 using Ecommerce.Application.Store;
 using Ecommerce.Application.Tenancy;
+using Ecommerce.Domain.Platform;
 using Ecommerce.Domain.Store;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Infrastructure.Platform;
@@ -68,10 +69,37 @@ public sealed class StoreProfileService(
         var tenant = await catalog.FindByIdAsync(tenantId, ct) ?? throw new InvalidOperationException("Tenant do escopo fora do catálogo.");
         var branding = await LoadBrandingAsync(tenantId, ct);
         var store = new PublicStore(tenant.Slug, tenant.TradeName, Theme(branding), Texts(branding),
-            branding.LogoId is { } logoId ? IStoreProfileService.LogoPath(logoId) : null, tenant.PrimaryHost);
+            branding.LogoId is { } logoId ? IStoreProfileService.LogoPath(logoId) : null, tenant.PrimaryHost,
+            await CustomThemeAsync(tenantId, ct));
         cache.Set(PublicKey(tenantId), store, PublicTtl);
         return store;
     }
+
+    public async Task<PublicPage?> GetPublicPageAsync(string slug, CancellationToken ct = default)
+    {
+        var tenantId = db.RequireTenantId();
+        if (!TenantPage.IsValidSlug(slug) || !await IsCustomStorefrontAsync(tenantId, ct)) return null;
+        return await platform.TenantPages.AsNoTracking()
+            .Where(p => p.TenantId == tenantId && p.Slug == slug && p.Published)
+            .Select(p => new PublicPage(p.Slug, p.Title, p.Html)).SingleOrDefaultAsync(ct);
+    }
+
+    /// <summary>RF40 CA1: o tema exclusivo só vale com a loja personalizada ligada (desligar devolve o visual padrão na hora).</summary>
+    private async Task<PublicCustomTheme?> CustomThemeAsync(Guid tenantId, CancellationToken ct)
+    {
+        if (!await IsCustomStorefrontAsync(tenantId, ct)) return null;
+        var theme = await platform.TenantThemes.AsNoTracking().SingleOrDefaultAsync(t => t.TenantId == tenantId, ct);
+        var pages = await platform.TenantPages.AsNoTracking().Where(p => p.TenantId == tenantId && p.Published)
+            .OrderBy(p => p.Position).ThenBy(p => p.Title).Select(p => new PublicPageLink(p.Slug, p.Title)).ToListAsync(ct);
+        if (theme is null && pages.Count == 0) return null;
+
+        // Aninhado (CSS nesting): cada regra só vale dentro das áreas marcadas com .custom-theme.
+        var css = theme is { Css.Length: > 0 } ? $".custom-theme {{\n{CustomContentSanitizer.EscapeMarkup(theme.Css)}\n}}" : string.Empty;
+        return new PublicCustomTheme(css, theme?.HeaderHtml ?? string.Empty, theme?.FooterHtml ?? string.Empty, pages);
+    }
+
+    private Task<bool> IsCustomStorefrontAsync(Guid tenantId, CancellationToken ct) =>
+        platform.Tenants.AsNoTracking().AnyAsync(t => t.Id == tenantId && t.CustomStorefrontSince != null, ct);
 
     public async Task<(StoreProfile? Profile, string? Error)> ReplaceLogoAsync(Stream content, CancellationToken ct = default)
     {

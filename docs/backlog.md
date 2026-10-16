@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1005** |
 
-Progresso: 511 h de 1005 h em tarefas concluídas (51%).
+Progresso: 535 h de 1005 h em tarefas concluídas (53%).
 
 Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -360,14 +360,14 @@ Onboarding, domínio próprio, assinatura, superadmin e LGPD.
 - [x] Endpoint ask interno — 4 h
 - [x] Tela de domínio com instruções — 8 h
 
-#### Loja personalizada (sob orçamento) — 31 h  `RF40` · **em andamento**
+#### Loja personalizada (sob orçamento) — 31 h  `RF40` · **concluído**
 
 **Critérios de aceite:** Superadmin liga/desliga a opção por tenant (com data); com ela ligada, a API recusa e o painel trava a edição da aparência mostrando "Loja personalizada"; tema e páginas exclusivos cadastrados pela plataforma como dados do tenant, sanitizados, sem script; peças, pedidos e demais configurações seguem com o lojista.
 
 - [x] Opção por tenant e trava da aparência na API — 4 h
 - [x] Selo "Loja personalizada" no painel — 3 h
-- [ ] Tema e páginas exclusivos na vitrine (dados do tenant, sanitizados) — 16 h
-- [ ] Tela de superadmin para o tema exclusivo — 8 h
+- [x] Tema e páginas exclusivos na vitrine (dados do tenant, sanitizados) — 16 h
+- [x] Tela de superadmin para o tema exclusivo — 8 h
 
 ### Assinatura e planos — 50 h
 

@@ -128,6 +128,7 @@ Na contratação, o lojista pode optar por um site próprio personalizado com a 
 - CA3: peças, preços, estoque, pedidos, frete, pagamento, NF-e, e-mail e usuários continuam com o lojista.
 - CA4: ligar e desligar a opção é da plataforma (superadmin/contrato), registrado com data; desligar devolve a edição ao Dono.
 - **Antecipado no E1 (trava e selo):** coluna `custom_storefront_since` no tenant; até o painel de superadmin (E4), liga/desliga pelo comando do migrador `loja-personalizada --slug <slug> --ligar|--desligar`. Aparência travada = nome fantasia, logo, cores e textos (sobre, trocas e devoluções, rodapé). O tema e as páginas exclusivos (CA1) seguem no E4.
+- **Tema e páginas exclusivos (E4, 16/10/2026):** guardados no banco `plataforma` (`tenant_themes`, `tenant_pages`), pois o superadmin só acessa esse banco (ADR-0007). Limpeza no servidor ao salvar com o HtmlSanitizer, por lista do permitido: HTML de conteúdo sem `style` inline, links só `https`/`mailto:`/`tel:`/relativos; CSS com as propriedades da lista padrão da biblioteca, só `@media`, `url()` só `https`/relativo, `<` escapado. A vitrine aplica só com a opção ligada; o CSS vai aninhado em `.custom-theme`. Liga/desliga e edição pela tela do painel da plataforma, com auditoria. **HIPÓTESES:** carrinho, checkout e Meus pedidos ficam fora do tema (só as cores da loja), para não arriscar a venda; até 20 páginas por loja; sem `@font-face`, `@keyframes` nem `@import` (fontes só do sistema); imagens do tema por endereço `https` (sem envio pela tela).
 
 ## 4. Pedidos e fiscal
 

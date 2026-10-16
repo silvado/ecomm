@@ -504,3 +504,17 @@ ul.choices {
   background: var(--warn-bg);
   border-bottom: 1px solid var(--border);
 }
+
+// Tema exclusivo (RF40): editor de código e prévia isolada.
+textarea.code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+iframe.theme-preview {
+  width: 100%;
+  height: 420px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}

@@ -31,9 +31,11 @@ public sealed class PlatformAdminTests(ApiFactory api) : IClassFixture<ApiFactor
     private sealed record PlanDto(string Code, Dictionary<string, int> Limits, List<string> Features);
 
     /// <summary>Superadmin pronto: senha trocada, MFA cadastrado, sessão aberta.</summary>
-    private sealed record Admin(string Email, byte[] Secret, string Token, string Cookie, List<string> RecoveryCodes);
+    internal sealed record Admin(string Email, byte[] Secret, string Token, string Cookie, List<string> RecoveryCodes);
 
-    private async Task<(string Email, string Password)> CreateAdminAsync()
+    private Task<(string Email, string Password)> CreateAdminAsync() => CreateAdminAsync(api);
+
+    private static async Task<(string Email, string Password)> CreateAdminAsync(ApiFactory api)
     {
         await using var scope = api.Services.CreateAsyncScope();
         var provisioning = ActivatorUtilities.CreateInstance<PlatformAdminProvisioning>(scope.ServiceProvider);
@@ -59,9 +61,12 @@ public sealed class PlatformAdminTests(ApiFactory api) : IClassFixture<ApiFactor
         Totp.Compute(secret, Totp.StepAt(DateTimeOffset.UtcNow) + stepsAhead);
 
     /// <summary>Primeiro acesso completo: senha provisória → senha nova → app autenticador → sessão.</summary>
-    private async Task<Admin> EnrolledAdminAsync(HttpClient client)
+    private Task<Admin> EnrolledAdminAsync(HttpClient client) => EnrolledAdminAsync(api, client);
+
+    /// <summary>Usado também pelos outros testes da plataforma.</summary>
+    internal static async Task<Admin> EnrolledAdminAsync(ApiFactory api, HttpClient client)
     {
-        var (email, temporary) = await CreateAdminAsync();
+        var (email, temporary) = await CreateAdminAsync(api);
         var setup = await StepAsync(await PostAsync(client, "/api/plataforma/auth/entrar", new { email, password = temporary }));
         setup = await StepAsync(await SendAsync(client, setup.AccessToken, HttpMethod.Put, "/api/plataforma/auth/senha",
             new { currentPassword = temporary, newPassword = NewPassword }));

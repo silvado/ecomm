@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { CartPage } from './cart-page';
+import { CustomPage, customPageResolver } from './custom-theme';
 import { LegalPage, legalTextsResolver } from './legal';
 import { MyOrdersPage } from './my-orders';
 import { OrderPage } from './order-page';
@@ -20,5 +21,7 @@ export const routes: Routes = [
   // RNF04: textos da loja ou o modelo padrão.
   { path: 'privacidade', component: LegalPage, data: { kind: 'privacy' }, resolve: { texts: legalTextsResolver } },
   { path: 'termos', component: LegalPage, data: { kind: 'terms' }, resolve: { texts: legalTextsResolver } },
+  // RF40 CA1: páginas exclusivas da loja personalizada.
+  { path: 'p/:slug', component: CustomPage, resolve: { page: customPageResolver } },
   { path: '**', redirectTo: '' },
 ];
