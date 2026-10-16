@@ -15,7 +15,8 @@ public sealed record PlatformTenantDetail(
     DateTimeOffset CreatedAt, DateTimeOffset? CustomStorefrontSince,
     IReadOnlyList<PlatformTenantDomain> Domains, IReadOnlyList<PlatformTenantUser> Users);
 
-public sealed record PlatformPlan(string Code, string Name, IReadOnlyDictionary<string, int> Limits, IReadOnlyList<string> Features, int Tenants);
+public sealed record PlatformPlan(string Code, string Name, IReadOnlyDictionary<string, int> Limits, IReadOnlyList<string> Features, int Tenants,
+    decimal MonthlyPrice);
 
 public sealed record PlatformAuditItem(
     DateTimeOffset At, string AdminEmail, string Action, Guid? TenantId, string? TenantSlug, string? Details, string? Ip);

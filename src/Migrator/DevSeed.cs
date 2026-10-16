@@ -30,8 +30,21 @@ internal static partial class DevSeed
         if (result.Tenant is { } created) LogSeeded(logger, created.Host, created.OwnerId);
         else if (result.Error is not (CreateTenantError.SlugTaken or CreateTenantError.CnpjTaken)) LogSkipped(logger, result.Error!.Value);
 
-        // Tabela de veículos de amostra (RF09), só se ainda não houver nenhuma.
         var platform = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
+
+        // Mensalidades fictícias (RF38), só se nenhum plano tiver preço: em produção a equipe define pela plataforma.
+        if (!await platform.Plans.AnyAsync(p => p.MonthlyPrice > 0))
+        {
+            var prices = new Dictionary<string, decimal>
+            {
+                [Domain.Platform.Plan.Essential] = 149.90m, [Domain.Platform.Plan.Professional] = 299.90m, [Domain.Platform.Plan.Complete] = 499.90m,
+            };
+            foreach (var plan in await platform.Plans.ToListAsync())
+                if (prices.TryGetValue(plan.Code, out var price)) plan.SetMonthlyPrice(price);
+            await platform.SaveChangesAsync();
+        }
+
+        // Tabela de veículos de amostra (RF09), só se ainda não houver nenhuma.
         var sample = Path.Combine(AppContext.BaseDirectory, ImportVehiclesCommand.SampleFile);
         if (!await platform.VehicleBrands.AnyAsync() && File.Exists(sample))
         {

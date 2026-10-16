@@ -60,6 +60,7 @@ public sealed class PostgresEnvironment : IAsyncDisposable
         ["Fiscal:UseFakeProvider"] = "true",
         ["Channels:UseFakeChannel"] = "true",
         ["Dns:UseFake"] = "true",
+        ["Billing:UseFakeGateway"] = "true",
         ["Platform:PublicIps:0"] = "203.0.113.50",
     };
 

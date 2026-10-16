@@ -25,6 +25,19 @@ public sealed class Plan
     public string Name { get; private set; } = string.Empty;
     public IReadOnlyCollection<PlanLimit> Limits => _limits;
 
+    /// <summary>
+    /// Mensalidade (RF38), editada pela equipe da plataforma; vale para as faturas geradas depois da mudança.
+    /// Zero = sem mensalidade (nenhuma fatura é gerada).
+    /// </summary>
+    public decimal MonthlyPrice { get; private set; }
+
+    public void SetMonthlyPrice(decimal price)
+    {
+        if (price < 0 || price > Billing.SubscriptionInvoice.MaxAmount || decimal.Round(price, 2) != price)
+            throw new ArgumentException("Preço inválido.", nameof(price));
+        MonthlyPrice = price;
+    }
+
     /// <summary>Nulo = sem limite.</summary>
     public int? Limit(string key) => _limits.SingleOrDefault(l => l.Key == key)?.Value;
 }

@@ -38,6 +38,9 @@ const FAILURE_CHECK_MS = 2 * 60 * 1000;
           <a routerLink="/pagamentos" routerLinkActive="active">Pagamentos</a>
           <a routerLink="/cofre" routerLinkActive="active">Cofre</a>
         }
+        @if (auth.can('planManage')) {
+          <a routerLink="/assinatura" routerLinkActive="active">Assinatura</a>
+        }
         @if (auth.can('usersManage')) {
           <a routerLink="/usuarios" routerLinkActive="active">Usuários</a>
         }

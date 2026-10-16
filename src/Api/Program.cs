@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Ecommerce.Api.Auth;
+using Ecommerce.Api.Billing;
 using Ecommerce.Api.Channels;
 using Ecommerce.Api.Customers;
 using Ecommerce.Api.Diagnostics;
@@ -200,6 +201,14 @@ if (app.Configuration.GetValue<bool>("Payments:UseFakeGateway"))
     // A simulação marca pedidos como pagos sem dinheiro algum: jamais em produção.
     if (app.Environment.IsProduction()) throw new InvalidOperationException("Payments:UseFakeGateway não pode ser usado em produção.");
     app.MapFakePaymentSimulation();
+}
+
+app.MapSubscriptionWebhook();
+if (app.Configuration.GetValue<bool>("Billing:UseFakeGateway"))
+{
+    // Cobrança simulada da assinatura (RF38): quita faturas sem dinheiro algum. Jamais em produção.
+    if (app.Environment.IsProduction()) throw new InvalidOperationException("Billing:UseFakeGateway não pode ser usado em produção.");
+    app.MapFakeSubscriptionPayment();
 }
 
 if (app.Configuration.GetValue<bool>("Channels:UseFakeChannel"))

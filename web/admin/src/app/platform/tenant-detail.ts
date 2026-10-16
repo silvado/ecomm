@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { problemTitle } from '../core/auth';
 import { RoleLabelPipe } from '../shared/role-label';
 import { PlatformApi, PlatformPlan, PlatformTenantDetail, STATUS_LABELS } from './platform.api';
+import { PlatformBillingSection } from './tenant-billing';
 
 /**
  * Uma loja vista pela plataforma: dados cadastrais, domínios e usuários (nada de peças, pedidos ou clientes — ADR-0007).
@@ -12,7 +13,7 @@ import { PlatformApi, PlatformPlan, PlatformTenantDetail, STATUS_LABELS } from '
  */
 @Component({
   selector: 'app-platform-tenant',
-  imports: [DatePipe, FormsModule, RouterLink, RoleLabelPipe],
+  imports: [DatePipe, FormsModule, RouterLink, RoleLabelPipe, PlatformBillingSection],
   template: `
     <main class="card wide">
       <p><a routerLink="/plataforma">← Lojas</a></p>
@@ -36,6 +37,9 @@ import { PlatformApi, PlatformPlan, PlatformTenantDetail, STATUS_LABELS } from '
           <button type="button" (click)="changePlan()" [disabled]="busy() || plan === t.planCode">Trocar plano</button>
         </div>
         <p class="muted">Vale na hora. Ao baixar de plano, o que já passou do novo limite continua; só não dá para acrescentar mais.</p>
+
+        <h2>Cobrança</h2>
+        <app-platform-billing [tenantId]="t.id" />
 
         <h2>Situação</h2>
         @if (t.status === 'Suspended') {

@@ -61,4 +61,8 @@ public static class PlatformAuditActions
     public const string ThemeUpdated = "loja.tema";
     public const string PageSaved = "loja.pagina";
     public const string PageRemoved = "loja.pagina.removida";
+    public const string SetupFeeAdded = "cobranca.implantacao";
+    public const string InvoicePaidManually = "cobranca.pagamento-manual";
+    public const string InvoiceCanceled = "cobranca.cancelada";
+    public const string PlanPriceChanged = "plano.preco";
 }

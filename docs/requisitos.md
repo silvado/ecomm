@@ -259,6 +259,7 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 - CA1: cobra mensalidade e taxa de implantação via gateway **da plataforma**.
 - CA2: inadimplência gradual: D+3 aviso; D+10 painel somente leitura; D+20 loja e sincronização suspensas; D+60 tenant marcado para encerramento. **HIPÓTESE** de prazos.
 - CA3: pagamento regulariza o acesso automaticamente.
+- **Implementado — cobrança (E4, 16/10/2026; ADR-0008):** decisões do usuário: **preço por plano** (editado pelo superadmin; zero = sem cobrança), mensalidade **a partir da publicação** (1ª vence no dia; as seguintes no mesmo dia do mês, até o dia 28) e loja **continua vendendo** na carência (Q13). Tela Assinatura (Dono) com faturas e **Pagar** pelo gateway da plataforma (só o simulado até Q05); webhook com idempotência e baixa pela fila após consultar a cobrança; superadmin lança a taxa de implantação, registra pagamento manual e cancela fatura (auditado). **HIPÓTESES:** fatura gerada 10 dias antes; sem cobrança retroativa; lojas já publicadas começam no dia da primeira rodada do job; cobrança no gateway criada no clique em Pagar e reaproveitada; pago a menor não quita; pago após cancelada conta como paga; uma taxa de implantação por loja. Régua (CA2/CA3) na próxima etapa.
 
 ### RF39 — Exportação de dados · E4
 - CA1: o Dono gera um pacote (ZIP) com peças, fotos, pedidos, clientes e notas em CSV/JSON + arquivos.
@@ -295,7 +296,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q02 | O piloto é empresa de desmontagem credenciada no DETRAN (Lei 12.977) ou só revende? Em qual UF? | Campos de rastreabilidade opcionais, com modo "desmontagem" que os torna obrigatórios. | RF10 |
 | Q03 | Provedor fiscal (Focus NFe, PlugNotas, eNotas, NFE.io…)? | Só `IFiscalProvider` + fake até a escolha; ADR quando definido. | RF19 |
 | Q04 | Regime tributário do piloto e tributação da peça usada (CSOSN/CST, CFOP) — validar com contador. | Configurável por tenant e por peça; sem padrão "inteligente". | RF19 |
-| Q05 | Gateway da plataforma para cobrar a assinatura (Asaas, Iugu, Mercado Pago assinaturas…)? | Interface `ISubscriptionBilling` + fake. | RF38 |
+| Q05 | Gateway da plataforma para cobrar a assinatura (Asaas, Iugu, Mercado Pago assinaturas…)? | Interface `ISubscriptionBilling` + fake (implementado em 16/10/2026, ADR-0008). Sem gateway, a equipe registra os pagamentos à mão. | RF38 |
 | Q06 | Pix entra no E1? | Sim, via gateway do tenant. | RF15 |
 | Q07 | Hub OLX? | Adapter fake. | RF23 |
 | Q08 | Mensagens do Instagram (RF31) exigem App Review da Meta para atender vários negócios (Advanced Access). Aceitamos o prazo incerto? | RF31 inicia só com perguntas do ML; Instagram após aprovação. | RF31 |
@@ -303,7 +304,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q10 | Domínio raiz: o provedor DNS do cliente suporta ALIAS/ANAME/CNAME flattening? | Recomendar redirecionar raiz → `www`; registro A só como alternativa, com IP estável (IP flutuante). | RF03 |
 | Q11 | Nome/domínio da plataforma (`plataforma.com.br` é provisório). | Placeholder configurável. | RF02 |
 | Q12 | Provedor de WhatsApp para alertas (API oficial Cloud API ou parceiro)? | Só e-mail na primeira versão. | RF33 |
-| Q13 | Prazos de inadimplência e se a loja deve continuar vendendo durante a carência. | Ver RF38 CA2. | RF38 |
+| Q13 | Prazos de inadimplência e se a loja deve continuar vendendo durante a carência. | Decidido em 16/10/2026: a loja **continua vendendo** até a suspensão (D+20). Prazos: ver RF38 CA2 (ainda HIPÓTESE). | RF38 |
 | Q14 | Uma peça pode ter mais de 1 unidade (peças novas) ou usadas são sempre quantidade 1? | Quantidade genérica (≥ 0) para todas. | RF08, RF12 |
 | Q15 | Variações (lado esquerdo/direito, cor) como produtos distintos? | Sem variações: cada variação é uma peça. | RF08 |
 | Q16 | Transportadoras além do Melhor Envio; Mercado Envios para vendas do ML é gerido pelo ML? | Melhor Envio no site; envio das vendas do ML fica com o ML. | RF14 |

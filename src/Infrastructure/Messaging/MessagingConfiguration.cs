@@ -50,6 +50,7 @@ public static class MessagingConfiguration
         opts.CodeGeneration.AlwaysUseServiceLocationFor<ChannelAccountDirectory>(); // idem (mapa de contas de canal)
         opts.CodeGeneration.AlwaysUseServiceLocationFor<ChannelProcessors>(); // processadores do canal, no escopo da loja
         opts.CodeGeneration.AlwaysUseServiceLocationFor<Platform.PlanDirectory>(); // plano da loja (banco plataforma)
+        opts.CodeGeneration.AlwaysUseServiceLocationFor<Billing.SubscriptionPayments>(); // faturas da assinatura (banco plataforma)
         opts.Policies.AddMiddleware(typeof(TenantMessageMiddleware));
         opts.Policies.UseDurableLocalQueues();
         opts.Policies.AutoApplyTransactions();
@@ -65,6 +66,7 @@ public static class MessagingConfiguration
             .Or<EmailDeliveryException>()
             .Or<Application.Fiscal.FiscalProviderException>()
             .Or<Application.Channels.ChannelConnectorException>()
+            .Or<Application.Billing.SubscriptionBillingException>()
             .Or<NpgsqlException>(e => e.IsTransient, "PostgreSQL transitório")
             .ScheduleRetry(retryDelays ?? DefaultRetryDelays).WithBoundedJitter(0.2)
             .Then.CustomAction(MessageFailures.RecordAndDeadLetterAsync, "registrar a falha para a loja");

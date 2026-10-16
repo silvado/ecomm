@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { SubscriptionInvoice } from '../shared/invoice';
 
 export type TenantStatus = 'Onboarding' | 'Active' | 'ReadOnly' | 'Suspended' | 'Closed';
 
@@ -53,6 +54,17 @@ export interface PlatformPlan {
   limits: Record<string, number>;
   features: string[];
   tenants: number;
+  /** Mensalidade (RF38); zero = sem cobrança. */
+  monthlyPrice: number;
+}
+
+export interface PlatformBilling {
+  tenantId: string;
+  planName: string;
+  monthlyPrice: number;
+  startedOn: string | null;
+  dueDay: number | null;
+  invoices: SubscriptionInvoice[];
 }
 
 export interface AuditItem {
@@ -98,6 +110,10 @@ export const AUDIT_LABELS: Record<string, string> = {
   'loja.tema': 'Salvou o tema exclusivo',
   'loja.pagina': 'Salvou uma página exclusiva',
   'loja.pagina.removida': 'Removeu uma página exclusiva',
+  'cobranca.implantacao': 'Lançou a taxa de implantação',
+  'cobranca.pagamento-manual': 'Registrou um pagamento',
+  'cobranca.cancelada': 'Cancelou uma fatura',
+  'plano.preco': 'Mudou a mensalidade de um plano',
 };
 
 /** Tema exclusivo da loja personalizada (RF40), já limpo pelo servidor. */
@@ -231,6 +247,26 @@ export class PlatformApi {
 
   plans(): Promise<PlatformPlan[]> {
     return firstValueFrom(this.http.get<PlatformPlan[]>(`${this.base}/planos`));
+  }
+
+  setPlanPrice(code: string, valor: number): Promise<PlatformPlan[]> {
+    return firstValueFrom(this.http.put<PlatformPlan[]>(`${this.base}/planos/${code}/preco`, { valor }));
+  }
+
+  billing(id: string): Promise<PlatformBilling> {
+    return firstValueFrom(this.http.get<PlatformBilling>(`${this.base}/lojas/${id}/cobranca`));
+  }
+
+  addSetupFee(id: string, valor: number, vencimento: string): Promise<PlatformBilling> {
+    return firstValueFrom(this.http.post<PlatformBilling>(`${this.base}/lojas/${id}/cobranca/implantacao`, { valor, vencimento }));
+  }
+
+  recordPayment(id: string, invoiceId: string, observacao: string): Promise<PlatformBilling> {
+    return firstValueFrom(this.http.post<PlatformBilling>(`${this.base}/lojas/${id}/cobranca/faturas/${invoiceId}/pagamento-manual`, { observacao }));
+  }
+
+  cancelInvoice(id: string, invoiceId: string, observacao: string): Promise<PlatformBilling> {
+    return firstValueFrom(this.http.post<PlatformBilling>(`${this.base}/lojas/${id}/cobranca/faturas/${invoiceId}/cancelar`, { observacao }));
   }
 
   audit(filter: { loja?: string; acao?: string; email?: string; pagina?: number }): Promise<AuditPage> {

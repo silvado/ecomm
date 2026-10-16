@@ -1,3 +1,4 @@
+using Ecommerce.Domain.Billing;
 using Ecommerce.Domain.Identity;
 using Ecommerce.Domain.Platform;
 using Ecommerce.Domain.Vehicles;
@@ -30,6 +31,9 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<PlatformAuditEntry> PlatformAuditLog => Set<PlatformAuditEntry>();
     public DbSet<TenantTheme> TenantThemes => Set<TenantTheme>();
     public DbSet<TenantPage> TenantPages => Set<TenantPage>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<SubscriptionInvoice> SubscriptionInvoices => Set<SubscriptionInvoice>();
+    public DbSet<SubscriptionEvent> SubscriptionEvents => Set<SubscriptionEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -74,6 +78,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             b.HasKey(p => p.Id);
             b.Property(p => p.Code).HasMaxLength(30).IsRequired();
             b.Property(p => p.Name).HasMaxLength(60).IsRequired();
+            b.Property(p => p.MonthlyPrice).HasPrecision(12, 2);
             b.HasMany(p => p.Limits).WithOne().HasForeignKey(l => l.PlanCode).HasPrincipalKey(p => p.Code).OnDelete(DeleteBehavior.Cascade);
             b.Navigation(p => p.Limits).UsePropertyAccessMode(PropertyAccessMode.Field);
             b.HasData(
@@ -202,6 +207,45 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             b.Property(p => p.Html).HasMaxLength(TenantTheme.HtmlMaxLength).IsRequired();
             b.Property(p => p.UpdatedBy).HasMaxLength(254).IsRequired();
             b.HasOne<Tenant>().WithMany().HasForeignKey(p => p.TenantId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Assinatura das lojas (RF38): começa na publicação; faturas e avisos do gateway da plataforma.
+        modelBuilder.Entity<Subscription>(b =>
+        {
+            b.HasKey(s => s.TenantId);
+            b.HasOne<Tenant>().WithOne().HasForeignKey<Subscription>(s => s.TenantId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SubscriptionInvoice>(b =>
+        {
+            b.HasKey(i => i.Id);
+            b.Property(i => i.Id).ValueGeneratedNever();
+            b.Property(i => i.Kind).HasConversion<string>().HasMaxLength(20);
+            b.Property(i => i.Status).HasConversion<string>().HasMaxLength(20);
+            b.Property(i => i.PaidVia).HasConversion<string>().HasMaxLength(20);
+            b.Property(i => i.Description).HasMaxLength(SubscriptionInvoice.DescriptionMaxLength).IsRequired();
+            b.Property(i => i.Amount).HasPrecision(12, 2);
+            b.Property(i => i.PaidAmount).HasPrecision(12, 2);
+            b.Property(i => i.ChargeId).HasMaxLength(SubscriptionInvoice.ChargeIdMaxLength);
+            b.Property(i => i.PaymentUrl).HasMaxLength(SubscriptionInvoice.PaymentUrlMaxLength);
+            b.Property(i => i.Note).HasMaxLength(SubscriptionInvoice.NoteMaxLength);
+            // Uma mensalidade por competência: o job pode rodar de novo (ou em paralelo) sem duplicar.
+            b.HasIndex(i => new { i.TenantId, i.Period }).IsUnique().HasFilter("kind = 'Monthly'");
+            b.HasIndex(i => new { i.TenantId, i.DueDate });
+            b.HasIndex(i => i.ChargeId).IsUnique();
+            b.HasOne<Tenant>().WithMany().HasForeignKey(i => i.TenantId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SubscriptionEvent>(b =>
+        {
+            b.HasKey(e => e.Id);
+            b.Property(e => e.Id).ValueGeneratedNever();
+            b.Property(e => e.Gateway).HasMaxLength(SubscriptionEvent.GatewayMaxLength).IsRequired();
+            b.Property(e => e.IdempotencyKey).HasMaxLength(SubscriptionEvent.KeyMaxLength).IsRequired();
+            b.Property(e => e.ChargeId).HasMaxLength(SubscriptionInvoice.ChargeIdMaxLength).IsRequired();
+            b.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+            b.HasIndex(e => new { e.Gateway, e.IdempotencyKey }).IsUnique();
+            b.HasIndex(e => e.ReceivedAt).HasFilter("status = 'Received'");
         });
 
         // Somente inclusão: a migração tira UPDATE/DELETE/TRUNCATE do papel da aplicação. Sem FK: sobrevive à conta e à loja.

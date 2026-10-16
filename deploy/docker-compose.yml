@@ -72,6 +72,8 @@ services:
       Channels__UseFakeChannel: "true"
       # DNS simulado para o domínio próprio (POST /api/dev/dns) e IP público de exemplo para o registro A. Nunca em produção.
       Dns__UseFake: "true"
+      # Cobrança simulada da assinatura (RF38; página /api/dev/assinatura-simulada) até o gateway da plataforma (Q05). Nunca em produção.
+      Billing__UseFakeGateway: "true"
       Platform__PublicIps__0: 127.0.0.1
       Platform__Domain: ${PLATFORM_DOMAIN:-localhost}   # URL de notificação mostrada no painel (<slug>.<domínio>)
       Shipping__MelhorEnvio__BaseUrl: https://sandbox.melhorenvio.com.br
@@ -93,6 +95,8 @@ services:
       Payments__UseFakeGateway: "true"
       Fiscal__UseFakeProvider: "true"
       Channels__UseFakeChannel: "true"
+      # Avisos da cobrança da assinatura também são processados aqui: o mesmo gateway simulado da API.
+      Billing__UseFakeGateway: "true"
       # Dev: primeira reconciliação de canais 30 s depois de subir (em produção, 5 min; depois de hora em hora).
       Channels__Reconciliation__FirstRunDelay: "00:00:30"
       ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD}

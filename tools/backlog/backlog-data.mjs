@@ -348,7 +348,7 @@ export const epics = [
             title: 'Cobrança recorrente e inadimplência',
             rf: 'RF38',
             ac: 'Cobra mensalidade e implantação pelo gateway da plataforma; bloqueio gradual por inadimplência; pagamento reativa automaticamente.',
-            t: [['ISubscriptionBilling e adapter', 20], ['Régua de inadimplência', 10]],
+            t: [['ISubscriptionBilling e adapter', 20, 'done'], ['Régua de inadimplência', 10]],
           },
         ],
       },
