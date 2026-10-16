@@ -74,6 +74,9 @@ services:
       Dns__UseFake: "true"
       # Cobrança simulada da assinatura (RF38; página /api/dev/assinatura-simulada) até o gateway da plataforma (Q05). Nunca em produção.
       Billing__UseFakeGateway: "true"
+      # IA simulada (ADR-0003). Com chave: Ai__Provider=anthropic e Ai__Anthropic__ApiKey no .env. Nunca simulada em produção.
+      Ai__Provider: ${AI_PROVIDER:-simulado}
+      Ai__Anthropic__ApiKey: ${ANTHROPIC_API_KEY:-}
       Platform__PublicIps__0: 127.0.0.1
       Platform__Domain: ${PLATFORM_DOMAIN:-localhost}   # URL de notificação mostrada no painel (<slug>.<domínio>)
       Shipping__MelhorEnvio__BaseUrl: https://sandbox.melhorenvio.com.br
@@ -97,6 +100,9 @@ services:
       Channels__UseFakeChannel: "true"
       # Avisos da cobrança da assinatura também são processados aqui: o mesmo gateway simulado da API.
       Billing__UseFakeGateway: "true"
+      # Rotinas com IA (resumo diário, diagnóstico) rodam aqui: mesmo provedor da API.
+      Ai__Provider: ${AI_PROVIDER:-simulado}
+      Ai__Anthropic__ApiKey: ${ANTHROPIC_API_KEY:-}
       # Dev: primeira reconciliação de canais 30 s depois de subir (em produção, 5 min; depois de hora em hora).
       Channels__Reconciliation__FirstRunDelay: "00:00:30"
       ConnectionStrings__Platform: Host=postgres;Database=plataforma;Username=app_user;Password=${APP_USER_PASSWORD}
