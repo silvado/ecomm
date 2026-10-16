@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 16/10/2026 (primeiros passos e publicação da loja).
+> Última atualização: 16/10/2026 (assinatura da loja: mensalidade e faturas).
 
 ## Sumário
 
@@ -22,6 +22,7 @@
    - 4.7.1 [Cofre e certificado digital](#471-cofre-e-certificado-digital)
    - 4.8 [Usuários](#48-usuários)
    - 4.9 [Privacidade (LGPD) e exportação](#49-privacidade-lgpd-e-exportação)
+   - 4.10 [Assinatura](#410-assinatura)
 5. [Loja virtual (o que o comprador vê)](#5-loja-virtual-o-que-o-comprador-vê)
 6. [Painel da plataforma (superadmin)](#6-painel-da-plataforma-superadmin)
 7. [Ainda não disponível](#7-ainda-não-disponível)
@@ -71,6 +72,7 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Usuários | ✔ | — |
 | Privacidade: apagar dados de comprador, registro de acesso e exportação | ✔ | — |
 | Privacidade e termos da loja (Dados da loja) | ✔ | — |
+| Assinatura (mensalidade e faturas da plataforma) | ✔ | — |
 
 O menu mostra só os módulos que o perfil pode usar.
 
@@ -527,6 +529,19 @@ O que acontece:
 
 **Quem acessou dados pessoais** — lista, que não pode ser alterada nem apagada, de cada vez que alguém da loja abriu um pedido, baixou o XML ou o DANFE de uma nota, gerou ou baixou uma exportação ou apagou dados de um comprador: quando, quem, o pedido e o IP. Filtre por ação.
 
+### 4.10 Assinatura
+
+**Acesso:** menu **Assinatura** (só Dono).
+
+Mostra o plano da loja, o valor da mensalidade e as faturas da plataforma (mensalidades e taxa de implantação), com vencimento, valor e situação: **Em aberto**, **Vencida**, **Paga** ou **Cancelada**.
+
+- **Quando começa:** a mensalidade começa no dia em que a loja é publicada (**Primeiros passos**, 4.2.1). A primeira vence nesse dia; as seguintes, todo mês no mesmo dia (quem publica nos dias 29, 30 ou 31 passa a vencer no dia 28).
+- **Fatura do mês:** aparece cerca de 10 dias antes do vencimento, com o valor do plano naquele momento.
+- **Taxa de implantação:** quando houver, é lançada pela equipe da plataforma e aparece aqui.
+- **Pagar:** clique em **Pagar** na fatura. Você vai para a página de pagamento e, ao terminar, volta para esta tela. A fatura aparece como **Paga** assim que o pagamento é confirmado (alguns instantes). Clicar em **Pagar** de novo abre a mesma cobrança, nunca uma segunda.
+- **Pagou por Pix ou transferência direto para a plataforma?** A equipe registra o pagamento e a fatura aparece como **Paga (registrada pela equipe)**.
+- Se a tela avisar que o pagamento pelo painel não está disponível, fale com a equipe da plataforma.
+
 ## 5. Loja virtual (o que o comprador vê)
 
 **Loja em breve:** enquanto o Dono não publica a loja (4.2.1), o endereço mostra só "Loja em breve". Loja suspensa mostra "Loja indisponível no momento".
@@ -598,6 +613,11 @@ Cinco erros seguidos (senha ou código) bloqueiam a conta por 15 minutos. Um mes
   - **Suspender loja** (pede confirmação): a loja virtual sai do ar e a sincronização com os canais para. **Reativar loja** desfaz. Loja em implantação não pode ser suspensa: a loja virtual dela já está fechada, e reativar a publicaria sem os passos obrigatórios.
   - **Loja personalizada** (RF40): **Ligar** depois de fechado o orçamento; o Dono deixa de mudar logo, nome, cores e textos. **Desligar** devolve a edição ao Dono e a loja volta ao visual padrão na hora.
   - **Tema e páginas exclusivos**: abre o editor do visual sob medida (veja 6.3.1).
+  - **Cobrança**: plano, mensalidade, desde quando a loja é cobrada e o dia do vencimento, e as faturas da loja.
+    - **Taxa de implantação**: informe o valor e o vencimento e clique em **Lançar** (uma por loja; para trocar, cancele a atual).
+    - **Registrar pagamento**: para o que a loja pagou fora do gateway (Pix, transferência). Informe como foi pago.
+    - **Cancelar**: informe o motivo (por exemplo, cortesia). Fatura paga ou cancelada não muda mais.
+    - As mensalidades são geradas sozinhas, cerca de 10 dias antes do vencimento, a partir da publicação da loja. Mensalidade de valor zero não gera fatura, e o sistema não cobra meses passados que ficaram sem fatura.
 
 #### 6.3.1 Tema e páginas exclusivos
 
@@ -615,11 +635,13 @@ Onde a equipe monta o site sob medida da loja personalizada. Pode ser preparado 
 
 ### 6.4 Planos
 
-Mostra os limites (usuários, peças ativas, cadastros por IA no mês) e os recursos de cada plano, e quantas lojas usam cada um. Só consulta: mudar limites exige atualização do sistema.
+Mostra os limites (usuários, peças ativas, cadastros por IA no mês) e os recursos de cada plano, e quantas lojas usam cada um. Mudar limites e recursos exige atualização do sistema.
+
+**Mensalidade**: digite o valor em reais e clique em **Salvar** na linha do plano. Vale para as faturas geradas depois (as já geradas não mudam). Zero = o plano não é cobrado.
 
 ### 6.5 Auditoria
 
-Tudo o que os superadmins fazem fica registrado e não pode ser alterado nem apagado: entradas (e tentativas recusadas), cadastro do app, uso de código de recuperação, troca de senha, **cada abertura de uma loja** e cada ação (criar, plano, suspender, reativar, loja personalizada, tema e páginas exclusivos). Filtre por ação ou e-mail; na tela de uma loja, **Ver o que a plataforma fez nesta loja** mostra só os registros dela.
+Tudo o que os superadmins fazem fica registrado e não pode ser alterado nem apagado: entradas (e tentativas recusadas), cadastro do app, uso de código de recuperação, troca de senha, **cada abertura de uma loja** e cada ação (criar, plano, suspender, reativar, loja personalizada, tema e páginas exclusivos, mensalidade dos planos, taxa de implantação, pagamento registrado e fatura cancelada). Filtre por ação ou e-mail; na tela de uma loja, **Ver o que a plataforma fez nesta loja** mostra só os registros dela.
 
 ### 6.6 Comandos do servidor
 
@@ -640,6 +662,7 @@ Itens previstos que **ainda não estão no sistema**:
 - NF-e de devolução e estorno automático do reembolso.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
+- Assinatura: pagamento real pelo painel (o gateway da plataforma ainda será escolhido; em teste, a página de pagamento é simulada), aviso por e-mail da fatura e bloqueio gradual por atraso (aviso, painel só leitura, suspensão).
 - Primeiros passos: ver a loja virtual antes de publicar e "despublicar" a loja pelo painel.
 - LGPD: o comprador pedir a exclusão sozinho pela loja virtual (hoje pede à loja, que apaga em **Privacidade**); observações digitadas à mão nos pedidos não são apagadas na anonimização.
 - Painel da plataforma: criar outros superadmins pela tela (hoje, só a equipe técnica, pelo servidor); trocar o app autenticador ou gerar novos códigos de recuperação (hoje não há como — sem o celular e sem códigos, a equipe técnica cria outra conta); QR code no cadastro do app; ver peças e pedidos de uma loja; enviar imagens do tema exclusivo pela tela (hoje, só por endereço `https`); importar a tabela de veículos pela tela.
@@ -666,3 +689,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 15/10/2026 | LGPD (RNF04/RF39): privacidade e termos em 4.6 e na loja virtual (5); nova seção 4.9 Privacidade (apagar dados de comprador, exportação, registro de acesso); perfis. |
 | 16/10/2026 | Tema e páginas exclusivos da loja personalizada (RF40): nova seção 6.3.1; loja virtual (5); auditoria em 6.5. |
 | 16/10/2026 | Primeiros passos (RF05): nova seção 4.2.1, cartão no Início, "Loja em breve" na loja virtual (5), loja nova em implantação e suspensão em 6.3; perfis. |
+| 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |

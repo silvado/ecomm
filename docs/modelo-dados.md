@@ -22,9 +22,8 @@ erDiagram
     USER_ACCOUNT ||--o{ TENANT_MEMBERSHIP : "participa"
     PLAN ||--o{ PLAN_LIMIT : "define"
     PLAN ||--o{ PLAN_FEATURE : "habilita"
-    TENANT ||--o{ SUBSCRIPTION : "assina"
-    PLAN ||--o{ SUBSCRIPTION : ""
-    SUBSCRIPTION ||--o{ PLATFORM_INVOICE : "gera"
+    TENANT ||--o| SUBSCRIPTION : "assina"
+    TENANT ||--o{ SUBSCRIPTION_INVOICE : "paga"
     VEHICLE_BRAND ||--o{ VEHICLE_MODEL : ""
     VEHICLE_MODEL ||--o{ VEHICLE_VERSION : ""
 
@@ -73,8 +72,7 @@ erDiagram
     PLAN {
         uuid id PK
         string code UK "essencial|profissional|completo"
-        numeric monthly_price
-        numeric setup_fee
+        numeric monthly_price "RF38: editada pelo superadmin; 0 = sem cobrança"
     }
     PLAN_LIMIT {
         string plan_code PK "FK plan.code"
@@ -86,20 +84,26 @@ erDiagram
         string feature PK "channel:mercado-livre|channel:meta|channel:olx|custom_domain|ai:part_from_photos|ai:buyer_answers|ai:price_suggestion|ai:daily_summary"
     }
     SUBSCRIPTION {
+        uuid tenant_id PK "FK tenant; criada na publicação"
+        date started_on "vencimento da 1ª mensalidade"
+        int due_day "1–28: vencimento das seguintes"
+        timestamptz created_at
+    }
+    SUBSCRIPTION_INVOICE {
         uuid id PK
         uuid tenant_id FK
-        uuid plan_id FK
-        string status "trialing|active|past_due|canceled"
-        date current_period_end
-        string external_id "id no gateway da plataforma"
-    }
-    PLATFORM_INVOICE {
-        uuid id PK
-        uuid subscription_id FK
-        string kind "monthly|setup|ai_overage"
+        string kind "Setup|Monthly (ai_overage com o RF36)"
+        date period "competência; UK (tenant_id, period) nas mensalidades"
+        string description
         numeric amount
         date due_date
-        string status
+        string status "Open|Paid|Canceled"
+        string charge_id UK "cobrança no gateway da plataforma"
+        string payment_url
+        timestamptz paid_at
+        string paid_via "Gateway|Manual"
+        numeric paid_amount
+        string note "observação da equipe"
     }
     VEHICLE_BRAND {
         uuid id PK
@@ -124,6 +128,7 @@ Notas:
 - Identidade fica no catálogo porque o login acontece **antes** de sabermos o tenant; um e-mail pode participar de mais de um tenant.
 - Superadmin (RF07 CA3, ADR-0007), fora do diagrama: `platform_admins` (conta separada das de loja; `totp_secret_cipher` cifrado com a chave-mestra do cofre e `totp_key_version`, `totp_last_step` contra reuso do código, `mfa_enabled_at`, bloqueio como em `user_account`), `platform_admin_recovery_codes` (só hash SHA-256, `used_at`), `platform_admin_sessions` (hash do token do cookie, validade absoluta de 8 h, `revoked_at`) e `platform_audit_log` (somente inclusão: a migração revoga `UPDATE`/`DELETE`/`TRUNCATE` do `app_user`; sem FK, guarda `admin_email`, `action`, `tenant_id`, `details` redigido, `ip`, `correlation_id`).
 - Loja personalizada (RF40 CA1), fora do diagrama: `tenant_themes` (uma por loja, PK `tenant_id` com FK para `tenants`; `css` até 100.000, `header_html` e `footer_html` até 50.000 caracteres, já limpos; `updated_at`, `updated_by` = e-mail do superadmin) e `tenant_pages` (`id`, `tenant_id`, `slug` único por loja, `title`, `html` limpo, `published`, `position`, `updated_at`, `updated_by`). Ficam no banco `plataforma` porque só o superadmin edita (ADR-0007); a vitrine lê pelo tenant do Host, sempre filtrando por `tenant_id`.
+- Assinatura (RF38, implementado em 16/10/2026): `subscriptions` nasce quando o Dono publica a loja (lojas já publicadas ganham a sua na primeira rodada do job, com início no dia); o job de hora em hora gera as mensalidades de `subscription_invoices` 10 dias antes do vencimento (nunca retroativas). `subscription_events` (fora do diagrama): avisos do gateway da plataforma (`gateway`, `idempotency_key` — UK com o gateway —, `charge_id`, `status` Received|Processed|Ignored, `received_at`, `processed_at`), processados pela fila (ADR-0008).
 - Implementado no RF07 (E1): `user_account` com `failed_login_count`, `locked_until` e `must_change_password` (superadmin não é `user_account`: tem tabela própria — ADR-0007); `tenant.plan_code` → `plan.code` (plano vigente até existir `subscription`); `plan_limit` chaveado por `(plan_code, key)`; `refresh_token` (só o hash SHA-256, `family_id` para revogar a sessão inteira, `tenant_id` da loja escolhida, `used_at`/`revoked_at`). Tabelas com `tenant_id` neste banco não têm RLS: todo acesso filtra o tenant explicitamente e tem teste de isolamento.
 
 ## Banco `lojas` — todas as tabelas abaixo têm `tenant_id` + RLS
