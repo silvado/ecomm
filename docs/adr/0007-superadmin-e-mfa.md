@@ -41,7 +41,7 @@ Lojas, planos, domínios, usuários e vínculos, e status ficam no banco `plataf
 
 Tabela `platform_audit_log` no banco `plataforma`, somente inclusão: a migração tira `UPDATE`, `DELETE` e `TRUNCATE` do papel da aplicação. Registra: superadmin, quando, ação, loja alvo, detalhes já redigidos, IP e `correlation_id`. Gravam ali:
 - login, falha de MFA, uso de código de recuperação e cadastro de MFA;
-- toda ação de superadmin (criar loja, trocar plano, suspender, reativar, loja personalizada);
+- toda ação de superadmin (criar loja, trocar plano, suspender, reativar, loja personalizada, tema e páginas exclusivos);
 - toda leitura do detalhe de uma loja.
 
 ## Consequências
@@ -49,3 +49,9 @@ Tabela `platform_audit_log` no banco `plataforma`, somente inclusão: a migraç�
 - O papel `app_platform` previsto no ADR-0001 continua adiado (**HIPÓTESE**): a API segue com `app_user` no banco `plataforma`, e a separação é feita pela audiência do token e pela auditoria. Rever quando houver leitura de dados de loja pelo superadmin.
 - O painel de plataforma fica no mesmo app `admin`, em `/plataforma`, com login e layout próprios.
 - A troca dos limites de cada plano continua por migração; a tela de planos é só leitura.
+
+## Complemento (16/10/2026): tema exclusivo da loja personalizada (RF40 CA1)
+
+Decisão do usuário: o tema e as páginas exclusivos ficam no **banco `plataforma`** (`tenant_themes`, `tenant_pages`), e não no banco das lojas. Assim o superadmin continua sem acesso ao banco das lojas (item 3 acima) e não abre exceção ao ADR-0001. A vitrine lê o tema junto com a identidade da loja (cache de 30 s, limpo ao salvar), sempre pelo `tenant_id` resolvido pelo Host, e só quando a loja personalizada está ligada.
+
+O HTML e o CSS são limpos **no servidor, ao salvar e na prévia**, com o [HtmlSanitizer](https://github.com/mganss/HtmlSanitizer) (Ganss.Xss, MIT, baseado no AngleSharp; dependência aprovada pelo usuário), por lista do que é permitido. Defesas em camadas: o `<` é escapado no CSS para nunca fechar o `<style>`; a vitrine descarta CSS com `<` e passa o HTML pelo sanitizador do Angular (`[innerHTML]`); a prévia do painel usa `iframe` com `sandbox` vazio. Testes cobrem vetores conhecidos de XSS (script, eventos, `javascript:` com entidades e maiúsculas, SVG/MathML, `data:`, `<base>`, `<meta refresh>`, `expression()`, `behavior`, `@import`, `</style>` no CSS).
