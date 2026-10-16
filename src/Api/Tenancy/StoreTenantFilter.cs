@@ -19,6 +19,13 @@ public sealed class StoreTenantFilter(ITenantCatalog catalog, TenantScope scope)
         if (tenant is null)
             return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Loja não encontrada.");
 
+        // RF05: loja em implantação ainda não abriu — a vitrine mostra "em breve" em vez de "indisponível".
+        if (tenant.Status is Domain.Platform.TenantStatus.Onboarding)
+            return TypedResults.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Loja em breve.",
+                type: StoreProblemTypes.StoreComingSoon);
+
         if (!tenant.IsStorefrontAvailable)
             return TypedResults.Problem(
                 statusCode: StatusCodes.Status503ServiceUnavailable,
@@ -36,6 +43,9 @@ public static class StoreProblemTypes
 {
     /// <summary>Usado pelo storefront para exibir a página "loja indisponível" (RF04 CA3).</summary>
     public const string StoreUnavailable = "https://plataforma/problemas/loja-indisponivel";
+
+    /// <summary>Loja em implantação (RF05): o storefront mostra "em breve".</summary>
+    public const string StoreComingSoon = "https://plataforma/problemas/loja-em-breve";
 }
 
 public static class StoreTenantHttpContextExtensions

@@ -12,15 +12,13 @@ namespace Ecommerce.Integration.Tests.Api;
 /// <summary>RF01/RF02 — criação de loja com subdomínio e Dono.</summary>
 public sealed class StoreProvisioningTests(ApiFactory api) : IClassFixture<ApiFactory>
 {
-    private sealed record StoreDto(string Slug, string Name);
-
     private static string NewSlug() => "loja" + Guid.NewGuid().ToString("N")[..10];
 
-    private async Task<CreateTenantResult> CreateAsync(string slug, string cnpj, string ownerEmail, string? ownerPassword = null)
+    private async Task<CreateTenantResult> CreateAsync(string slug, string cnpj, string ownerEmail, string? ownerPassword = null, bool published = false)
     {
         await using var scope = api.Services.CreateAsyncScope();
         return await scope.ServiceProvider.GetRequiredService<ITenantProvisioning>().CreateAsync(
-            new CreateTenantRequest(slug, cnpj, "Peças Teste Ltda", "Peças Teste", ownerEmail, ownerPassword));
+            new CreateTenantRequest(slug, cnpj, "Peças Teste Ltda", "Peças Teste", ownerEmail, ownerPassword, published));
     }
 
     private static string NewEmail() => $"dono{Guid.NewGuid():N}@pecas.test";
@@ -37,8 +35,8 @@ public sealed class StoreProvisioningTests(ApiFactory api) : IClassFixture<ApiFa
         Assert.Equal($"{slug}.plataforma.test", created.Host);
         Assert.True(PasswordPolicy.IsValid(created.TemporaryPassword));
 
-        var store = await api.ClientFor(created.Host).GetFromJsonAsync<StoreDto>("/api/loja/identidade");
-        Assert.Equal(new StoreDto(slug, "Peças Teste"), store);
+        // RF05: nasce em implantação — o subdomínio já responde (com "em breve") e já pode ter certificado.
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await api.ClientFor(created.Host).GetAsync("/api/loja/identidade")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await api.ClientFor("api:8080", "10.0.0.2").GetAsync($"/internal/tls/ask?domain={created.Host}")).StatusCode);
 
         var login = await LoginAsync(api.PanelClient(), email, created.TemporaryPassword!);
@@ -111,7 +109,7 @@ public sealed class StoreProvisioningTests(ApiFactory api) : IClassFixture<ApiFa
     {
         var email = NewEmail();
 
-        var created = (await CreateAsync(NewSlug(), Cnpjs.Random().Value, email, "senha-de-dev-123")).Tenant!;
+        var created = (await CreateAsync(NewSlug(), Cnpjs.Random().Value, email, "senha-de-dev-123", published: true)).Tenant!;
 
         Assert.Null(created.TemporaryPassword);
         Assert.False((await LoginAsync(api.PanelClient(), email, "senha-de-dev-123")).Session!.MustChangePassword);

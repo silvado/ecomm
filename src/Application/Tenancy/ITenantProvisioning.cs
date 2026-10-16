@@ -2,10 +2,11 @@ namespace Ecommerce.Application.Tenancy;
 
 /// <summary>
 /// Dados para criar uma loja (RF01, RF02). <see cref="OwnerPassword"/> só é usado pela semente de desenvolvimento;
-/// nulo = senha provisória gerada, com troca obrigatória no primeiro acesso.
+/// nulo = senha provisória gerada, com troca obrigatória no primeiro acesso. <see cref="Published"/> também: sem ele, a loja
+/// nasce em implantação e abre quando o Dono publica (RF05).
 /// </summary>
 public sealed record CreateTenantRequest(
-    string Slug, string Cnpj, string LegalName, string TradeName, string OwnerEmail, string? OwnerPassword = null)
+    string Slug, string Cnpj, string LegalName, string TradeName, string OwnerEmail, string? OwnerPassword = null, bool Published = false)
 {
     public override string ToString() => $"CreateTenantRequest({Slug}, {Cnpj}, {OwnerEmail}, ***)";
 }

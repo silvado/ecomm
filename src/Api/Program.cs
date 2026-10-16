@@ -225,12 +225,13 @@ app.MapPanelEndpoints();
 app.MapPlatformAuthEndpoints();
 app.MapPlatformEndpoints();
 
-// Consultado pelo Caddy antes de emitir certificado on-demand (ADR-0004): só domínios verificados de lojas disponíveis.
+// Consultado pelo Caddy antes de emitir certificado on-demand (ADR-0004): só domínios verificados de lojas disponíveis
+// ou em implantação (RF05: a página "em breve" também precisa de https).
 var internalApi = app.MapGroup(InternalEndpointGuard.PathPrefix).AddEndpointFilter<InternalNetworkFilter>().ExcludeFromDescription();
 internalApi.MapGet("/tls/ask", async (string domain, ITenantCatalog catalog, CancellationToken ct) =>
 {
     var tenant = await catalog.FindByHostAsync(domain, ct);
-    return tenant is { IsStorefrontAvailable: true } ? Results.Ok() : Results.NotFound();
+    return tenant is { IsStorefrontAvailable: true } or { Status: Ecommerce.Domain.Platform.TenantStatus.Onboarding } ? Results.Ok() : Results.NotFound();
 });
 
 // RNF06: fila em números para o monitoramento da VPS (só rede interna).

@@ -212,14 +212,23 @@ public sealed class PlatformAdminTests(ApiFactory api) : IClassFixture<ApiFactor
         Assert.Equal(shop.Id, Assert.Single(byCnpj).Id);
 
         var detail = (await (await GetAsync(client, admin.Token, $"/api/plataforma/lojas/{shop.Id}")).Content.ReadFromJsonAsync<TenantDetailDto>())!;
-        Assert.Equal(("Active", Plan.Essential), (detail.Status, detail.PlanCode));
+        // RF05: nasce em implantação; o Dono publica pelos primeiros passos.
+        Assert.Equal(("Onboarding", Plan.Essential), (detail.Status, detail.PlanCode));
         Assert.Equal(($"dono@{slug}.test", "owner"), (Assert.Single(detail.Users).Email, detail.Users[0].Role.ToLowerInvariant()));
 
         var plan = await SendAsync(client, admin.Token, HttpMethod.Put, $"/api/plataforma/lojas/{shop.Id}/plano", new { plano = "profissional" });
         Assert.Equal(Plan.Professional, (await plan.Content.ReadFromJsonAsync<TenantDetailDto>())!.PlanCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await SendAsync(client, admin.Token, HttpMethod.Put, $"/api/plataforma/lojas/{shop.Id}/plano", new { plano = "ouro" })).StatusCode);
 
-        var tenant = await api.WithPlatformAsync(db => db.Tenants.AsNoTracking().SingleAsync(t => t.Id == shop.Id));
+        // Em implantação não se suspende (reativar abriria a loja sem os passos obrigatórios).
+        Assert.Equal(HttpStatusCode.BadRequest, (await PostAsync(client, $"/api/plataforma/lojas/{shop.Id}/suspender", null, admin.Token)).StatusCode);
+        var tenant = await api.WithPlatformAsync(async db =>
+        {
+            var stored = await db.Tenants.SingleAsync(t => t.Id == shop.Id);
+            stored.Publish();
+            await db.SaveChangesAsync();
+            return stored;
+        });
         Assert.Equal(HttpStatusCode.OK, (await api.StoreClient(tenant).GetAsync("/api/loja/identidade")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await PostAsync(client, $"/api/plataforma/lojas/{shop.Id}/suspender", null, admin.Token)).StatusCode);
         // Catálogo invalidado na hora: a vitrine já responde como suspensa.

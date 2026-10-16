@@ -69,6 +69,16 @@ public sealed class Tenant
 
     public void Activate() => Status = TenantStatus.Active;
 
+    /// <summary>
+    /// RF05 CA3: a loja em implantação abre a vitrine. Quem chama confere antes os passos obrigatórios
+    /// (<see cref="Onboarding.OnboardingRules.CanPublish"/>).
+    /// </summary>
+    public void Publish()
+    {
+        if (Status is not TenantStatus.Onboarding) throw new InvalidOperationException("Só uma loja em implantação pode ser publicada.");
+        Status = TenantStatus.Active;
+    }
+
     public void Suspend() => Status = TenantStatus.Suspended;
 
     /// <summary>Nome fantasia exibido na loja. CNPJ e razão social não mudam por aqui (dados fiscais).</summary>

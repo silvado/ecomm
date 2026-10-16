@@ -94,6 +94,7 @@ public static class DependencyInjection
         services.AddScoped<Application.Platform.IPlatformConsole, PlatformConsoleService>();
         services.AddSingleton<Application.Platform.ICustomContentSanitizer, CustomContentSanitizer>();
         services.AddScoped<Application.Platform.IPlatformThemeService, PlatformThemeService>();
+        services.AddScoped<Application.Onboarding.IOnboardingService, Onboarding.OnboardingService>();
         // RNF04: registro de acesso a dados pessoais e anonimização do comprador.
         services.AddScoped<Application.Privacy.PanelActor>();
         services.AddScoped<Application.Privacy.IPersonalDataAccessLog, Privacy.PersonalDataAccessLog>();

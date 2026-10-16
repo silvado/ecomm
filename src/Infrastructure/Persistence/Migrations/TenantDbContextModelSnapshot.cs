@@ -1227,6 +1227,27 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.ToTable("store_settings", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Onboarding.OnboardingSkip", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Step")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("step");
+
+                    b.Property<DateTimeOffset>("SkippedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("skipped_at");
+
+                    b.HasKey("TenantId", "Step")
+                        .HasName("pk_onboarding_skips");
+
+                    b.ToTable("onboarding_skips", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Orders.CustomerOrder", b =>
                 {
                     b.Property<Guid>("Id")

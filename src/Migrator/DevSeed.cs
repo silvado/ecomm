@@ -25,7 +25,7 @@ internal static partial class DevSeed
         var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(DevSeed));
         await using var scope = host.Services.CreateAsyncScope();
         var result = await scope.ServiceProvider.GetRequiredService<ITenantProvisioning>().CreateAsync(
-            new CreateTenantRequest("demo", "11222333000181", "Loja Demo Ltda", "Loja Demo", email, password));
+            new CreateTenantRequest("demo", "11222333000181", "Loja Demo Ltda", "Loja Demo", email, password, Published: true));
 
         if (result.Tenant is { } created) LogSeeded(logger, created.Host, created.OwnerId);
         else if (result.Error is not (CreateTenantError.SlugTaken or CreateTenantError.CnpjTaken)) LogSkipped(logger, result.Error!.Value);

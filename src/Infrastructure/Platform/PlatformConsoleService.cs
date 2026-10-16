@@ -83,6 +83,8 @@ public sealed class PlatformConsoleService(
         {
             if (tenant.Status is TenantStatus.Suspended) return null;
             if (tenant.Status is TenantStatus.Closed) return "Loja encerrada não pode ser suspensa.";
+            // Reativar abre a loja: suspender uma loja em implantação a publicaria sem os passos obrigatórios (RF05 CA3).
+            if (tenant.Status is TenantStatus.Onboarding) return "A loja ainda está em implantação: a loja virtual já está fechada até o Dono publicar.";
             var previous = tenant.Status;
             tenant.Suspend();
             await audit.RecordAsync(PlatformAuditActions.TenantSuspended, tenant.Id, $"antes: {previous}", ct);
