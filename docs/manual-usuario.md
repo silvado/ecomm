@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 16/10/2026 (bloqueio por fatura em atraso).
+> Última atualização: 16/10/2026 (base da IA: limite de cadastros com IA).
 
 ## Sumário
 
@@ -104,6 +104,7 @@ Tela de boas-vindas com o nome da loja. Os módulos ficam no menu do topo.
 - **Peças ativas:** no limite, ativar uma peça nova é recusado com a mensagem do plano. Inative outra peça ou mude de plano. Peças em rascunho ou inativas não contam.
 - **Usuários:** no limite, não dá para adicionar outro usuário.
 - **Canais:** conectar um canal que o plano não inclui é recusado.
+- **Cadastros com IA no mês:** conta cada cadastro por foto que a IA concluiu (tentativas que falharam não contam). No limite, a IA recusa novos cadastros até o mês seguinte ou a mudança de plano; o cadastro manual continua normal. As outras ajudas da IA (quando chegarem) não têm limite por enquanto.
 - Ao mudar para um plano menor, nada é desativado: só não dá para acrescentar além do novo limite.
 
 **Sua loja ainda não está no ar** (só o Dono, enquanto a loja não foi publicada): mostra quantos passos já foram concluídos e leva aos **Primeiros passos**.
@@ -704,4 +705,5 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Tema e páginas exclusivos da loja personalizada (RF40): nova seção 6.3.1; loja virtual (5); auditoria em 6.5. |
 | 16/10/2026 | Primeiros passos (RF05): nova seção 4.2.1, cartão no Início, "Loja em breve" na loja virtual (5), loja nova em implantação e suspensão em 6.3; perfis. |
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
+| 16/10/2026 | Base da IA (RF35/RF36): limite de cadastros com IA no mês explicado em 4.2 (Limites do plano); o cartão Seu plano passa a mostrar o uso real. |
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |

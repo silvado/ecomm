@@ -519,21 +519,25 @@ erDiagram
     AI_INTERACTION {
         uuid id PK
         uuid tenant_id "RLS"
-        uuid user_id "nullable"
+        uuid user_id "nullable (rotinas automáticas)"
         string feature "part_from_photos|buyer_answer|daily_summary|sync_diagnosis|price_suggestion"
         string model
+        bool success "falhas também ficam registradas"
         int input_tokens
         int output_tokens
-        numeric estimated_cost
-        jsonb input_summary
-        jsonb output
+        numeric estimated_cost_usd "numeric(12,6)"
+        string input_summary "resumo sem imagens nem dados pessoais"
+        string output "JSON como veio"
+        string error
+        int duration_ms
+        string correlation_id
         timestamptz at
     }
     AI_USAGE_COUNTER {
         uuid tenant_id PK
         string feature PK
         date period PK "primeiro dia do mês"
-        int used
+        int used "CHECK >= 0; só sucessos (reserva atômica, devolução na falha)"
     }
     STORE_BRANDING {
         uuid tenant_id PK

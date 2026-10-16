@@ -273,7 +273,7 @@ export const epics = [
             title: 'IAiProvider com auditoria',
             rf: 'RF35',
             ac: 'Implementação Anthropic e fake; toda chamada registrada com modelo, tokens, custo, entrada resumida e saída; a camada de IA não tem acesso a comandos de escrita.',
-            t: [['IAiProvider, adapter Anthropic e fake', 8], ['Decorador de auditoria', 4], ['Contador de uso por funcionalidade', 4]],
+            t: [['IAiProvider, adapter Anthropic e fake', 8, 'done'], ['Decorador de auditoria', 4, 'done'], ['Contador de uso por funcionalidade', 4, 'done']],
           },
         ],
       },
@@ -342,7 +342,7 @@ export const epics = [
             title: 'Planos, limites e feature flags',
             rf: 'RF37, RF36',
             ac: 'Planos, limites e recursos são dados; mudança de plano tem efeito imediato; limite de IA bloqueia ou consome pacote excedente.',
-            t: [['Modelo de planos e verificação de limites', 12, 'done'], ['Bloqueio e pacote excedente de IA', 8]],
+            t: [['Modelo de planos e verificação de limites', 12, 'done'], ['Bloqueio e pacote excedente de IA', 8, 'doing']],
           },
           {
             title: 'Cobrança recorrente e inadimplência',

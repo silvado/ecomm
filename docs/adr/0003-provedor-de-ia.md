@@ -38,6 +38,18 @@ public interface IAiProvider
 - **Sem capacidades de escrita:** as implementações não recebem repositórios nem serviços de comando; só devolvem sugestões (RF35).
 - Chave da API da plataforma em variável de ambiente (não por tenant).
 
+## Complemento — fundação implementada (16/10/2026)
+
+Decisões do dono do produto: registro e contador no **banco das lojas com RLS**; só o **cadastro por foto bem-sucedido** conta para o limite do plano; adaptador pelo **SDK oficial** `Anthropic` (C#, mantido pela Anthropic desde a versão 10 — https://platform.claude.com/docs/en/cli-sdks-libraries/sdks/csharp).
+
+- **Porta de baixo nível `IAiCompletion`** (Application): pedido = funcionalidade, instruções, texto, imagens, JSON Schema da resposta e resumo da entrada para o registro; resposta = objeto JSON conferido, modelo e tokens. Os casos de uso (RF30, RF31…) montam seus pedidos sobre ela; registro e limite valem para todos sem repetir código. Os métodos por caso de uso da seção "Decisão" passam a ser serviços da Application que usam esta porta.
+- **Saída estruturada** por `output_config.format` (`json_schema`), não por ferramenta forçada: os modelos mais novos recusam `tool_choice` forçado (https://platform.claude.com/docs/en/build-with-claude/structured-outputs). Nenhuma ferramenta é oferecida ao modelo. Recusa (`refusal`), resposta cortada (`max_tokens`) ou JSON inválido = sugestão descartada.
+- **Cadeia**: `QuotaAiCompletion` → `AuditedAiCompletion` → provedor (`AnthropicAiCompletion`, `FakeAiCompletion` ou `UnconfiguredAiCompletion`). O provedor é serviço com chave: quem pede `IAiCompletion` sempre passa pelo limite e pelo registro.
+- **Registro** (`ai_interactions`, RLS): toda chamada, também as que falham, gravada em escopo próprio; custo estimado em dólares pela tabela `Ai:Prices` (modelo sem preço = zero). **HIPÓTESE:** falha ao gravar o registro não descarta a resposta já paga (log crítico).
+- **Limite** (`ai_usage_counters`, RLS): reserva atômica (`INSERT … ON CONFLICT DO UPDATE … WHERE used < limite`) antes de chamar e devolução se a chamada falhar; recusado pelo limite não chama o provedor nem entra no registro.
+- **Erros**: 429, 5xx e rede = indisponível com nova tentativa; demais 4xx = indisponível sem nova tentativa; a mensagem do provedor não chega ao usuário (https://platform.claude.com/docs/en/api/errors).
+- **Configuração**: `Ai:Provider` (`simulado` | `anthropic` | vazio = desligada; simulado é recusado em produção), `Ai:DefaultModel`, `Ai:Models:<funcionalidade>`, `Ai:Anthropic:ApiKey` só por variável de ambiente.
+
 ## Consequências
 
 - Troca de provedor = nova implementação de `IAiProvider` + ajuste de prompts.
