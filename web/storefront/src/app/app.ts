@@ -1,6 +1,9 @@
-import { Component, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
 import { CartStore } from './cart';
+import { CustomThemeStyle, isThemedPath } from './custom-theme';
 import { StoreContext } from './store';
 
 /**
@@ -20,7 +23,10 @@ import { StoreContext } from './store';
           [style.--color-background]="ctx.store!.theme.backgroundColor"
           [style.--color-text]="ctx.store!.theme.textColor"
         >
-          <header>
+          @if (custom?.headerHtml) {
+            <div class="custom-header custom-theme" data-custom-header [innerHTML]="custom!.headerHtml"></div>
+          }
+          <header [class.custom-theme]="!!custom">
             <a routerLink="/" class="brand">
               @if (ctx.store!.logoUrl) {
                 <img [src]="ctx.store!.logoUrl" [alt]="ctx.store!.name" height="48" />
@@ -34,10 +40,15 @@ import { StoreContext } from './store';
               <a routerLink="/carrinho" class="cart-link">Carrinho @if (cart.count()) { <span class="badge">{{ cart.count() }}</span> }</a>
             </nav>
           </header>
-          <main><router-outlet /></main>
-          <footer>
-            @if (ctx.store!.texts.footer) {
+          <main [class.custom-theme]="!!custom && themed()"><router-outlet /></main>
+          <footer [class.custom-theme]="!!custom">
+            @if (custom?.footerHtml) {
+              <div class="custom-footer" data-custom-footer [innerHTML]="custom!.footerHtml"></div>
+            } @else if (ctx.store!.texts.footer) {
               <p class="pre">{{ ctx.store!.texts.footer }}</p>
+            }
+            @for (page of custom?.pages ?? []; track page.slug) {
+              <a [routerLink]="['/p', page.slug]">{{ page.title }}</a>
             }
             @if (ctx.store!.texts.returnPolicy) {
               <a routerLink="/trocas-e-devolucoes">Trocas e devoluções</a>
@@ -71,4 +82,17 @@ import { StoreContext } from './store';
 export class App {
   protected readonly ctx = inject(StoreContext);
   protected readonly cart = inject(CartStore);
+  /** Tema exclusivo da loja personalizada (RF40 CA1); nulo no visual padrão. */
+  protected readonly custom = this.ctx.store?.custom ?? null;
+
+  private readonly router = inject(Router);
+  private readonly url = toSignal(this.router.events.pipe(filter((e) => e instanceof NavigationEnd), map(() => this.router.url)), {
+    initialValue: this.router.url,
+  });
+  /** Fora do carrinho, do checkout e de Meus pedidos. */
+  protected readonly themed = computed(() => isThemedPath(this.url()));
+
+  constructor() {
+    inject(CustomThemeStyle).apply(this.custom?.css);
+  }
 }

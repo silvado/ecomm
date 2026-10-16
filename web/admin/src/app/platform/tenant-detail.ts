@@ -61,6 +61,7 @@ import { PlatformApi, PlatformPlan, PlatformTenantDetail, STATUS_LABELS } from '
           <p>Desligada: o Dono edita a aparência pelo painel.</p>
           <button type="button" (click)="setCustom(true)" [disabled]="busy()" data-custom-on>Ligar</button>
         }
+        <p><a [routerLink]="['/plataforma/lojas', t.id, 'tema']" data-theme-link>Tema e páginas exclusivos</a></p>
 
         <h2>Endereços</h2>
         <table>

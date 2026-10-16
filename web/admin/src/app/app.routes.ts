@@ -19,6 +19,7 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./platform/tenants').then((m) => m.PlatformTenantsPage), title: 'Lojas — plataforma' },
       { path: 'lojas/:id', loadComponent: () => import('./platform/tenant-detail').then((m) => m.PlatformTenantPage), title: 'Loja — plataforma' },
+      { path: 'lojas/:id/tema', loadComponent: () => import('./platform/theme-editor').then((m) => m.PlatformThemePage), title: 'Tema exclusivo — plataforma' },
       { path: 'planos', loadComponent: () => import('./platform/plans-audit').then((m) => m.PlatformPlansPage), title: 'Planos — plataforma' },
       { path: 'auditoria', loadComponent: () => import('./platform/plans-audit').then((m) => m.PlatformAuditPage), title: 'Auditoria — plataforma' },
     ],

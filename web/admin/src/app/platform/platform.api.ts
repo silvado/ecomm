@@ -95,7 +95,61 @@ export const AUDIT_LABELS: Record<string, string> = {
   'loja.suspensa': 'Suspendeu a loja',
   'loja.reativada': 'Reativou a loja',
   'loja.personalizada': 'Loja personalizada',
+  'loja.tema': 'Salvou o tema exclusivo',
+  'loja.pagina': 'Salvou uma página exclusiva',
+  'loja.pagina.removida': 'Removeu uma página exclusiva',
 };
+
+/** Tema exclusivo da loja personalizada (RF40), já limpo pelo servidor. */
+export interface ThemePageItem {
+  id: string;
+  slug: string;
+  title: string;
+  html: string;
+  published: boolean;
+  position: number;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export interface PlatformTheme {
+  tenantId: string;
+  tradeName: string;
+  customStorefront: boolean;
+  css: string;
+  headerHtml: string;
+  footerHtml: string;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  pages: ThemePageItem[];
+}
+
+export interface ThemeDraft {
+  css: string;
+  cabecalho: string;
+  rodape: string;
+}
+
+export interface PageDraft {
+  endereco: string;
+  titulo: string;
+  conteudo: string;
+  publicada: boolean;
+  ordem: number;
+}
+
+export interface ThemePreview {
+  css: string;
+  headerHtml: string;
+  footerHtml: string;
+  removed: string[];
+}
+
+/** Depois de salvar: o tema atualizado e o que a limpeza tirou. */
+export interface ThemeSaved {
+  theme: PlatformTheme;
+  removed: string[];
+}
 
 export const LIMIT_LABELS: Record<string, string> = {
   users: 'Usuários',
@@ -149,6 +203,30 @@ export class PlatformApi {
 
   setCustomStorefront(id: string, ligada: boolean): Promise<PlatformTenantDetail> {
     return firstValueFrom(this.http.put<PlatformTenantDetail>(`${this.base}/lojas/${id}/loja-personalizada`, { ligada }));
+  }
+
+  theme(id: string): Promise<PlatformTheme> {
+    return firstValueFrom(this.http.get<PlatformTheme>(`${this.base}/lojas/${id}/tema`));
+  }
+
+  previewTheme(id: string, draft: ThemeDraft): Promise<ThemePreview> {
+    return firstValueFrom(this.http.post<ThemePreview>(`${this.base}/lojas/${id}/tema/previa`, draft));
+  }
+
+  saveTheme(id: string, draft: ThemeDraft): Promise<ThemeSaved> {
+    return firstValueFrom(this.http.put<ThemeSaved>(`${this.base}/lojas/${id}/tema`, draft));
+  }
+
+  createPage(id: string, draft: PageDraft): Promise<ThemeSaved> {
+    return firstValueFrom(this.http.post<ThemeSaved>(`${this.base}/lojas/${id}/paginas`, draft));
+  }
+
+  updatePage(id: string, pageId: string, draft: PageDraft): Promise<ThemeSaved> {
+    return firstValueFrom(this.http.put<ThemeSaved>(`${this.base}/lojas/${id}/paginas/${pageId}`, draft));
+  }
+
+  deletePage(id: string, pageId: string): Promise<ThemeSaved> {
+    return firstValueFrom(this.http.delete<ThemeSaved>(`${this.base}/lojas/${id}/paginas/${pageId}`));
   }
 
   plans(): Promise<PlatformPlan[]> {
