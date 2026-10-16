@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Ecommerce.Api.Panel;
 
-public sealed record CompatibilityRequest(Guid VehicleVersionId, int? YearFrom, int? YearTo);
+/// <summary><see cref="SuggestedByAi"/>: veículo sugerido pela IA no cadastro por foto (RF30) e mantido pela pessoa.</summary>
+public sealed record CompatibilityRequest(Guid VehicleVersionId, int? YearFrom, int? YearTo, bool SuggestedByAi = false);
 
 /// <summary>Tabela de veículos (RF09) e compatibilidades das peças.</summary>
 public static class VehicleEndpoints
@@ -28,7 +29,8 @@ public static class VehicleEndpoints
         compatibilities.MapPost("/", async Task<Results<Created<PartView>, ProblemHttpResult>> (
             Guid id, CompatibilityRequest request, IPartCompatibilities service, IPartQueries queries, CancellationToken ct) =>
         {
-            var result = await service.AddAsync(id, request.VehicleVersionId, request.YearFrom, request.YearTo, ct);
+            var result = await service.AddAsync(id, request.VehicleVersionId, request.YearFrom, request.YearTo,
+                request.SuggestedByAi ? Domain.Catalog.CompatibilitySource.AiSuggested : Domain.Catalog.CompatibilitySource.Manual, ct);
             if (result.Outcome != CompatibilityOutcome.Done) return Problem(result);
             return TypedResults.Created($"/api/painel/pecas/{id}/compatibilidades/{result.CompatibilityId}", (await queries.GetAsync(id, ct))!);
         });

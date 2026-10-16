@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 16/10/2026 (base da IA: limite de cadastros com IA).
+> Última atualização: 16/10/2026 (cadastro por foto com IA).
 
 ## Sumário
 
@@ -148,6 +148,23 @@ Toda loja nova começa **em implantação**: a loja virtual mostra **"Loja em br
    - **Códigos OEM**: um por linha.
 3. Clique em **Cadastrar**. A peça nasce como **rascunho** e ainda não aparece na loja.
 
+**Preencher com IA (cadastro por foto)**
+
+Em **Nova peça**, a IA pode preencher o cadastro a partir das fotos. Você sempre confere e salva; nada vai para a loja sozinho.
+
+1. Em **Preencher com IA**, clique em **Escolher fotos** e selecione de 1 a 10 fotos da peça (JPG, PNG ou WebP, até 10 MB cada). Fotos com a **etiqueta e o código** à mostra ajudam muito.
+2. Se quiser, escreva **o que você já sabe** (até 500 caracteres): código, veículo de onde saiu, lado. Ex.: "retirada de um Gol 2011 1.6; lado do motorista".
+3. Clique em **Preencher com IA**. Em alguns segundos, a IA preenche **título**, **descrição**, **estado** e **códigos OEM**.
+4. Os campos preenchidos pela IA ficam **destacados em roxo** até você conferir: mexa no campo ou clique em **Revisado**. Códigos OEM só aparecem se a IA conseguiu lê-los nas fotos — confira com a peça.
+5. **Veículos sugeridos** aparecem marcados. **Desmarque** os que não servem. Veículos que a IA citou mas que não estão na tabela de veículos aparecem só como texto; se servirem, adicione à mão depois, em **Compatibilidade**.
+6. Informe o **código interno**, o **preço** (a IA nunca sugere preço) e a quantidade. Confira o resto e clique em **Cadastrar**.
+
+Ao cadastrar, a peça nasce como **rascunho**, as fotos escolhidas viram as **fotos da peça** e os veículos mantidos entram na **Compatibilidade** com o selo **IA**. Se alguma foto ou veículo não puder ser gravado, a peça é cadastrada assim mesmo e um aviso mostra o que faltou.
+
+- **Limite do plano:** cada sugestão concluída conta 1 nos **cadastros com IA do mês** (veja 4.2). Foto recusada ou falha da IA não contam. No limite, a tela mostra a mensagem do plano.
+- **Privacidade:** as fotos vão para a IA reduzidas e **sem a localização** gravada pelo celular.
+- Se a IA não conseguir sugerir (foto escura, peça não identificável), a tela pede outras fotos ou o preenchimento à mão.
+
 **Fotos**
 - Na peça já cadastrada, **Adicionar fotos**: JPG, PNG ou WebP, até 10 MB cada, até 20 fotos.
 - A **primeira foto é a capa**. Use ← e → para reordenar e **Remover** para tirar uma foto.
@@ -157,6 +174,7 @@ Toda loja nova começa **em implantação**: a loja virtual mostra **"Loja em br
 - Escolha **Marca → Modelo → Versão** e, se quiser, o intervalo de anos (**De/Até**). Depois, clique em **Adicionar**.
 - Com os anos em branco, vale a versão inteira.
 - Peça sem veículo informado **não aparece na busca por veículo** da loja.
+- O selo **IA** marca os veículos que vieram do cadastro por foto e que você manteve.
 
 **Publicar ou retirar da loja**
 - **Ativar** publica a peça (precisa de ao menos uma foto).
@@ -675,7 +693,7 @@ Itens previstos que **ainda não estão no sistema**:
 - Alerta de falha de integração por e-mail (hoje o alerta é a faixa no painel).
 - Remetente da plataforma em produção (provedor ainda a escolher). Em teste, os e-mails ficam numa caixa interna e não chegam ao comprador.
 - NF-e de devolução e estorno automático do reembolso.
-- Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
+- Automações de IA: atendimento, preço sugerido, alertas e resumo diário. No cadastro por foto, a categoria e os atributos do Mercado Livre virão com a integração do Mercado Livre. Em teste, a IA é simulada e sempre sugere o mesmo farol de exemplo.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
 - Assinatura: pagamento real pelo painel (o gateway da plataforma ainda será escolhido; em teste, a página de pagamento é simulada) e aviso da fatura por e-mail (hoje o aviso é a faixa no painel).
 - Primeiros passos: ver a loja virtual antes de publicar e "despublicar" a loja pelo painel.
@@ -707,3 +725,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
 | 16/10/2026 | Base da IA (RF35/RF36): limite de cadastros com IA no mês explicado em 4.2 (Limites do plano); o cartão Seu plano passa a mostrar o uso real. |
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
+| 16/10/2026 | Cadastro por foto (RF30): **Preencher com IA** em 4.3 Peças (sugestão, destaque até revisar, veículos sugeridos, limite do plano) e selo IA na compatibilidade. |

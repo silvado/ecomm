@@ -196,6 +196,7 @@ public static class DependencyInjection
         services.AddScoped<IFiscalService, FiscalService>();
         services.AddScoped<TenantIssuer>();
         services.AddScoped<IPartCompatibilities, PartCompatibilityService>();
+        services.AddScoped<IPartSuggestions, PartSuggestionService>();
 
         services.Configure<VaultOptions>(configuration.GetSection(VaultOptions.Section));
         services.AddScoped<SecretVault>();

@@ -8,6 +8,7 @@
   --danger: #b42318;
   --warn-bg: #fef0c7;
   --ok-bg: #d1fadf;
+  --ai-bg: #ede9fe;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -539,4 +540,31 @@ ol.onboarding-steps {
       margin: 0.25rem 0 0.5rem;
     }
   }
+}
+
+// Cadastro por foto (RF30): campos vindos da IA ficam destacados até a pessoa revisar.
+fieldset.ai-assist {
+  background: var(--bg);
+}
+
+.ai-suggested {
+  input,
+  textarea,
+  select {
+    background: var(--ai-bg);
+    border-color: #7c3aed;
+  }
+}
+
+.ai-note {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #5b21b6;
+}
+
+.badge.ai {
+  background: var(--ai-bg);
+  color: #5b21b6;
 }

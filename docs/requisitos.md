@@ -4,6 +4,8 @@ Origem: [BRIEF.md](BRIEF.md) §4 e §5. Cada RF tem critérios de aceite (CA) ve
 
 Legenda de etapa (roadmap §6): **E1** Núcleo e loja · **E2** Canais · **E3** IA e OLX · **E4** Produto vendável · **E5** Primeiros clientes.
 
+**Contexto do piloto (16/10/2026):** o dono do produto e a oficina piloto começam do zero — CNPJ ainda a abrir, sem emissor de NF-e e sem histórico de vendas de peças. Consequências: o modo "emissão externa" (RF19) não tem ferramenta para usar; a integração com a Focus NFe (RF19, parte B) é necessária antes de o piloto ganhar volume, mas só pode ser homologada com CNPJ, inscrição estadual e certificado A1 da loja. Até lá seguem os itens que não dependem disso (cadastro por foto, canais). Perguntas de negócio decorrentes: Q02, Q04, Q45 e Q46.
+
 ---
 
 ## 1. Multi-tenant e onboarding
@@ -217,9 +219,13 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 
 ### RF30 — Cadastro assistido · E3
 - CA1: a partir de 1–10 fotos + código, gera título, descrição, categoria e atributos do ML e sugestão de compatibilidade.
-- CA2: o resultado é sempre um **rascunho**; publicação exige ação humana.
-- CA3: campos sugeridos pela IA aparecem destacados até serem revisados.
-- CA4: consome 1 unidade do limite mensal do plano (RF36).
+  - Feito (16/10/2026): título, descrição (com as características visíveis), estado, códigos OEM legíveis nas fotos e veículos. O "código" é um texto livre opcional ("o que você já sabe": código, veículo de origem, lado).
+  - Veículos: só viram sugestão as versões que existem na tabela da plataforma (RF09), com os anos restritos quando a IA informa; os demais voltam como texto para a pessoa escolher à mão. No máximo 30 versões por sugestão.
+  - **Pendente:** categoria e atributos do Mercado Livre — dependem da API do ML e entram com o conector do ML (E2).
+- CA2: o resultado é sempre um **rascunho**; publicação exige ação humana. A sugestão só preenche o formulário — nada é gravado até a pessoa salvar, a peça nasce em rascunho e o preço é sempre digitado (RF35).
+- CA3: campos sugeridos pela IA aparecem destacados até serem revisados (editar o campo ou clicar em "Revisado"). Veículos sugeridos aparecem marcados para a pessoa desmarcar os que não servem; os mantidos ficam com o selo "IA" na peça.
+- CA4: consome 1 unidade do limite mensal do plano (RF36) — só quando a sugestão sai; foto inválida, falha da IA ou resposta inútil não contam.
+- CA5: as fotos vão para a IA reduzidas (lado maior de 1568 px), em JPEG e sem metadados (localização do celular não sai da plataforma).
 
 ### RF31 — Respostas a compradores · E5
 - CA1: responde usando apenas dados do cadastro (título, descrição, atributos, compatibilidade, estoque, políticas da loja).
@@ -296,9 +302,9 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | # | Pergunta | Hipótese adotada (conservadora) | Impacta |
 |---|---|---|---|
 | Q01 | Venda simultânea no ML e no site dentro da janela de propagação (o ML confirma vendas que não podemos bloquear). Qual canal perde? | O pedido que chegar depois é marcado "conflito de estoque" e o lojista decide; nenhum cancelamento automático. | RF12, RF24, RNF02 |
-| Q02 | O piloto é empresa de desmontagem credenciada no DETRAN (Lei 12.977) ou só revende? Em qual UF? | Campos de rastreabilidade opcionais, com modo "desmontagem" que os torna obrigatórios. | RF10 |
+| Q02 | O piloto é empresa de desmontagem credenciada no DETRAN (Lei 12.977) ou só revende? Em qual UF? (16/10/2026: negócio novo, ainda a constituir — a origem das peças, desmonte próprio ou compra de terceiros com nota, define o credenciamento.) | Campos de rastreabilidade opcionais, com modo "desmontagem" que os torna obrigatórios. | RF10 |
 | Q03 | Provedor fiscal (Focus NFe, PlugNotas, eNotas, NFE.io…)? | Só `IFiscalProvider` + fake até a escolha; ADR quando definido. | RF19 |
-| Q04 | Regime tributário do piloto e tributação da peça usada (CSOSN/CST, CFOP) — validar com contador. | Configurável por tenant e por peça; sem padrão "inteligente". | RF19 |
+| Q04 | Regime tributário do piloto e tributação da peça usada (CSOSN/CST, CFOP) — validar com contador. (16/10/2026: CNPJ ainda a abrir — MEI ou Simples Nacional? A atividade de peças usadas cabe no MEI? MEI muda a obrigação de emitir NF-e e o limite de faturamento; o sistema supõe NF-e modelo 55 com inscrição estadual.) | Configurável por tenant e por peça; sem padrão "inteligente". | RF19 |
 | Q05 | Gateway da plataforma para cobrar a assinatura (Asaas, Iugu, Mercado Pago assinaturas…)? | Interface `ISubscriptionBilling` + fake (implementado em 16/10/2026, ADR-0008). Sem gateway, a equipe registra os pagamentos à mão. | RF38 |
 | Q06 | Pix entra no E1? | Sim, via gateway do tenant. | RF15 |
 | Q07 | Hub OLX? | Adapter fake. | RF23 |
@@ -339,6 +345,8 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q42 | Quem escreve a política de privacidade e os termos de cada loja? | **HIPÓTESE:** a loja (controladora) escreve; enquanto não escreve, a vitrine mostra um modelo genérico da plataforma com razão social e CNPJ, a revisar por advogado antes do lançamento. Os textos ficam fora da trava da loja personalizada. | RNF04 |
 | Q43 | Até onde vai a anonimização do comprador? | Aprovado (15/10/2026): saem e-mail, telefone, endereço de entrega (ficam cidade/UF) e o acesso a Meus pedidos; sem NF-e, também nome e CPF/CNPJ; com NF-e, nome e CPF/CNPJ ficam (guarda fiscal de 5 anos) e a nota não muda. **HIPÓTESE:** pedido em andamento impede; observações livres não são varridas; o registro de acesso não tem prazo de retenção definido. | RNF04 |
 | Q44 | Haverá pacote excedente de IA (comprar mais cadastros no mês)? Preço e como cobra (fatura avulsa da assinatura?). | Sem pacote: no limite, bloqueia até o mês seguinte ou troca de plano. | RF36, RF38 |
+| Q45 | Reabre Q37 (16/10/2026): as lojas-alvo são pequenas e novas, muitas sem emissor. Oferecer "NF-e incluída" (a plataforma tem uma conta na Focus e cadastra o CNPJ e o A1 de cada loja; custo no plano) já no lançamento, além do "traga sua conta"? A confirmar com a Focus: plano de revenda/parceiro, cadastro de empresas pela API e preço por CNPJ. | Mantida a Q37 ("traga sua conta") até a resposta. O adaptador é o mesmo nos dois modelos: muda só de quem é a credencial. | RF19, RF37, RF38 |
+| Q46 | A empresa da plataforma emitirá NFS-e das mensalidades cobradas das lojas? Por qual emissor (a Focus também emite NFS-e)? | Fora do sistema até a resposta: a cobrança da assinatura (RF38) não emite nota. | RF38 |
 
 ## Fontes
 

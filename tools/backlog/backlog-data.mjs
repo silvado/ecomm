@@ -284,7 +284,7 @@ export const epics = [
             title: 'Cadastro de peça a partir de fotos',
             rf: 'RF30',
             ac: 'Fotos + código geram rascunho com título, descrição, categoria, atributos e compatibilidades sugeridas; campos da IA destacados até revisão; publicação só por humano.',
-            t: [['Prompt e saída estruturada validada', 12], ['Tela de revisão do rascunho', 12], ['Conjunto de avaliação de qualidade', 6]],
+            t: [['Prompt e saída estruturada validada', 12, 'done'], ['Tela de revisão do rascunho', 12, 'done'], ['Conjunto de avaliação de qualidade', 6], ['Categoria e atributos do ML na sugestão', 6]],
           },
           {
             title: 'Preço sugerido',

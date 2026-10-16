@@ -19,6 +19,9 @@ import { CompatibilityView, VehicleOption, VehiclesApi, VehicleVersionOption, ye
             <li>
               <span>
                 {{ c.brand }} {{ c.model }} · {{ c.engine }} · {{ range(c.yearFrom, c.yearTo) }}
+                @if (c.suggestedByAi) {
+                  <span class="badge ai" title="Sugerida pela IA no cadastro por foto e mantida por você">IA</span>
+                }
                 @if (c.narrowed) {
                   <span class="badge">anos restritos</span>
                 }

@@ -6,9 +6,13 @@ public sealed record StockView(int OnHand, int Reserved, int Available);
 
 public sealed record PhotoView(Guid Id, int Position);
 
-/// <summary>Anos efetivos (os da compatibilidade ou, sem eles, os da versão). <see cref="Narrowed"/>: restringe a versão.</summary>
+/// <summary>
+/// Anos efetivos (os da compatibilidade ou, sem eles, os da versão). <see cref="Narrowed"/>: restringe a versão.
+/// <see cref="SuggestedByAi"/>: veio do cadastro por foto (RF30).
+/// </summary>
 public sealed record CompatibilityView(
-    Guid Id, Guid VehicleVersionId, string Brand, string Model, string Engine, int YearFrom, int? YearTo, bool Narrowed, bool Discontinued);
+    Guid Id, Guid VehicleVersionId, string Brand, string Model, string Engine, int YearFrom, int? YearTo, bool Narrowed, bool Discontinued,
+    bool SuggestedByAi = false);
 
 /// <summary>Filtro por veículo (RF09 CA3): modelo obrigatório; versão e ano-modelo opcionais.</summary>
 public sealed record VehicleFilter(Guid ModelId, Guid? VersionId, int? Year);

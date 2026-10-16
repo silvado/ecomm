@@ -75,6 +75,32 @@ export interface PartRequest {
   quantity: number;
 }
 
+/** Versão da tabela de veículos sugerida pela IA (RF30); anos nulos = versão inteira. */
+export interface SuggestedCompatibility {
+  vehicleVersionId: string;
+  brand: string;
+  model: string;
+  engine: string;
+  versionYearFrom: number;
+  versionYearTo: number | null;
+  yearFrom: number | null;
+  yearTo: number | null;
+}
+
+/** Sugestão de cadastro a partir das fotos (RF30). Nada foi gravado: só preenche o formulário; sem preço. */
+export interface PartSuggestion {
+  title: string;
+  description: string;
+  condition: PartCondition;
+  oemCodes: string[];
+  compatibilities: SuggestedCompatibility[];
+  unmatchedVehicles: string[];
+}
+
+/** Mesmos limites da API (IPartSuggestions). */
+export const MAX_SUGGESTION_PHOTOS = 10;
+export const MAX_SUGGESTION_NOTES = 500;
+
 export const CONDITION_LABELS: Record<PartCondition, string> = { new: 'Nova', used: 'Usada', refurbished: 'Recondicionada' };
 export const STATUS_LABELS: Record<PartStatus, string> = { draft: 'Rascunho', active: 'Ativa', inactive: 'Inativa' };
 
@@ -111,6 +137,14 @@ export class PartsApi {
 
   update(id: string, request: PartRequest): Promise<PartView> {
     return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}`, request));
+  }
+
+  /** Cadastro por foto (RF30): conta 1 no limite mensal do plano quando dá certo. */
+  suggest(photos: Blob[], notes: string): Promise<PartSuggestion> {
+    const form = new FormData();
+    photos.forEach((photo, index) => form.append('fotos', photo, (photo as File).name ?? `foto${index + 1}`));
+    if (notes.trim()) form.append('informacoes', notes.trim());
+    return firstValueFrom(this.http.post<PartSuggestion>(`${this.base}/sugestao-ia`, form));
   }
 
   /** Bytes da imagem no corpo; a API reconhece o formato pelo conteúdo e gera os WebP. */
