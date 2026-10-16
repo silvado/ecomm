@@ -61,13 +61,13 @@ public static class ChannelReconciliationHandler
     }
 
     public static async Task Handle(ReconcileListing command, TenantDbContext db, IChannelConnectorResolver connectors, IIntegrationLog log,
-        TimeProvider clock, CancellationToken ct)
+        Application.Tenancy.ITenantCatalog catalog, TimeProvider clock, CancellationToken ct)
     {
         if (await ChannelSyncHandler.LockAsync(db, command.ListingId, ct) is not { ExternalId: { } externalId } listing) return;
         var connection = await db.ChannelConnections.SingleAsync(c => c.Id == listing.ConnectionId, ct);
         if (connection.Status != ChannelConnectionStatus.Active || await connectors.ResolveAsync(connection, ct) is not { } resolved) return;
         var connector = new LoggedChannelConnector(resolved, log, listing.PartId);
-        var (available, price) = await ChannelSyncHandler.StockAndPriceAsync(db, listing.PartId, ct);
+        var (available, price) = await ChannelSyncHandler.StockAndPriceAsync(db, catalog, listing.PartId, ct);
         var now = clock.GetUtcNow();
 
         var remote = await connector.GetRemoteStateAsync(externalId, ct);

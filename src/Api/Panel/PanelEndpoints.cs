@@ -20,7 +20,7 @@ public static class PanelEndpoints
 {
     public static void MapPanelEndpoints(this IEndpointRouteBuilder app)
     {
-        var panel = app.MapGroup("/api/painel").RequireAuthorization().AddEndpointFilter<PanelTenantFilter>();
+        var panel = app.MapGroup("/api/painel").RequireAuthorization().AddEndpointFilter<PanelTenantFilter>().AddEndpointFilter<PanelReadOnlyFilter>();
 
         panel.MapGet("/eu", (HttpContext http) =>
         {

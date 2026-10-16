@@ -51,6 +51,9 @@ public interface IChannelConnectorResolver
 /// <param name="ChangedAt">Quando o estoque mudou, para a métrica de latência (RF24: até 60 s).</param>
 public sealed record SyncListing(Guid ListingId, DateTimeOffset? ChangedAt);
 
+/// <summary>A loja foi suspensa ou reativada (RF38): reconfere todos os anúncios (pausa ou retoma nos canais).</summary>
+public sealed record ResyncStoreListings;
+
 /// <summary>Reconciliação de uma loja (RF27): agenda a conferência de cada anúncio, espaçada para respeitar os limites do canal.</summary>
 public sealed record ReconcileChannels;
 

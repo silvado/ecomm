@@ -13,7 +13,7 @@ public sealed record PlatformTenantUser(string Email, string Role, bool MustChan
 public sealed record PlatformTenantDetail(
     Guid Id, string Slug, string TradeName, string LegalName, string Cnpj, string Status, string PlanCode, string PlanName,
     DateTimeOffset CreatedAt, DateTimeOffset? CustomStorefrontSince,
-    IReadOnlyList<PlatformTenantDomain> Domains, IReadOnlyList<PlatformTenantUser> Users);
+    IReadOnlyList<PlatformTenantDomain> Domains, IReadOnlyList<PlatformTenantUser> Users, bool BillingHold = false);
 
 public sealed record PlatformPlan(string Code, string Name, IReadOnlyDictionary<string, int> Limits, IReadOnlyList<string> Features, int Tenants,
     decimal MonthlyPrice);

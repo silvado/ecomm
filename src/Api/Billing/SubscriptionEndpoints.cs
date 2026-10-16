@@ -23,7 +23,11 @@ public static class SubscriptionEndpoints
     /// <summary>Só quem cuida do plano (Dono).</summary>
     public static void MapSubscriptionEndpoints(this RouteGroupBuilder panel)
     {
-        var subscription = panel.MapGroup("/assinatura").RequirePermission(Permission.PlanManage);
+        // Faixa da régua (RF38 CA2): todo perfil vê a situação; só o Dono vê faturas e paga.
+        panel.MapGet("/assinatura/situacao", async (ISubscriptionPanel service, CancellationToken ct) => TypedResults.Ok(await service.StandingAsync(ct)));
+
+        // Pagar continua valendo com o painel somente leitura.
+        var subscription = panel.MapGroup("/assinatura").RequirePermission(Permission.PlanManage).AllowWhenPanelReadOnly();
 
         subscription.MapGet("/", async (ISubscriptionPanel service, CancellationToken ct) => TypedResults.Ok(await service.GetAsync(ct)));
 

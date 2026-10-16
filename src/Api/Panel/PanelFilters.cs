@@ -46,8 +46,39 @@ public sealed class PanelTenantFilter(IMembershipLookup memberships, TenantScope
     }
 }
 
+/// <summary>Rota que continua valendo com o painel somente leitura (pagar a assinatura, direitos do titular — LGPD).</summary>
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+public sealed class AllowWhenPanelReadOnlyAttribute : Attribute;
+
+/// <summary>
+/// RF38 CA2: com a loja em somente leitura, suspensa ou em encerramento, o painel só consulta. Gravações (tudo que não é
+/// GET/HEAD) são recusadas, menos as marcadas com <see cref="AllowWhenPanelReadOnlyAttribute"/>. A situação vem do catálogo
+/// (cache de até 60 s). Roda depois de <see cref="PanelTenantFilter"/>.
+/// </summary>
+public sealed class PanelReadOnlyFilter(Application.Tenancy.ITenantCatalog catalog) : IEndpointFilter
+{
+    public const string ProblemType = "https://plataforma/problemas/painel-somente-leitura";
+
+    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        var http = context.HttpContext;
+        if (HttpMethods.IsGet(http.Request.Method) || HttpMethods.IsHead(http.Request.Method)
+            || http.GetEndpoint()?.Metadata.GetMetadata<AllowWhenPanelReadOnlyAttribute>() is not null)
+            return await next(context);
+        var store = await catalog.FindByIdAsync(http.GetPanelUser().Access.TenantId, http.RequestAborted);
+        if (store is null || !Domain.Platform.Tenant.IsPanelReadOnly(store.Status)) return await next(context);
+        return AuthEndpoints.Problem(StatusCodes.Status403Forbidden, store.Status == Domain.Platform.TenantStatus.ReadOnly
+            ? "Painel somente leitura por fatura em atraso. Pague em Assinatura para voltar a alterar."
+            : "Loja suspensa ou em encerramento: o painel está somente para consulta. Veja Assinatura ou fale com a equipe da plataforma.", ProblemType);
+    }
+}
+
 public static class PanelEndpointExtensions
 {
+    /// <summary>Marca a rota como permitida com o painel somente leitura (RF38).</summary>
+    public static TBuilder AllowWhenPanelReadOnly<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder =>
+        builder.WithMetadata(new AllowWhenPanelReadOnlyAttribute());
+
     public static PanelUser GetPanelUser(this HttpContext http) =>
         http.Items[typeof(PanelUser)] as PanelUser ?? throw new InvalidOperationException("Rota sem PanelTenantFilter.");
 

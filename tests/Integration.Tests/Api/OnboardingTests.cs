@@ -130,7 +130,9 @@ public sealed class OnboardingTests(ApiFactory api) : IClassFixture<ApiFactory>
 
         var response = await SendAsync(api.PanelClient(), owner, HttpMethod.Post, "/api/painel/primeiros-passos/publicar", null);
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        // Loja suspensa: o painel é só consulta (RF38), então nem chega a tentar publicar.
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(TenantStatus.Suspended, await api.WithPlatformAsync(db => db.Tenants.Where(t => t.Id == tenant.Id).Select(t => t.Status).SingleAsync()));
     }
 
     [Fact]

@@ -7,6 +7,7 @@ using Ecommerce.Domain.Identity;
 using Ecommerce.Domain.Platform;
 using Ecommerce.Infrastructure.Platform;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wolverine;
@@ -33,6 +34,17 @@ public sealed class SubscriptionPanel(PlatformDbContext db, ITenantContext tenan
             .OrderByDescending(i => i.DueDate).ThenByDescending(i => i.Id).Take(InvoiceLimit).ToListAsync(ct);
         return new SubscriptionView(plan.Code, plan.Name, plan.MonthlyPrice, subscription?.StartedOn, subscription?.DueDay, gateways.Any(),
             invoices.Select(i => BillingCalendar.View(i, today)).ToList());
+    }
+
+    public async Task<BillingStandingView> StandingAsync(CancellationToken ct = default)
+    {
+        var tenantId = TenantId();
+        var today = BillingCalendar.Today(clock);
+        var status = await db.Tenants.AsNoTracking().Where(t => t.Id == tenantId).Select(t => t.Status).SingleAsync(ct);
+        var oldest = await db.SubscriptionInvoices.AsNoTracking()
+            .Where(i => i.TenantId == tenantId && i.Status == InvoiceStatus.Open && i.DueDate < today)
+            .MinAsync(i => (DateOnly?)i.DueDate, ct);
+        return new BillingStandingView(status, DunningPolicy.StageFor(oldest, today), oldest, Tenant.IsPanelReadOnly(status));
     }
 
     public async Task<PayInvoiceResult> PayAsync(Guid invoiceId, string returnUrl, CancellationToken ct = default)
@@ -71,8 +83,8 @@ public sealed class SubscriptionPanel(PlatformDbContext db, ITenantContext tenan
 }
 
 /// <summary>Cobrança das lojas no painel da plataforma (superadmin, ADR-0007): cada ação entra na auditoria.</summary>
-public sealed class SubscriptionAdmin(PlatformDbContext db, IPlatformAudit audit, IEnumerable<ISubscriptionBilling> gateways, TimeProvider clock)
-    : ISubscriptionAdmin
+public sealed class SubscriptionAdmin(PlatformDbContext db, IPlatformAudit audit, IEnumerable<ISubscriptionBilling> gateways, ITenantCatalog catalog,
+    IMemoryCache cache, IMessageBus bus, TimeProvider clock, ILogger<SubscriptionAdmin> logger) : ISubscriptionAdmin
 {
     public async Task<PlatformBillingView?> GetAsync(Guid tenantId, CancellationToken ct = default)
     {
@@ -143,6 +155,10 @@ public sealed class SubscriptionAdmin(PlatformDbContext db, IPlatformAudit audit
         var invoice = await db.SubscriptionInvoices.SingleOrDefaultAsync(i => i.Id == invoiceId && i.TenantId == tenantId, ct);
         if (invoice is null) return NotFound();
         if (await change(invoice) is { } error) return Fail(error);
+        // Pago ou cancelado o que estava vencido, a régua desfaz o bloqueio na hora (RF38 CA3).
+        var changes = await BillingStanding.ApplyAsync(db, [tenantId], BillingCalendar.Today(clock), ct);
+        await db.SaveChangesAsync(ct);
+        await BillingStanding.AnnounceAsync(changes, catalog, cache, bus, logger);
         return new PlatformBillingResult(await GetAsync(tenantId, ct), null);
     }
 
@@ -224,6 +240,15 @@ public sealed partial class SubscriptionPayments(IServiceProvider services, Time
             received.Finish(SubscriptionEventStatus.Processed, now);
         }
         await db.SaveChangesAsync(ct);
+
+        // RF38 CA3: pagou, a loja volta na hora (se não sobrou fatura vencida e o bloqueio foi da régua).
+        if (invoice is { Status: InvoiceStatus.Paid })
+        {
+            var changes = await BillingStanding.ApplyAsync(db, [invoice.TenantId], BillingCalendar.Today(clock), ct);
+            await db.SaveChangesAsync(ct);
+            await BillingStanding.AnnounceAsync(changes, services.GetRequiredService<ITenantCatalog>(), services.GetRequiredService<IMemoryCache>(),
+                services.GetRequiredService<IMessageBus>(), logger);
+        }
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Fatura da assinatura paga: loja {TenantId}, fatura {InvoiceId}")]

@@ -793,6 +793,12 @@ namespace Ecommerce.Infrastructure.Platform.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<bool>("BillingHold")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("billing_hold");
+
                     b.Property<string>("Cnpj")
                         .IsRequired()
                         .HasMaxLength(14)

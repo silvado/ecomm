@@ -15,7 +15,8 @@ public static class PrivacyEndpoints
 {
     public static void MapPrivacyEndpoints(this RouteGroupBuilder panel)
     {
-        var privacy = panel.MapGroup("/privacidade").RequirePermission(Permission.DataExport);
+        // Direitos do titular e exportação valem mesmo com o painel somente leitura (RF38; HIPÓTESE: a LGPD não espera a fatura).
+        var privacy = panel.MapGroup("/privacidade").RequirePermission(Permission.DataExport).AllowWhenPanelReadOnly();
 
         privacy.MapPost("/titular/previa", async Task<Results<Ok<AnonymizationPreview>, ProblemHttpResult>> (
             DataSubjectRequest request, IBuyerAnonymization anonymization, CancellationToken ct) =>
