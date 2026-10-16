@@ -57,9 +57,10 @@ public sealed class TenantProvisioning(
         if (await db.Tenants.AnyAsync(t => t.Cnpj == cnpj, ct)) return Fail(CreateTenantError.CnpjTaken);
 
         var now = clock.GetUtcNow();
-        // HIPÓTESE: a loja fica no ar ao ser criada (RF02 CA1); onboarding guiado e assinatura vêm no E4.
+        // RF05 (decisão do usuário, 16/10/2026): a loja nasce em implantação, com a vitrine fechada ("em breve"), até o Dono
+        // publicar pelos primeiros passos. Só a semente de desenvolvimento já nasce publicada.
         var tenant = Tenant.Create(slug!, cnpj!, request.LegalName, request.TradeName, platformDomain, now);
-        tenant.Activate();
+        if (request.Published) tenant.Activate();
         db.Tenants.Add(tenant);
 
         string? temporaryPassword = null;

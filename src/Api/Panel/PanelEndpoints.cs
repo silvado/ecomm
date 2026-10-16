@@ -38,6 +38,7 @@ public static class PanelEndpoints
         panel.MapPaymentSettings();
         panel.MapEmailSettings();
         panel.MapFiscalEndpoints();
+        panel.MapOnboardingEndpoints();
         panel.MapChannelEndpoints(app.ServiceProvider.GetRequiredService<IConfiguration>());
         panel.MapGroup("").RequirePermission(Permission.CatalogManage).MapVehicleCatalog();
 

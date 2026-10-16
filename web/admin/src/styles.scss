@@ -518,3 +518,25 @@ iframe.theme-preview {
   border-radius: 6px;
   background: #fff;
 }
+
+// Primeiros passos (RF05).
+ol.onboarding-steps {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+
+  li {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+
+    &.done {
+      opacity: 0.75;
+    }
+
+    p {
+      margin: 0.25rem 0 0.5rem;
+    }
+  }
+}

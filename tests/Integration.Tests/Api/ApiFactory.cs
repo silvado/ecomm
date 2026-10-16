@@ -93,11 +93,12 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     public HttpClient PanelClient() =>
         ClientFor(PanelHost, $"198.18.{RandomNumberGenerator.GetInt32(256)}.{RandomNumberGenerator.GetInt32(1, 255)}");
 
-    public async Task<Tenant> CreateTenantAsync(string planCode = Plan.Essential)
+    /// <param name="published">Falso = loja em implantação, como nasce pelos comandos e pelo painel da plataforma (RF05).</param>
+    public async Task<Tenant> CreateTenantAsync(string planCode = Plan.Essential, bool published = true)
     {
         var slug = "t" + Convert.ToHexString(RandomNumberGenerator.GetBytes(6)).ToLowerInvariant();
         var tenant = Tenant.Create(slug, Cnpjs.Random(), $"{slug} Ltda", $"Loja {slug}", "plataforma.test", DateTimeOffset.UtcNow);
-        tenant.Activate();
+        if (published) tenant.Activate();
         tenant.ChangePlan(planCode);
         await WithPlatformAsync(async db =>
         {

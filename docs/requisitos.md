@@ -40,6 +40,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 - CA1: cada passo pode ser salvo parcialmente e retomado; o progresso aparece no painel.
 - CA2: passos de canais são opcionais e só aparecem se o plano os habilitar (RF37).
 - CA3: a loja só pode ser publicada com empresa, gateway e frete concluídos.
+- **Implementado (E4, 16/10/2026):** decisão do usuário: loja nova nasce **em implantação** (`TenantStatus.Onboarding`) e a vitrine mostra "Loja em breve" (503 com tipo próprio) até o Dono publicar; lojas já existentes e a semente de desenvolvimento seguem publicadas. A situação de cada passo vem das configurações já existentes (salvar pela metade = salvar a tela do assunto); só os passos opcionais pulados ficam em `onboarding_skips` (RLS). Publicar é conferido no servidor e invalida o catálogo (abre na hora). O certificado (endpoint `ask`) já vale para loja em implantação. **HIPÓTESES:** empresa concluída = o Dono já salvou Dados da loja (ou a loja personalizada está ligada); fiscal concluído = configuração fiscal salva (vale "não emite"); pagamento simulado (só dev/teste) conta como configurado; domínio próprio também só aparece se o plano incluir; o superadmin não suspende loja em implantação (reativar a publicaria sem os passos); não há "despublicar" pelo painel.
 
 ### RF06 — Cofre de segredos por tenant · E1
 - CA1: segredos (chaves de gateway, certificado A1 + senha, tokens OAuth) são gravados com criptografia envelope (chave de dados por tenant, protegida por chave mestra fora do banco).

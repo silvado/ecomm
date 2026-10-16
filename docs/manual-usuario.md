@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 15/10/2026 (LGPD: privacidade e termos, apagar dados de comprador, registro de acesso e exportação).
+> Última atualização: 16/10/2026 (primeiros passos e publicação da loja).
 
 ## Sumário
 
@@ -11,6 +11,7 @@
 4. [Painel da loja](#4-painel-da-loja)
    - 4.1 [Entrar, trocar senha, trocar de loja e sair](#41-entrar-trocar-senha-trocar-de-loja-e-sair)
    - 4.2 [Início](#42-início)
+   - 4.2.1 [Primeiros passos](#421-primeiros-passos)
    - 4.3 [Peças](#43-peças)
    - 4.3.1 [Veículos doadores e rastreabilidade](#431-veículos-doadores-e-rastreabilidade)
    - 4.4 [Pedidos](#44-pedidos)
@@ -63,6 +64,7 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Configurar a nota fiscal da loja (Dados da loja) | ✔ | — |
 | Venda de balcão | ✔ | ✔ |
 | Integrações (log e reprocessar falhas) | ✔ | ✔ |
+| Primeiros passos e publicar a loja | ✔ | — |
 | Dados da loja | ✔ | — |
 | Pagamentos (chaves dos gateways) | ✔ | — |
 | Cofre (certificado digital A1 e chaves guardadas) | ✔ | — |
@@ -101,6 +103,27 @@ Tela de boas-vindas com o nome da loja. Os módulos ficam no menu do topo.
 - **Usuários:** no limite, não dá para adicionar outro usuário.
 - **Canais:** conectar um canal que o plano não inclui é recusado.
 - Ao mudar para um plano menor, nada é desativado: só não dá para acrescentar além do novo limite.
+
+**Sua loja ainda não está no ar** (só o Dono, enquanto a loja não foi publicada): mostra quantos passos já foram concluídos e leva aos **Primeiros passos**.
+
+### 4.2.1 Primeiros passos
+
+Toda loja nova começa **em implantação**: a loja virtual mostra **"Loja em breve"** e não vende até o Dono publicar. Em **Primeiros passos** (menu do topo, só o Dono) aparece cada passo e a situação dele:
+
+| Passo | Onde se configura | |
+|---|---|---|
+| **Dados da loja** | Dados da loja: revise nome, cores, logo e textos e clique em **Salvar** | Obrigatório |
+| **Domínio próprio** | Dados da loja → Domínio próprio (só nos planos com domínio próprio) | Opcional |
+| **Pagamento** | Pagamentos: conecte o Mercado Pago ou a Cielo | Obrigatório |
+| **Nota fiscal** | Dados da loja → Nota fiscal: escolha como a loja emite (vale "não emite pela plataforma") | Opcional |
+| **Frete** | Dados da loja → Entrega e retirada: CEP de origem ou retirada no balcão | Obrigatório |
+| **Mercado Livre, Instagram, OLX** | Só aparecem se o plano inclui o canal; a conexão chega numa próxima versão | Opcional |
+
+- O passo fica **Concluído** sozinho quando a configuração é salva na tela dele; dá para fazer aos poucos e voltar depois.
+- **Configurar** abre a tela do passo. **Pular** esconde um passo opcional da lista de pendências; **Mostrar de novo** desfaz.
+- **Publicar a loja** só fica disponível com **Dados da loja, Pagamento e Frete** concluídos. Ao publicar, a loja virtual abre na hora.
+- Na loja personalizada, **Dados da loja** já conta como concluído (o visual é da equipe da plataforma).
+- Em ambiente de teste, o pagamento simulado conta como configurado (a tela avisa).
 
 ### 4.3 Peças
 
@@ -506,6 +529,8 @@ O que acontece:
 
 ## 5. Loja virtual (o que o comprador vê)
 
+**Loja em breve:** enquanto o Dono não publica a loja (4.2.1), o endereço mostra só "Loja em breve". Loja suspensa mostra "Loja indisponível no momento".
+
 **Navegar e buscar**
 - **Início**: nome, texto "Sobre a loja" e peças recentes.
 - **Busca**: por texto e por veículo (marca, modelo e ano).
@@ -567,10 +592,10 @@ Cinco erros seguidos (senha ou código) bloqueiam a conta por 15 minutos. Um mes
 ### 6.3 Lojas
 
 - **Lista**: busca por nome, endereço, domínio ou CNPJ completo, e filtro por situação (ativa, suspensa…).
-- **Nova loja**: nome fantasia, razão social, CNPJ, endereço (o começo do endereço da loja: letras minúsculas, números e hífen) e e-mail do Dono. Ao criar, aparece a **senha provisória do Dono** — só nesse momento. Repasse ao Dono por um canal seguro; no primeiro acesso ele cria a própria senha. Se o e-mail já tinha conta na plataforma, o Dono entra com a senha que já usa.
+- **Nova loja**: nome fantasia, razão social, CNPJ, endereço (o começo do endereço da loja: letras minúsculas, números e hífen) e e-mail do Dono. Ao criar, aparece a **senha provisória do Dono** — só nesse momento. Repasse ao Dono por um canal seguro; no primeiro acesso ele cria a própria senha. Se o e-mail já tinha conta na plataforma, o Dono entra com a senha que já usa. A loja nasce **Em implantação**: a loja virtual mostra "Loja em breve" até o Dono publicar pelos **Primeiros passos** (4.2.1).
 - **Abrir uma loja** mostra dados cadastrais, endereços (subdomínio e domínio próprio), usuários e perfis. Peças, pedidos e clientes da loja **não** aparecem aqui.
   - **Plano**: escolha e clique em **Trocar plano**. Vale na hora; ao baixar de plano, o que já passou do novo limite continua, só não dá para acrescentar mais.
-  - **Suspender loja** (pede confirmação): a loja virtual sai do ar e a sincronização com os canais para. **Reativar loja** desfaz.
+  - **Suspender loja** (pede confirmação): a loja virtual sai do ar e a sincronização com os canais para. **Reativar loja** desfaz. Loja em implantação não pode ser suspensa: a loja virtual dela já está fechada, e reativar a publicaria sem os passos obrigatórios.
   - **Loja personalizada** (RF40): **Ligar** depois de fechado o orçamento; o Dono deixa de mudar logo, nome, cores e textos. **Desligar** devolve a edição ao Dono e a loja volta ao visual padrão na hora.
   - **Tema e páginas exclusivos**: abre o editor do visual sob medida (veja 6.3.1).
 
@@ -615,6 +640,7 @@ Itens previstos que **ainda não estão no sistema**:
 - NF-e de devolução e estorno automático do reembolso.
 - Automações de IA: cadastro por foto, atendimento, preço sugerido, alertas e resumo diário.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
+- Primeiros passos: ver a loja virtual antes de publicar e "despublicar" a loja pelo painel.
 - LGPD: o comprador pedir a exclusão sozinho pela loja virtual (hoje pede à loja, que apaga em **Privacidade**); observações digitadas à mão nos pedidos não são apagadas na anonimização.
 - Painel da plataforma: criar outros superadmins pela tela (hoje, só a equipe técnica, pelo servidor); trocar o app autenticador ou gerar novos códigos de recuperação (hoje não há como — sem o celular e sem códigos, a equipe técnica cria outra conta); QR code no cadastro do app; ver peças e pedidos de uma loja; enviar imagens do tema exclusivo pela tela (hoje, só por endereço `https`); importar a tabela de veículos pela tela.
 
@@ -639,3 +665,4 @@ Itens previstos que **ainda não estão no sistema**:
 | 15/10/2026 | Painel da plataforma (RF07): seção 6 reescrita (primeiro acesso com app autenticador, lojas, planos, auditoria); endereço em 2 e visão geral. |
 | 15/10/2026 | LGPD (RNF04/RF39): privacidade e termos em 4.6 e na loja virtual (5); nova seção 4.9 Privacidade (apagar dados de comprador, exportação, registro de acesso); perfis. |
 | 16/10/2026 | Tema e páginas exclusivos da loja personalizada (RF40): nova seção 6.3.1; loja virtual (5); auditoria em 6.5. |
+| 16/10/2026 | Primeiros passos (RF05): nova seção 4.2.1, cartão no Início, "Loja em breve" na loja virtual (5), loja nova em implantação e suspensão em 6.3; perfis. |
