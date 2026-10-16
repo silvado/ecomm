@@ -16,7 +16,9 @@ public sealed record CompatibilityResult(CompatibilityOutcome Outcome, Guid? Com
 public interface IPartCompatibilities
 {
     /// <summary>Anos nulos = faixa inteira da versão; informados, precisam estar dentro dela.</summary>
-    Task<CompatibilityResult> AddAsync(Guid partId, Guid vehicleVersionId, int? yearFrom, int? yearTo, CancellationToken ct = default);
+    /// <param name="source">Manual, ou sugerida pela IA (RF30) e confirmada pela pessoa no cadastro.</param>
+    Task<CompatibilityResult> AddAsync(Guid partId, Guid vehicleVersionId, int? yearFrom, int? yearTo,
+        Domain.Catalog.CompatibilitySource source = Domain.Catalog.CompatibilitySource.Manual, CancellationToken ct = default);
 
     Task<CompatibilityResult> RemoveAsync(Guid partId, Guid compatibilityId, CancellationToken ct = default);
 }

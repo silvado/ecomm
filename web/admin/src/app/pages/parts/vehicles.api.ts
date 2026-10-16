@@ -26,6 +26,8 @@ export interface CompatibilityView {
   yearTo: number | null;
   narrowed: boolean;
   discontinued: boolean;
+  /** Veio do cadastro por foto (RF30). */
+  suggestedByAi?: boolean;
 }
 
 /** "2009–2012" ou "2020–atual". */
@@ -50,10 +52,10 @@ export class VehiclesApi {
     return firstValueFrom(this.http.get<VehicleVersionOption[]>(`/api/painel/veiculos/modelos/${modelId}/versoes`));
   }
 
-  addCompatibility(partId: string, vehicleVersionId: string, yearFrom: number | null, yearTo: number | null): Promise<PartView> {
-    return firstValueFrom(
-      this.http.post<PartView>(`/api/painel/pecas/${partId}/compatibilidades`, { vehicleVersionId, yearFrom, yearTo }),
-    );
+  /** `suggestedByAi`: veículo sugerido no cadastro por foto e mantido pela pessoa (RF30). */
+  addCompatibility(partId: string, vehicleVersionId: string, yearFrom: number | null, yearTo: number | null, suggestedByAi = false): Promise<PartView> {
+    const body = suggestedByAi ? { vehicleVersionId, yearFrom, yearTo, suggestedByAi } : { vehicleVersionId, yearFrom, yearTo };
+    return firstValueFrom(this.http.post<PartView>(`/api/painel/pecas/${partId}/compatibilidades`, body));
   }
 
   removeCompatibility(partId: string, compatibilityId: string): Promise<PartView> {

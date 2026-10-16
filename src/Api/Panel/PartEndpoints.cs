@@ -4,6 +4,7 @@ using Ecommerce.Domain.Catalog;
 using Ecommerce.Domain.Identity;
 using Ecommerce.Infrastructure.Catalog;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Wolverine;
@@ -43,6 +44,36 @@ public static class PartEndpoints
             var vehicle = VehicleEndpoints.VehicleFilterFrom(modelo, versao, ano);
             return TypedResults.Ok(await queries.SearchAsync(new PartSearch(busca, status, pagina ?? 1, tamanho ?? 25, vehicle), ct));
         });
+
+        // RF30: fotos + informações (multipart: "fotos" e "informacoes") → sugestão de cadastro. Nada é gravado aqui.
+        parts.MapPost("/sugestao-ia", async Task<Results<Ok<PartSuggestion>, ProblemHttpResult>> (
+            HttpRequest request, IPartSuggestions service, CancellationToken ct) =>
+        {
+            if (!request.HasFormContentType) return AuthEndpoints.Problem(StatusCodes.Status400BadRequest, "Envie as fotos da peça.");
+            var form = await request.ReadFormAsync(ct);
+            var files = form.Files.GetFiles("fotos");
+            if (files.Count > IPartSuggestions.MaxPhotos)
+                return AuthEndpoints.Problem(StatusCodes.Status400BadRequest, $"Envie no máximo {IPartSuggestions.MaxPhotos} fotos.");
+            var photos = new List<SuggestionPhoto>();
+            foreach (var file in files)
+            {
+                if (file.Length > PartPhoto.MaxUploadBytes)
+                    return AuthEndpoints.Problem(StatusCodes.Status400BadRequest, $"{file.FileName}: a foto pode ter no máximo 10 MB.");
+                using var buffer = new MemoryStream((int)file.Length);
+                await file.CopyToAsync(buffer, ct);
+                photos.Add(new SuggestionPhoto(buffer.ToArray()));
+            }
+
+            var result = await service.SuggestAsync(photos, form["informacoes"].ToString(), ct);
+            return result.Outcome switch
+            {
+                SuggestionOutcome.Done => TypedResults.Ok(result.Suggestion!),
+                SuggestionOutcome.QuotaExceeded => AuthEndpoints.Problem(StatusCodes.Status409Conflict, result.Message!),
+                SuggestionOutcome.Unavailable => AuthEndpoints.Problem(StatusCodes.Status503ServiceUnavailable, result.Message!),
+                SuggestionOutcome.Unusable => AuthEndpoints.Problem(StatusCodes.Status422UnprocessableEntity, result.Message!),
+                _ => AuthEndpoints.Problem(StatusCodes.Status400BadRequest, result.Message!),
+            };
+        }).WithMetadata(new RequestSizeLimitAttribute(IPartSuggestions.MaxPhotos * (long)PartPhoto.MaxUploadBytes + 1024 * 1024));
 
         parts.MapGet("/{id:guid}", async Task<Results<Ok<PartView>, NotFound>> (Guid id, IPartQueries queries, CancellationToken ct) =>
             await queries.GetAsync(id, ct) is { } part ? TypedResults.Ok(part) : TypedResults.NotFound());

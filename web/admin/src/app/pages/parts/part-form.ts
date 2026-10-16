@@ -1,9 +1,22 @@
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 import { problemTitle } from '../../core/auth';
-import { CONDITION_LABELS, parseOemCodes, PartCondition, PartRequest, PartsApi, PartView, STATUS_LABELS } from './parts.api';
+import {
+  CONDITION_LABELS,
+  MAX_SUGGESTION_NOTES,
+  MAX_SUGGESTION_PHOTOS,
+  parseOemCodes,
+  PartCondition,
+  PartRequest,
+  PartsApi,
+  PartView,
+  STATUS_LABELS,
+  SuggestedCompatibility,
+} from './parts.api';
+import { VehiclesApi, yearRange } from './vehicles.api';
 import { Compatibilities } from './compatibilities';
 import { IntegrationLog } from '../integrations/integration-log';
 import { PartTraceability } from './part-traceability';
@@ -17,6 +30,10 @@ const MAX_PHOTOS = 20;
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
 const LIMITS = { code: 60, title: 120, description: 5000, dimensionCm: 1000, weightG: 1_000_000, quantity: 1_000_000 };
+
+/** Campos que a IA pode preencher (RF30 CA3: destacados até a pessoa revisar). */
+type AiField = 'title' | 'description' | 'condition' | 'oemCodes';
+const AI_FIELDS: AiField[] = ['title', 'description', 'condition', 'oemCodes'];
 
 @Component({
   selector: 'app-part-form',
@@ -97,6 +114,65 @@ const LIMITS = { code: 60, title: 120, description: 5000, dimensionCm: 1000, wei
         }
       }
 
+      @if (notice()) {
+        <p class="warn" role="status">{{ notice() }}</p>
+      }
+
+      @if (!part()) {
+        <fieldset class="ai-assist">
+          <legend>Preencher com IA</legend>
+          <p class="muted">
+            Envie de 1 a {{ maxSuggestionPhotos }} fotos da peça, de preferência com a etiqueta e o código à mostra. A IA sugere
+            título, descrição, estado, códigos OEM e veículos compatíveis; você confere, informa o código interno e o preço e
+            salva. As fotos viram as fotos da peça. Cada sugestão conta 1 no limite mensal de cadastros com IA do seu plano.
+          </p>
+          <div class="status-row">
+            <label class="button-like">
+              Escolher fotos
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="choosePhotos($event)" [disabled]="busy()" hidden />
+            </label>
+            @if (pendingPhotos().length) {
+              <small>{{ pendingPhotos().length }} foto(s): {{ photoNames() }}</small>
+            }
+          </div>
+          <label>
+            O que você já sabe sobre a peça (opcional)
+            <textarea [formControl]="notes" rows="2" [maxlength]="maxSuggestionNotes"
+              placeholder="Ex.: retirada de um Gol 2011 1.6; lado do motorista"></textarea>
+          </label>
+          <div>
+            <button type="button" (click)="suggest()" [disabled]="pendingPhotos().length === 0 || busy()">
+              {{ suggesting() ? 'Analisando as fotos…' : 'Preencher com IA' }}
+            </button>
+          </div>
+          @if (suggestError()) {
+            <p class="error" role="alert">{{ suggestError() }}</p>
+          }
+          @if (suggestedVehicles().length || unmatchedVehicles().length) {
+            <div class="ai-suggested-vehicles">
+              <span class="label">Veículos sugeridos pela IA — desmarque os que não servem</span>
+              <ul class="choices">
+                @for (s of suggestedVehicles(); track s.vehicle.vehicleVersionId; let i = $index) {
+                  <li>
+                    <label class="checkbox">
+                      <input type="checkbox" [checked]="s.keep" (change)="toggleVehicle(i)" [disabled]="busy()" />
+                      {{ s.vehicle.brand }} {{ s.vehicle.model }} · {{ s.vehicle.engine }} ·
+                      {{ range(s.vehicle.yearFrom ?? s.vehicle.versionYearFrom, s.vehicle.yearFrom ? s.vehicle.yearTo : s.vehicle.versionYearTo) }}
+                    </label>
+                  </li>
+                }
+              </ul>
+              @if (unmatchedVehicles().length) {
+                <p class="muted">
+                  A IA também citou, mas não estão na tabela de veículos (adicione à mão depois, se for o caso):
+                  {{ unmatchedVehicles().join('; ') }}.
+                </p>
+              }
+            </div>
+          }
+        </fieldset>
+      }
+
       <form [formGroup]="form" (ngSubmit)="save()">
         @if (!part()) {
           <label>
@@ -105,23 +181,32 @@ const LIMITS = { code: 60, title: 120, description: 5000, dimensionCm: 1000, wei
             <small>Único na loja. Não muda depois (aparece em etiquetas e planilhas).</small>
           </label>
         }
-        <label>
+        <label [class.ai-suggested]="aiFields().has('title')">
           Título
           <input type="text" formControlName="title" [maxlength]="limits.title" required />
+          @if (aiFields().has('title')) {
+            <span class="ai-note">Sugerido pela IA — confira. <button type="button" class="link" (click)="reviewed('title')">Revisado</button></span>
+          }
         </label>
-        <label>
+        <label [class.ai-suggested]="aiFields().has('description')">
           Descrição
           <textarea formControlName="description" rows="5" [maxlength]="limits.description"></textarea>
+          @if (aiFields().has('description')) {
+            <span class="ai-note">Sugerido pela IA — confira. <button type="button" class="link" (click)="reviewed('description')">Revisado</button></span>
+          }
         </label>
 
         <div class="grid-3">
-          <label>
+          <label [class.ai-suggested]="aiFields().has('condition')">
             Estado
             <select formControlName="condition">
               @for (c of conditions; track c) {
                 <option [value]="c">{{ conditionLabels[c] }}</option>
               }
             </select>
+            @if (aiFields().has('condition')) {
+              <span class="ai-note">Sugerido pela IA. <button type="button" class="link" (click)="reviewed('condition')">Revisado</button></span>
+            }
           </label>
           <label>
             Preço (R$)
@@ -149,10 +234,13 @@ const LIMITS = { code: 60, title: 120, description: 5000, dimensionCm: 1000, wei
           }
         </fieldset>
 
-        <label>
+        <label [class.ai-suggested]="aiFields().has('oemCodes')">
           Códigos OEM
           <textarea formControlName="oemCodes" rows="3" placeholder="Um por linha (ex.: 5U0 941 015)"></textarea>
           <small>Espaços, pontos e hífens são ignorados na busca.</small>
+          @if (aiFields().has('oemCodes')) {
+            <span class="ai-note">Lidos pela IA nas fotos — confira com a peça. <button type="button" class="link" (click)="reviewed('oemCodes')">Revisado</button></span>
+          }
         </label>
 
         @if (error()) {
@@ -171,6 +259,7 @@ export class PartFormPage implements OnInit {
   readonly id = input<string>();
 
   private readonly api = inject(PartsApi);
+  private readonly vehicles = inject(VehiclesApi);
   private readonly router = inject(Router);
 
   protected readonly limits = LIMITS;
@@ -203,8 +292,103 @@ export class PartFormPage implements OnInit {
     return [v.lengthCm, v.widthCm, v.heightCm, v.weightG].every((n) => n != null && n > 0);
   });
 
+  // Cadastro por foto (RF30).
+  protected readonly maxSuggestionPhotos = MAX_SUGGESTION_PHOTOS;
+  protected readonly maxSuggestionNotes = MAX_SUGGESTION_NOTES;
+  protected readonly range = yearRange;
+  protected readonly notes = new FormControl('', { nonNullable: true, validators: [Validators.maxLength(MAX_SUGGESTION_NOTES)] });
+  protected readonly pendingPhotos = signal<File[]>([]);
+  protected readonly photoNames = computed(() => this.pendingPhotos().map((f) => f.name).join(', '));
+  protected readonly suggesting = signal(false);
+  protected readonly suggestError = signal<string | null>(null);
+  protected readonly aiFields = signal<ReadonlySet<AiField>>(new Set());
+  protected readonly suggestedVehicles = signal<{ vehicle: SuggestedCompatibility; keep: boolean }[]>([]);
+  protected readonly unmatchedVehicles = signal<string[]>([]);
+  /** Aviso vindo do cadastro (ex.: foto que não subiu), mostrado na página da peça. */
+  protected readonly notice = signal<string | null>(null);
+
+  constructor() {
+    // Mexeu no campo = revisou.
+    for (const field of AI_FIELDS) {
+      (this.form.controls[field].valueChanges as Observable<unknown>).pipe(takeUntilDestroyed()).subscribe(() => this.reviewed(field));
+    }
+  }
+
+  protected reviewed(field: AiField): void {
+    if (!this.aiFields().has(field)) return;
+    const next = new Set(this.aiFields());
+    next.delete(field);
+    this.aiFields.set(next);
+  }
+
+  protected choosePhotos(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    this.suggestError.set(null);
+    const tooBig = files.find((f) => f.size > MAX_PHOTO_BYTES);
+    if (files.length > MAX_SUGGESTION_PHOTOS) {
+      this.suggestError.set(`Escolha no máximo ${MAX_SUGGESTION_PHOTOS} fotos.`);
+    } else if (tooBig) {
+      this.suggestError.set(`${tooBig.name}: a foto pode ter no máximo 10 MB.`);
+    } else {
+      this.pendingPhotos.set(files);
+    }
+  }
+
+  async suggest(): Promise<void> {
+    if (this.pendingPhotos().length === 0) return;
+    this.busy.set(true);
+    this.suggesting.set(true);
+    this.suggestError.set(null);
+    try {
+      const suggestion = await this.api.suggest(this.pendingPhotos(), this.notes.value);
+      this.form.patchValue({
+        title: suggestion.title,
+        description: suggestion.description,
+        condition: suggestion.condition,
+        oemCodes: suggestion.oemCodes.join('\n'),
+      });
+      // Depois do patch: o patch dispara valueChanges, que limparia o destaque.
+      this.aiFields.set(new Set(AI_FIELDS.filter((f) => f !== 'oemCodes' || suggestion.oemCodes.length > 0)));
+      this.suggestedVehicles.set(suggestion.compatibilities.map((vehicle) => ({ vehicle, keep: true })));
+      this.unmatchedVehicles.set(suggestion.unmatchedVehicles);
+    } catch (error) {
+      this.suggestError.set(problemTitle(error));
+    } finally {
+      this.suggesting.set(false);
+      this.busy.set(false);
+    }
+  }
+
+  protected toggleVehicle(index: number): void {
+    this.suggestedVehicles.update((list) => list.map((s, i) => (i === index ? { ...s, keep: !s.keep } : s)));
+  }
+
+  /** Depois de criar: fotos escolhidas para a IA e veículos mantidos. Falhas não desfazem a peça: viram aviso. */
+  private async completeNewPart(partId: string): Promise<string | null> {
+    const problems: string[] = [];
+    for (const file of this.pendingPhotos()) {
+      try {
+        await this.api.addPhoto(partId, file);
+      } catch (error) {
+        problems.push(`Foto ${file.name}: ${problemTitle(error)}`);
+      }
+    }
+    for (const { vehicle } of this.suggestedVehicles().filter((s) => s.keep)) {
+      try {
+        await this.vehicles.addCompatibility(partId, vehicle.vehicleVersionId, vehicle.yearFrom, vehicle.yearTo, true);
+      } catch (error) {
+        problems.push(`${vehicle.brand} ${vehicle.model} ${vehicle.engine}: ${problemTitle(error)}`);
+      }
+    }
+    return problems.length ? `A peça foi cadastrada, mas: ${problems.join(' ')}` : null;
+  }
+
   async ngOnInit(): Promise<void> {
     const id = this.id();
+    const state = (typeof history !== 'undefined' ? history.state : null) as { notice?: string } | null;
+    if (id && state?.notice) this.notice.set(state.notice);
     if (!id) {
       this.form.controls.internalCode.addValidators(Validators.required);
       this.form.controls.internalCode.updateValueAndValidity();
@@ -229,7 +413,8 @@ export class PartFormPage implements OnInit {
         this.saved.set(true);
       } else {
         const created = await this.api.create(this.request());
-        await this.router.navigate(['/pecas', created.id]);
+        const notice = await this.completeNewPart(created.id);
+        await this.router.navigate(['/pecas', created.id], notice ? { state: { notice } } : undefined);
       }
     } catch (error) {
       this.error.set(problemTitle(error));

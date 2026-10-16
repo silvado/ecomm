@@ -9,8 +9,11 @@ namespace Ecommerce.Infrastructure.Catalog;
 /// <summary>Compatibilidades da peça (RF09). A versão vem da réplica <c>ref</c>; a peça, do tenant do escopo (RLS).</summary>
 public sealed class PartCompatibilityService(TenantDbContext db, TimeProvider clock) : IPartCompatibilities
 {
-    public async Task<CompatibilityResult> AddAsync(Guid partId, Guid vehicleVersionId, int? yearFrom, int? yearTo, CancellationToken ct = default)
+    public async Task<CompatibilityResult> AddAsync(Guid partId, Guid vehicleVersionId, int? yearFrom, int? yearTo,
+        CompatibilitySource source = CompatibilitySource.Manual, CancellationToken ct = default)
     {
+        if (source is not (CompatibilitySource.Manual or CompatibilitySource.AiSuggested))
+            return new CompatibilityResult(CompatibilityOutcome.Invalid, null, "Origem da compatibilidade inválida.");
         var part = await db.Parts.Include(p => p.Compatibilities).SingleOrDefaultAsync(p => p.Id == partId, ct);
         if (part is null) return new CompatibilityResult(CompatibilityOutcome.NotFound, null, "Peça não encontrada.");
         var version = await db.VehicleVersions.AsNoTracking().Where(v => v.Id == vehicleVersionId)
@@ -18,7 +21,7 @@ public sealed class PartCompatibilityService(TenantDbContext db, TimeProvider cl
         if (version is null) return new CompatibilityResult(CompatibilityOutcome.NotFound, null, "Versão de veículo não encontrada.");
 
         PartCompatibility compatibility;
-        try { compatibility = part.AddCompatibility(version, yearFrom, yearTo, CompatibilitySource.Manual, clock.GetUtcNow()); }
+        try { compatibility = part.AddCompatibility(version, yearFrom, yearTo, source, clock.GetUtcNow()); }
         catch (ArgumentException e) { return new CompatibilityResult(CompatibilityOutcome.Invalid, null, e.Message.Split(" (Parameter", 2)[0]); }
         catch (InvalidOperationException e) { return new CompatibilityResult(CompatibilityOutcome.Conflict, null, e.Message); }
 

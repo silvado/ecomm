@@ -8,14 +8,14 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 |---|---:|
 | E1 — Núcleo e loja (meses 1–3) | 470 |
 | E2 — Canais (mês 4) | 142 |
-| E3 — IA e OLX (mês 5) | 90 |
+| E3 — IA e OLX (mês 5) | 96 |
 | E4 — Produto vendável (mês 6) | 187 |
 | E5 — Primeiros clientes (meses 7–8) | 116 |
-| **Total** | **1005** |
+| **Total** | **1011** |
 
-Progresso: 605 h de 1005 h em tarefas concluídas (60%).
+Progresso: 629 h de 1011 h em tarefas concluídas (62%).
 
-Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
+Referência: 6 h produtivas/dia ≈ 169 dias úteis ≈ 8,0 meses de uma pessoa.
 
 ## E1 — Núcleo e loja (meses 1–3) — 470 h
 
@@ -299,7 +299,7 @@ Mercado Livre e Instagram (catálogo Meta) sincronizados com o estoque único.
 - [ ] Atualizações pela Catalog Batch API — 10 h
 - [ ] Conexão e configuração do catálogo — 6 h
 
-## E3 — IA e OLX (mês 5) — 90 h
+## E3 — IA e OLX (mês 5) — 96 h
 
 Cadastro assistido por IA, preço sugerido e integração OLX via hub.
 
@@ -313,15 +313,16 @@ Cadastro assistido por IA, preço sugerido e integração OLX via hub.
 - [x] Decorador de auditoria — 4 h
 - [x] Contador de uso por funcionalidade — 4 h
 
-### Cadastro assistido e preço — 46 h
+### Cadastro assistido e preço — 52 h
 
-#### Cadastro de peça a partir de fotos — 30 h  `RF30`
+#### Cadastro de peça a partir de fotos — 36 h  `RF30` · **em andamento**
 
 **Critérios de aceite:** Fotos + código geram rascunho com título, descrição, categoria, atributos e compatibilidades sugeridas; campos da IA destacados até revisão; publicação só por humano.
 
-- [ ] Prompt e saída estruturada validada — 12 h
-- [ ] Tela de revisão do rascunho — 12 h
+- [x] Prompt e saída estruturada validada — 12 h
+- [x] Tela de revisão do rascunho — 12 h
 - [ ] Conjunto de avaliação de qualidade — 6 h
+- [ ] Categoria e atributos do ML na sugestão — 6 h
 
 #### Preço sugerido — 16 h  `RF32`
 

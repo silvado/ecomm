@@ -134,17 +134,18 @@ Product Backlog Item,,,Catálogo Meta por tenant,,"Requisitos: RF22, RF24",Feed 
 Task,,,,Feed de catálogo,,,E2,,8
 Task,,,,Atualizações pela Catalog Batch API,,,E2,,10
 Task,,,,Conexão e configuração do catálogo,,,E2,,6
-Epic,E3 — IA e OLX (mês 5),,,,"Cadastro assistido por IA, preço sugerido e integração OLX via hub.",,E3,90,
+Epic,E3 — IA e OLX (mês 5),,,,"Cadastro assistido por IA, preço sugerido e integração OLX via hub.",,E3,96,
 Feature,,Fundação de IA,,,,,E3,16,
 Product Backlog Item,,,IAiProvider com auditoria,,Requisitos: RF35,"Implementação Anthropic e fake; toda chamada registrada com modelo, tokens, custo, entrada resumida e saída; a camada de IA não tem acesso a comandos de escrita.",E3; RF35,16,
 Task,,,,"IAiProvider, adapter Anthropic e fake",,,E3,,8
 Task,,,,Decorador de auditoria,,,E3,,4
 Task,,,,Contador de uso por funcionalidade,,,E3,,4
-Feature,,Cadastro assistido e preço,,,,,E3,46,
-Product Backlog Item,,,Cadastro de peça a partir de fotos,,Requisitos: RF30,"Fotos + código geram rascunho com título, descrição, categoria, atributos e compatibilidades sugeridas; campos da IA destacados até revisão; publicação só por humano.",E3; RF30,30,
+Feature,,Cadastro assistido e preço,,,,,E3,52,
+Product Backlog Item,,,Cadastro de peça a partir de fotos,,Requisitos: RF30,"Fotos + código geram rascunho com título, descrição, categoria, atributos e compatibilidades sugeridas; campos da IA destacados até revisão; publicação só por humano.",E3; RF30,36,
 Task,,,,Prompt e saída estruturada validada,,,E3,,12
 Task,,,,Tela de revisão do rascunho,,,E3,,12
 Task,,,,Conjunto de avaliação de qualidade,,,E3,,6
+Task,,,,Categoria e atributos do ML na sugestão,,,E3,,6
 Product Backlog Item,,,Preço sugerido,,Requisitos: RF32,Sugere faixa de preço mostrando a amostra usada; nunca altera o preço sozinho.,E3; RF32,16,
 Task,,,,Coleta de anúncios semelhantes (fonte a validar),,,E3,,10
 Task,,,,Cálculo e tela de sugestão,,,E3,,6

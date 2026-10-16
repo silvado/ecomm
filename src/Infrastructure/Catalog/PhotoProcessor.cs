@@ -38,6 +38,44 @@ public static class PhotoProcessor
         }
     }
 
+    /// <summary>
+    /// Cópia para a IA (RF30): JPEG com no máximo <see cref="AiMaxEdge"/> px no lado maior e sem metadados (GPS do celular
+    /// não sai da plataforma). Imagens maiores só gastam tokens: https://platform.claude.com/docs/en/build-with-claude/vision
+    /// </summary>
+    public static async Task<(byte[]? Jpeg, string? Error)> ForAiAsync(byte[] original, CancellationToken ct)
+    {
+        await Slots.WaitAsync(ct);
+        try
+        {
+            return await Task.Run(() => ForAi(original), ct);
+        }
+        finally
+        {
+            Slots.Release();
+        }
+    }
+
+    public const int AiMaxEdge = 1568;
+
+    private static (byte[]? Jpeg, string? Error) ForAi(byte[] original)
+    {
+        try
+        {
+            using (var header = Image.NewFromBuffer(original, access: Enums.Access.Sequential, failOn: Enums.FailOn.Error))
+            {
+                if ((long)header.Width * header.Height > PartPhoto.MaxPixels)
+                    return (null, $"Imagem grande demais: até {PartPhoto.MaxPixels / 1_000_000} megapixels.");
+            }
+            using var resized = Image.ThumbnailBuffer(original, AiMaxEdge, height: AiMaxEdge, size: Enums.Size.Down);
+            using var flat = resized.HasAlpha() ? resized.Flatten(background: [255, 255, 255]) : resized.Copy();
+            return (flat.JpegsaveBuffer(q: 85, keep: Enums.ForeignKeep.None), null);
+        }
+        catch (VipsException)
+        {
+            return (null, "Não foi possível ler a imagem: arquivo corrompido ou formato não suportado.");
+        }
+    }
+
     private static (ProcessedPhoto? Photo, string? Error) Process(byte[] original)
     {
         try
