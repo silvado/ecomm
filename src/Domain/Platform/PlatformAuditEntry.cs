@@ -58,4 +58,7 @@ public static class PlatformAuditActions
     public const string TenantSuspended = "loja.suspensa";
     public const string TenantReactivated = "loja.reativada";
     public const string CustomStorefrontChanged = "loja.personalizada";
+    public const string ThemeUpdated = "loja.tema";
+    public const string PageSaved = "loja.pagina";
+    public const string PageRemoved = "loja.pagina.removida";
 }

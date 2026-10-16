@@ -123,6 +123,13 @@ store.MapGet("/privacidade", async (IStoreProfileService profiles, HttpResponse 
     response.Headers.CacheControl = "public, max-age=60";
     return TypedResults.Ok(await profiles.GetPublicLegalTextsAsync(ct));
 });
+// RF40 CA1: páginas exclusivas da loja personalizada (HTML já limpo ao salvar).
+store.MapGet("/paginas/{slug}", async Task<Results<Ok<PublicPage>, NotFound>> (string slug, IStoreProfileService profiles, HttpResponse response, CancellationToken ct) =>
+{
+    if (await profiles.GetPublicPageAsync(slug, ct) is not { } page) return TypedResults.NotFound();
+    response.Headers.CacheControl = "public, max-age=30";
+    return TypedResults.Ok(page);
+});
 
 // Vitrine (RF13): só peças ativas da loja do Host; busca por texto (sem acento), código/OEM e veículo (RF09 CA3).
 store.MapVehicleCatalog();

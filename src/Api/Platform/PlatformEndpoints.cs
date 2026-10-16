@@ -11,6 +11,19 @@ public sealed record PlatformPlanRequest(string Plano);
 public sealed record PlatformCustomStorefrontRequest(bool Ligada);
 public sealed record PlatformMeResponse(string Email);
 
+public sealed record PlatformThemeRequest(string? Css, string? Cabecalho, string? Rodape)
+{
+    public SavePlatformTheme ToCommand() => new(Css, Cabecalho, Rodape);
+}
+
+public sealed record PlatformPageRequest(string? Endereco, string? Titulo, string? Conteudo, bool Publicada, int Ordem)
+{
+    public SavePlatformPage ToCommand() => new(Endereco, Titulo, Conteudo, Publicada, Ordem);
+}
+
+/// <summary>Tema depois de salvar e o que a limpeza removeu (a tela mostra para a equipe).</summary>
+public sealed record PlatformThemeSaved(PlatformTheme Theme, IReadOnlyList<string> Removed);
+
 /// <summary>
 /// Sessão de superadmin conferida no banco a cada requisição: sair ou trocar a senha derruba o token na hora.
 /// Preenche quem está agindo, para a auditoria.
@@ -81,11 +94,35 @@ public static class PlatformEndpoints
         platform.MapPut("/lojas/{id:guid}/loja-personalizada", async (Guid id, PlatformCustomStorefrontRequest request, IPlatformConsole console, CancellationToken ct) =>
             Respond(await console.SetCustomStorefrontAsync(id, request.Ligada, ct)));
 
-        platform.MapGet("/planos", async (IPlatformConsole console, CancellationToken ct) => TypedResults.Ok(await console.PlansAsync(ct)));
+        // RF40 CA1: tema e páginas exclusivos (limpos ao salvar; a vitrine só aplica com a loja personalizada ligada).
+        platform.MapGet("/lojas/{id:guid}/tema", async Task<Results<Ok<PlatformTheme>, NotFound>> (Guid id, IPlatformThemeService themes, CancellationToken ct) =>
+            await themes.GetAsync(id, ct) is { } theme ? TypedResults.Ok(theme) : TypedResults.NotFound());
+
+        platform.MapPost("/lojas/{id:guid}/tema/previa", (Guid id, PlatformThemeRequest request, IPlatformThemeService themes) =>
+            TypedResults.Ok(themes.Preview(request.ToCommand())));
+
+        platform.MapPut("/lojas/{id:guid}/tema", async (Guid id, PlatformThemeRequest request, IPlatformThemeService themes, CancellationToken ct) =>
+            RespondTheme(await themes.SaveThemeAsync(id, request.ToCommand(), ct)));
+
+        platform.MapPost("/lojas/{id:guid}/paginas", async (Guid id, PlatformPageRequest request, IPlatformThemeService themes, CancellationToken ct) =>
+            RespondTheme(await themes.CreatePageAsync(id, request.ToCommand(), ct)));
+
+        platform.MapPut("/lojas/{id:guid}/paginas/{pageId:guid}", async (Guid id, Guid pageId, PlatformPageRequest request, IPlatformThemeService themes, CancellationToken ct) =>
+            RespondTheme(await themes.UpdatePageAsync(id, pageId, request.ToCommand(), ct)));
+
+        platform.MapDelete("/lojas/{id:guid}/paginas/{pageId:guid}", async (Guid id, Guid pageId, IPlatformThemeService themes, CancellationToken ct) =>
+            RespondTheme(await themes.DeletePageAsync(id, pageId, ct)));
+
+        platform.MapGet("/planos",async (IPlatformConsole console, CancellationToken ct) => TypedResults.Ok(await console.PlansAsync(ct)));
 
         platform.MapGet("/auditoria", async (Guid? loja, string? acao, string? email, int? pagina, IPlatformConsole console, CancellationToken ct) =>
             TypedResults.Ok(await console.AuditAsync(new PlatformAuditFilter(loja, acao, email, pagina ?? 1), ct)));
     }
+
+    private static Results<Ok<PlatformThemeSaved>, ProblemHttpResult> RespondTheme(PlatformThemeResult result) =>
+        result.Theme is { } theme
+            ? TypedResults.Ok(new PlatformThemeSaved(theme, result.Removed))
+            : AuthEndpoints.Problem(result.NotFound ? StatusCodes.Status404NotFound : StatusCodes.Status400BadRequest, result.Error!);
 
     private static Results<Ok<PlatformTenantDetail>, ProblemHttpResult> Respond(PlatformTenantResult result) =>
         result.Tenant is { } tenant

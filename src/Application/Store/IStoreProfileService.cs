@@ -36,7 +36,19 @@ public sealed record UpdateStoreProfile(
 /// da loja e muda a cada troca de logo (pode ter cache longo).
 /// </summary>
 /// <param name="PrimaryHost">Host principal: a vitrine redireciona (301) os outros hosts da loja para ele (RF02 CA3, RF03).</param>
-public sealed record PublicStore(string Slug, string Name, StoreTheme Theme, StoreTexts Texts, string? LogoUrl, string? PrimaryHost = null);
+/// <param name="Custom">Tema exclusivo (RF40 CA1): só com a loja personalizada ligada.</param>
+public sealed record PublicStore(
+    string Slug, string Name, StoreTheme Theme, StoreTexts Texts, string? LogoUrl, string? PrimaryHost = null, PublicCustomTheme? Custom = null);
+
+/// <summary>
+/// Tema exclusivo já limpo no servidor. <see cref="Css"/> vem dentro de <c>.custom-theme { ... }</c>: a vitrine decide onde
+/// ele vale (fora do carrinho, do checkout e de Meus pedidos).
+/// </summary>
+public sealed record PublicCustomTheme(string Css, string HeaderHtml, string FooterHtml, IReadOnlyList<PublicPageLink> Pages);
+
+public sealed record PublicPageLink(string Slug, string Title);
+
+public sealed record PublicPage(string Slug, string Title, string Html);
 
 /// <summary>Política de privacidade e termos como a vitrine mostra: os da loja ou, se vazios, o modelo padrão (RNF04).</summary>
 public sealed record StoreLegalTexts(string PrivacyPolicy, string Terms);
@@ -69,6 +81,9 @@ public interface IStoreProfileService
     Task<(StoreLegalTextsEditor? Texts, string? Error)> UpdateLegalTextsAsync(string? privacyPolicy, string? terms, CancellationToken ct = default);
 
     Task<StoreLegalTexts> GetPublicLegalTextsAsync(CancellationToken ct = default);
+
+    /// <summary>Página exclusiva publicada (RF40 CA1); nula sem a loja personalizada ligada ou com a página em rascunho.</summary>
+    Task<PublicPage?> GetPublicPageAsync(string slug, CancellationToken ct = default);
 
     /// <summary>
     /// O logo da loja do escopo, se <paramref name="logoId"/> for o atual (nulo = o atual, para o painel).
