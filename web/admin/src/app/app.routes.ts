@@ -51,6 +51,7 @@ export const routes: Routes = [
       { path: 'cofre', loadComponent: () => import('./pages/vault/vault').then((m) => m.VaultPage), canActivate: [permissionGuard('vaultManage')], title: 'Cofre' },
       { path: 'primeiros-passos', loadComponent: () => import('./pages/onboarding/onboarding').then((m) => m.OnboardingPage), canActivate: [permissionGuard('storeManage')], title: 'Primeiros passos' },
       { path: 'loja', loadComponent: () => import('./pages/store/store').then((m) => m.StorePage), canActivate: [permissionGuard('storeManage')], title: 'Dados da loja' },
+      { path: 'assinatura', loadComponent: () => import('./pages/subscription/subscription').then((m) => m.SubscriptionPage), canActivate: [permissionGuard('planManage')], title: 'Assinatura' },
       { path: 'privacidade', loadComponent: () => import('./pages/privacy/privacy').then((m) => m.PrivacyPage), canActivate: [permissionGuard('dataExport')], title: 'Privacidade' },
       { path: 'usuarios', loadComponent: () => import('./pages/users/users').then((m) => m.UsersPage), canActivate: [permissionGuard('usersManage')], title: 'Usuários' },
     ],

@@ -5,22 +5,33 @@ import { RouterLink } from '@angular/router';
 import { problemTitle } from '../core/auth';
 import { AUDIT_LABELS, AuditItem, FEATURE_LABELS, LIMIT_LABELS, PlatformApi, PlatformPlan } from './platform.api';
 
-/** Planos e o que cada um libera. Só leitura: limites mudam por migração (ADR-0007). */
+/**
+ * Planos e o que cada um libera. Limites e recursos mudam por migração (ADR-0007); a mensalidade (RF38) a equipe muda
+ * aqui e vale para as faturas geradas depois.
+ */
 @Component({
   selector: 'app-platform-plans',
+  imports: [FormsModule],
   template: `
     <main class="card wide">
       <h1>Planos</h1>
-      <p class="muted">Os limites e recursos de cada plano mudam só por atualização do sistema.</p>
+      <p class="muted">Os limites e recursos de cada plano mudam só por atualização do sistema. A mensalidade vale para as faturas geradas depois da mudança; zero = sem cobrança.</p>
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
+      @if (saved()) {
+        <p class="ok" role="status">{{ saved() }}</p>
+      }
       <table>
-        <thead><tr><th>Plano</th><th>Limites</th><th>Recursos</th><th class="num">Lojas</th></tr></thead>
+        <thead><tr><th>Plano</th><th>Mensalidade (R$)</th><th>Limites</th><th>Recursos</th><th class="num">Lojas</th></tr></thead>
         <tbody>
           @for (p of plans(); track p.code) {
             <tr>
               <td><strong>{{ p.name }}</strong></td>
+              <td [attr.data-price]="p.code">
+                <input type="number" min="0" step="0.01" [(ngModel)]="prices[p.code]" [attr.aria-label]="'Mensalidade do plano ' + p.name" />
+                <button type="button" (click)="savePrice(p)" [disabled]="busy() || prices[p.code] === p.monthlyPrice">Salvar</button>
+              </td>
               <td>
                 @for (key of limitKeys; track key) {
                   <div>{{ limitLabels[key] }}: {{ p.limits[key] ?? 'sem limite' }}</div>
@@ -47,13 +58,35 @@ export class PlatformPlansPage implements OnInit {
   protected readonly featureLabels = FEATURE_LABELS;
   protected readonly plans = signal<PlatformPlan[]>([]);
   protected readonly error = signal<string | null>(null);
+  protected readonly saved = signal<string | null>(null);
+  protected readonly busy = signal(false);
+  protected prices: Record<string, number> = {};
 
   async ngOnInit(): Promise<void> {
     try {
-      this.plans.set(await this.api.plans());
+      this.show(await this.api.plans());
     } catch (error) {
       this.error.set(problemTitle(error));
     }
+  }
+
+  protected async savePrice(plan: PlatformPlan): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    this.saved.set(null);
+    try {
+      this.show(await this.api.setPlanPrice(plan.code, Number(this.prices[plan.code] ?? 0)));
+      this.saved.set(`Mensalidade do plano ${plan.name} salva.`);
+    } catch (error) {
+      this.error.set(problemTitle(error));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  private show(plans: PlatformPlan[]): void {
+    this.plans.set(plans);
+    this.prices = Object.fromEntries(plans.map((p) => [p.code, p.monthlyPrice]));
   }
 }
 
