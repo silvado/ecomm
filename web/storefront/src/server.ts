@@ -25,6 +25,9 @@ const app = express();
 // Atrás do Caddy (rede interna do Docker): esquema e IP do comprador vêm de X-Forwarded-*, só de proxies privados.
 app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
+/** Mesmo texto de StoreProblemTypes.StoreComingSoon na API. */
+const COMING_SOON = 'https://plataforma/problemas/loja-em-breve';
+
 /** Resolve a loja pelo Host (RF04): a API decide, com o Host repassado em X-Forwarded-Host. */
 async function loadStore(req: express.Request): Promise<StoreState> {
   const host = req.headers.host;
@@ -40,7 +43,11 @@ async function loadStore(req: express.Request): Promise<StoreState> {
       signal: AbortSignal.timeout(3000),
     });
     if (response.ok) return { kind: 'open', store: await response.json() };
-    if (response.status === 503) return { kind: 'unavailable' };
+    if (response.status === 503) {
+      // RF05: loja em implantação mostra "em breve"; suspensa ou fora do ar, "indisponível".
+      const problem = (await response.json().catch(() => null)) as { type?: string } | null;
+      return { kind: problem?.type === COMING_SOON ? 'coming-soon' : 'unavailable' };
+    }
     if (response.status === 404) return { kind: 'not-found' };
     return { kind: 'error' };
   } catch {

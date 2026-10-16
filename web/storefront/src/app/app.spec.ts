@@ -58,6 +58,14 @@ describe('App (loja)', () => {
     expect(page.textContent).toContain('Loja indisponível no momento');
   });
 
+  it('loja em implantação responde 503 com "em breve"', () => {
+    const response: ResponseInit = {};
+    const page = render({ kind: 'coming-soon' }, response);
+
+    expect(response.status).toBe(503);
+    expect(page.querySelector('[data-coming-soon]')!.textContent).toContain('Loja em breve');
+  });
+
   it('host desconhecido responde 404', () => {
     const response: ResponseInit = {};
     const page = render({ kind: 'not-found' }, response);

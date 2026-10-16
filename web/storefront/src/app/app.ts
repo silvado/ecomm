@@ -64,6 +64,12 @@ import { StoreContext } from './store';
           <p>Volte mais tarde.</p>
         </main>
       }
+      @case ('coming-soon') {
+        <main class="notice" data-coming-soon>
+          <h1>Loja em breve</h1>
+          <p>Estamos preparando tudo. Volte em alguns dias.</p>
+        </main>
+      }
       @case ('not-found') {
         <main class="notice">
           <h1>Loja não encontrada</h1>

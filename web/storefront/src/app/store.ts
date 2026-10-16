@@ -39,6 +39,8 @@ export type StoreState =
   | { kind: 'open'; store: PublicStore }
   | { kind: 'not-found' }
   | { kind: 'unavailable' }
+  /** RF05: loja em implantação, ainda não publicada pelo Dono. */
+  | { kind: 'coming-soon' }
   | { kind: 'error' };
 
 /** Como o SSR chama a API interna em nome do comprador (só existe no servidor; não vai para o navegador). */
@@ -60,7 +62,7 @@ export interface StoreRequestContext {
 const STORE_KEY = makeStateKey<StoreState>('store');
 const ORIGIN_KEY = makeStateKey<string>('origin');
 
-const STATUS: Record<StoreState['kind'], number> = { open: 200, 'not-found': 404, unavailable: 503, error: 503 };
+const STATUS: Record<StoreState['kind'], number> = { open: 200, 'not-found': 404, unavailable: 503, 'coming-soon': 503, error: 503 };
 
 /**
  * Loja da requisição. No servidor vem do REQUEST_CONTEXT e vai para o TransferState;
