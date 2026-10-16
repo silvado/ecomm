@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1005** |
 
-Progresso: 589 h de 1005 h em tarefas concluídas (59%).
+Progresso: 605 h de 1005 h em tarefas concluídas (60%).
 
 Referência: 6 h produtivas/dia ≈ 168 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -305,13 +305,13 @@ Cadastro assistido por IA, preço sugerido e integração OLX via hub.
 
 ### Fundação de IA — 16 h
 
-#### IAiProvider com auditoria — 16 h  `RF35`
+#### IAiProvider com auditoria — 16 h  `RF35` · **concluído**
 
 **Critérios de aceite:** Implementação Anthropic e fake; toda chamada registrada com modelo, tokens, custo, entrada resumida e saída; a camada de IA não tem acesso a comandos de escrita.
 
-- [ ] IAiProvider, adapter Anthropic e fake — 8 h
-- [ ] Decorador de auditoria — 4 h
-- [ ] Contador de uso por funcionalidade — 4 h
+- [x] IAiProvider, adapter Anthropic e fake — 8 h
+- [x] Decorador de auditoria — 4 h
+- [x] Contador de uso por funcionalidade — 4 h
 
 ### Cadastro assistido e preço — 46 h
 
@@ -376,7 +376,7 @@ Onboarding, domínio próprio, assinatura, superadmin e LGPD.
 **Critérios de aceite:** Planos, limites e recursos são dados; mudança de plano tem efeito imediato; limite de IA bloqueia ou consome pacote excedente.
 
 - [x] Modelo de planos e verificação de limites — 12 h
-- [ ] Bloqueio e pacote excedente de IA — 8 h
+- [ ] Bloqueio e pacote excedente de IA — 8 h *(em andamento)*
 
 #### Cobrança recorrente e inadimplência — 30 h  `RF38` · **concluído**
 

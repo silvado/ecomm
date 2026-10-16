@@ -243,10 +243,12 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 ### RF35 — Auditoria e limites da IA · E3
 - CA1: toda chamada registra tenant, usuário, funcionalidade, modelo, tokens, custo estimado, entrada (resumida) e saída.
 - CA2: a camada de IA não tem acesso a comandos que alterem preço, estoque ou pedidos — garantido por arquitetura (a IA devolve sugestões; só casos de uso humanos aplicam).
+- **Implementado — fundação (E3, 16/10/2026; ADR-0003 complemento):** porta `IAiCompletion` com provedor Anthropic (SDK oficial, desligado sem chave), simulado (dev/testes) e registro de toda chamada em `ai_interactions` (RLS), inclusive falhas. Teste de arquitetura: provedores não recebem banco, fila nem contêiner; o modelo não recebe ferramentas. **HIPÓTESES:** custo em dólares pela tabela de preços configurada; falha ao gravar o registro não descarta a resposta (log crítico); ainda sem tela de consulta do registro (o superadmin e o Dono a terão quando houver funcionalidade de IA em uso).
 
 ### RF36 — Limites de uso de IA · E4
 - CA1: contador mensal por tenant e por funcionalidade.
 - CA2: ao atingir o limite, bloqueia novas chamadas com mensagem clara, ou consome pacote excedente se contratado.
+- **Implementado — contador e bloqueio (16/10/2026):** `ai_usage_counters` (RLS) por loja, funcionalidade e mês; reserva atômica antes da chamada (concorrência não passa do limite) e devolução se falhar. Decisão do usuário: **só o cadastro por foto bem-sucedido conta** para o limite do plano (`ai_listings_month`); as outras funcionalidades são contadas, sem limite. Cartão "Seu plano" mostra o uso real. **HIPÓTESE / em aberto:** pacote excedente (Q44).
 
 ## 8. Assinatura
 
@@ -336,6 +338,7 @@ Cada pergunta tem uma hipótese adotada até a resposta. Quem responder, atualiz
 | Q41 | Quais limites e recursos tem cada plano? | **HIPÓTESE** aprovada como ponto de partida (13/10/2026): usuários 2/5/10; peças ativas 500/3.000/sem limite; cadastros com IA 50/300/1.000 por mês; Mercado Livre e IA de cadastro em todos; Instagram, domínio próprio e demais IAs a partir do Profissional; OLX só no Completo; loja virtual, balcão, NF-e e e-mail em todos. Ajustável por migração de dados quando houver tabela de preços. | RF37, RF36, RF07 |
 | Q42 | Quem escreve a política de privacidade e os termos de cada loja? | **HIPÓTESE:** a loja (controladora) escreve; enquanto não escreve, a vitrine mostra um modelo genérico da plataforma com razão social e CNPJ, a revisar por advogado antes do lançamento. Os textos ficam fora da trava da loja personalizada. | RNF04 |
 | Q43 | Até onde vai a anonimização do comprador? | Aprovado (15/10/2026): saem e-mail, telefone, endereço de entrega (ficam cidade/UF) e o acesso a Meus pedidos; sem NF-e, também nome e CPF/CNPJ; com NF-e, nome e CPF/CNPJ ficam (guarda fiscal de 5 anos) e a nota não muda. **HIPÓTESE:** pedido em andamento impede; observações livres não são varridas; o registro de acesso não tem prazo de retenção definido. | RNF04 |
+| Q44 | Haverá pacote excedente de IA (comprar mais cadastros no mês)? Preço e como cobra (fatura avulsa da assinatura?). | Sem pacote: no limite, bloqueia até o mês seguinte ou troca de plano. | RF36, RF38 |
 
 ## Fontes
 

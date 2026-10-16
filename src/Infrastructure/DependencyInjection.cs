@@ -104,6 +104,33 @@ public static class DependencyInjection
         services.AddScoped<Application.Billing.ISubscriptionAdmin, Billing.SubscriptionAdmin>();
         services.AddScoped<Application.Billing.ISubscriptionWebhook, Billing.SubscriptionWebhook>();
         services.AddScoped<Billing.SubscriptionPayments>();
+
+        // IA (ADR-0003, RF35/RF36): provedor + registro de toda chamada + limite do plano. Chave da plataforma só em variável de ambiente.
+        services.Configure<Ai.AiOptions>(configuration.GetSection(Ai.AiOptions.Section));
+        var aiOptions = configuration.GetSection(Ai.AiOptions.Section).Get<Ai.AiOptions>() ?? new Ai.AiOptions();
+        // O provedor só existe com chave: quem pede IAiCompletion sempre recebe limite → registro → provedor.
+        if (aiOptions.Provider == Ai.AiOptions.FakeProvider)
+            services.AddKeyedSingleton<Application.Ai.IAiCompletion, Ai.FakeAiCompletion>(Ai.AiOptions.Section);
+        else if (aiOptions.Provider == Ai.AiOptions.AnthropicProvider && !string.IsNullOrWhiteSpace(aiOptions.Anthropic.ApiKey))
+        {
+            services.AddSingleton(_ => new Anthropic.AnthropicClient(new Anthropic.Core.ClientOptions
+            {
+                ApiKey = aiOptions.Anthropic.ApiKey,
+                BaseUrl = string.IsNullOrWhiteSpace(aiOptions.Anthropic.BaseUrl) ? "https://api.anthropic.com" : aiOptions.Anthropic.BaseUrl,
+                MaxRetries = aiOptions.Anthropic.MaxRetries,
+                Timeout = TimeSpan.FromSeconds(aiOptions.Anthropic.TimeoutSeconds),
+            }));
+            services.AddKeyedSingleton<Application.Ai.IAiCompletion, Ai.AnthropicAiCompletion>(Ai.AiOptions.Section);
+        }
+        else
+            services.AddKeyedSingleton<Application.Ai.IAiCompletion, Ai.UnconfiguredAiCompletion>(Ai.AiOptions.Section);
+        services.AddScoped<Application.Ai.IAiCompletion>(sp =>
+        {
+            var provider = sp.GetRequiredKeyedService<Application.Ai.IAiCompletion>(Ai.AiOptions.Section);
+            var audited = ActivatorUtilities.CreateInstance<Ai.AuditedAiCompletion>(sp, provider);
+            return ActivatorUtilities.CreateInstance<Ai.QuotaAiCompletion>(sp, (Application.Ai.IAiCompletion)audited);
+        });
+        services.AddScoped<Application.Ai.IAiUsage, Ai.AiUsageService>();
         // RNF04: registro de acesso a dados pessoais e anonimização do comprador.
         services.AddScoped<Application.Privacy.PanelActor>();
         services.AddScoped<Application.Privacy.IPersonalDataAccessLog, Privacy.PersonalDataAccessLog>();

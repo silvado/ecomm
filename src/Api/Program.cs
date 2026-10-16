@@ -225,6 +225,10 @@ if (app.Configuration.GetValue<bool>("Dns:UseFake"))
     app.MapFakeDns();
 }
 
+// IA simulada devolve sugestões vazias: jamais em produção (lá, "anthropic" com a chave da plataforma, ou desligada).
+if (app.Environment.IsProduction() && app.Configuration["Ai:Provider"] == Ecommerce.Infrastructure.Ai.AiOptions.FakeProvider)
+    throw new InvalidOperationException("Ai:Provider=simulado não pode ser usado em produção.");
+
 // A NF-e simulada não tem valor fiscal: jamais em produção.
 if (app.Environment.IsProduction() && app.Configuration.GetValue<bool>("Fiscal:UseFakeProvider"))
     throw new InvalidOperationException("Fiscal:UseFakeProvider não pode ser usado em produção.");

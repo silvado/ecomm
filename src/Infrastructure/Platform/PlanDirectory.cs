@@ -35,7 +35,7 @@ public sealed class PlanDirectory(IServiceProvider services)
 }
 
 /// <summary>Cartão "Seu plano": plano, uso de cada limite e recursos (só leitura).</summary>
-public sealed class PlanUsageService(PlanDirectory plans, TenantDbContext db, PlatformDbContext platform) : IPlanUsage
+public sealed class PlanUsageService(PlanDirectory plans, TenantDbContext db, PlatformDbContext platform, Application.Ai.IAiUsage ai) : IPlanUsage
 {
     public async Task<PlanUsageView> CurrentAsync(CancellationToken ct = default)
     {
@@ -43,12 +43,13 @@ public sealed class PlanUsageService(PlanDirectory plans, TenantDbContext db, Pl
         var plan = await plans.ForTenantAsync(tenantId, ct);
         var users = await platform.TenantMemberships.CountAsync(m => m.TenantId == tenantId, ct);
         var activeParts = await db.Parts.CountAsync(p => p.Status == PartStatus.Active, ct);
+        var aiUsed = (await ai.CurrentMonthAsync(ct)).GetValueOrDefault(Domain.Ai.AiFeature.PartFromPhotos);
         return new PlanUsageView(plan.Code, plan.Name,
         [
             new PlanUsage(PlanLimit.ActiveParts, activeParts, plan.Limit(PlanLimit.ActiveParts)),
             new PlanUsage(PlanLimit.Users, users, plan.Limit(PlanLimit.Users)),
-            // Contador de IA entra com o RF36; até lá, nada usado.
-            new PlanUsage(PlanLimit.AiListingsPerMonth, 0, plan.Limit(PlanLimit.AiListingsPerMonth)),
+            // RF36: cadastros por foto bem-sucedidos no mês.
+            new PlanUsage(PlanLimit.AiListingsPerMonth, aiUsed, plan.Limit(PlanLimit.AiListingsPerMonth)),
         ], plan.Features.Order(StringComparer.Ordinal).ToList());
     }
 }
