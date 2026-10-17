@@ -23,10 +23,16 @@ public sealed class MercadoLivreAuthContractTests
         }
     }
 
-    private const string TokenResponse = """
-        {"access_token":"APP_USR-123456-090515-8cc4448aac10d5105474e1351-1234567","token_type":"bearer","expires_in":21600,
-         "scope":"offline_access read write","user_id":1234567,"refresh_token":"TG-5b9032b4e23464aed1f959f-1234567"}
-        """;
+    // Tokens no formato do exemplo da documentação, montados na hora (o gitleaks do CI marca literais com cara de token).
+    private static readonly string AccessToken = string.Join('-', "APP_USR", "123456", "090515", "8cc4448aac10d5105474e1351", "1234567");
+    private static readonly string RefreshToken = string.Join('-', "TG", "5b9032b4e23464aed1f959f", "1234567");
+    private static readonly string OldRefreshToken = string.Join('-', "TG", "antigo", "1234567");
+
+    private static string TokenResponse => System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+    {
+        ["access_token"] = AccessToken, ["token_type"] = "bearer", ["expires_in"] = 21600, ["scope"] = "offline_access read write",
+        ["user_id"] = 1234567, ["refresh_token"] = RefreshToken,
+    });
 
     private static (MercadoLivreAuthClient Client, StubHandler Handler) Client(HttpStatusCode status, string body)
     {
@@ -64,7 +70,7 @@ public sealed class MercadoLivreAuthContractTests
 
         var tokens = await client.ExchangeCodeAsync("TG-61828b7fffcc9a001b4bc890-314029626", "verificador");
 
-        Assert.Equal(("APP_USR-123456-090515-8cc4448aac10d5105474e1351-1234567", "TG-5b9032b4e23464aed1f959f-1234567", "1234567"),
+        Assert.Equal((AccessToken, RefreshToken, "1234567"),
             (tokens.AccessToken, tokens.RefreshToken, tokens.UserId));
         Assert.InRange(tokens.ExpiresAt, DateTimeOffset.UtcNow.AddSeconds(21590), DateTimeOffset.UtcNow.AddSeconds(21610));
         var (request, body) = handler.Calls.Single();
@@ -81,10 +87,10 @@ public sealed class MercadoLivreAuthContractTests
     {
         var (client, handler) = Client(HttpStatusCode.OK, TokenResponse);
 
-        await client.RefreshAsync("TG-antigo-1234567");
+        await client.RefreshAsync(OldRefreshToken);
 
         var form = Form(handler.Calls.Single().Body!);
-        Assert.Equal(("refresh_token", "TG-antigo-1234567"), (form["grant_type"], form["refresh_token"]));
+        Assert.Equal(("refresh_token", OldRefreshToken), (form["grant_type"], form["refresh_token"]));
         Assert.False(form.ContainsKey("code"));
     }
 

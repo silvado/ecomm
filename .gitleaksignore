@@ -3,3 +3,6 @@
 1df0838a8046855d2b302f39e89c959bf5c32886:tests/Integration.Tests/Api/PanelAuthTests.cs:generic-api-key:414
 # Falso positivo: JWT inventado no teste de redação (RNF05), hoje montado em tempo de execução.
 765fab567308873583f427b3eab0f4f3ad08c49d:tests/Application.Tests/Common/RedactionTests.cs:jwt:17
+# Falso positivo: tokens de exemplo da documentação do Mercado Livre no teste de contrato (RF21), hoje montados em tempo de execução.
+bd418654bad55773b9f26c830df5c7cd18b3f647:tests/Integration.Tests/Channels/MercadoLivreAuthContractTests.cs:generic-api-key:28
+bd418654bad55773b9f26c830df5c7cd18b3f647:tests/Integration.Tests/Channels/MercadoLivreAuthContractTests.cs:generic-api-key:87
