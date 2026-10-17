@@ -42,12 +42,23 @@ public static class PhotoProcessor
     /// Cópia para a IA (RF30): JPEG com no máximo <see cref="AiMaxEdge"/> px no lado maior e sem metadados (GPS do celular
     /// não sai da plataforma). Imagens maiores só gastam tokens: https://platform.claude.com/docs/en/build-with-claude/vision
     /// </summary>
-    public static async Task<(byte[]? Jpeg, string? Error)> ForAiAsync(byte[] original, CancellationToken ct)
+    public static Task<(byte[]? Jpeg, string? Error)> ForAiAsync(byte[] original, CancellationToken ct) => JpegAsync(original, AiMaxEdge, 85, ct);
+
+    /// <summary>
+    /// Cópia para canal de venda: JPEG com no máximo <see cref="ChannelMaxEdge"/> px, sem metadados. O ML aceita JPG/PNG
+    /// (não WebP) até 1920 px: https://developers.mercadolivre.com.br/pt_br/trabalhar-com-imagens
+    /// </summary>
+    public static Task<(byte[]? Jpeg, string? Error)> ForChannelAsync(byte[] original, CancellationToken ct) => JpegAsync(original, ChannelMaxEdge, 90, ct);
+
+    public const int AiMaxEdge = 1568;
+    public const int ChannelMaxEdge = 1920;
+
+    private static async Task<(byte[]? Jpeg, string? Error)> JpegAsync(byte[] original, int maxEdge, int quality, CancellationToken ct)
     {
         await Slots.WaitAsync(ct);
         try
         {
-            return await Task.Run(() => ForAi(original), ct);
+            return await Task.Run(() => Jpeg(original, maxEdge, quality), ct);
         }
         finally
         {
@@ -55,9 +66,7 @@ public static class PhotoProcessor
         }
     }
 
-    public const int AiMaxEdge = 1568;
-
-    private static (byte[]? Jpeg, string? Error) ForAi(byte[] original)
+    private static (byte[]? Jpeg, string? Error) Jpeg(byte[] original, int maxEdge, int quality)
     {
         try
         {
@@ -66,9 +75,9 @@ public static class PhotoProcessor
                 if ((long)header.Width * header.Height > PartPhoto.MaxPixels)
                     return (null, $"Imagem grande demais: até {PartPhoto.MaxPixels / 1_000_000} megapixels.");
             }
-            using var resized = Image.ThumbnailBuffer(original, AiMaxEdge, height: AiMaxEdge, size: Enums.Size.Down);
+            using var resized = Image.ThumbnailBuffer(original, maxEdge, height: maxEdge, size: Enums.Size.Down);
             using var flat = resized.HasAlpha() ? resized.Flatten(background: [255, 255, 255]) : resized.Copy();
-            return (flat.JpegsaveBuffer(q: 85, keep: Enums.ForeignKeep.None), null);
+            return (flat.JpegsaveBuffer(q: quality, keep: Enums.ForeignKeep.None), null);
         }
         catch (VipsException)
         {
