@@ -138,6 +138,11 @@ public static class DependencyInjection
         else
             services.AddHttpClient<Application.Channels.IMercadoLivreAuth, Channels.MercadoLivre.MercadoLivreAuthClient>(http => http.Timeout = TimeSpan.FromSeconds(20));
         services.AddScoped<Channels.MercadoLivre.MercadoLivreCredentials>();
+        // API de anúncios do ML: real, ou o ML simulado em memória (mesmo cliente HTTP, outro "servidor") em dev e testes.
+        var mlApi = services.AddHttpClient<Channels.MercadoLivre.MercadoLivreApiClient>(http => http.Timeout = TimeSpan.FromSeconds(30));
+        if (configuration.GetValue<bool>($"{Channels.MercadoLivre.MercadoLivreOptions.Section}:UseFake"))
+            mlApi.ConfigurePrimaryHttpMessageHandler(() => new Channels.MercadoLivre.FakeMercadoLivreApi());
+        services.AddScoped<Application.Channels.IMercadoLivrePublishing, Channels.MercadoLivre.MercadoLivrePublishingService>();
         services.AddScoped<Application.Channels.IChannelConnections, Channels.MercadoLivre.ChannelConnectionService>();
         // RNF04: registro de acesso a dados pessoais e anonimização do comprador.
         services.AddScoped<Application.Privacy.PanelActor>();

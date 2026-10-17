@@ -93,26 +93,30 @@ public sealed class ChannelService(TenantDbContext db, PlatformDbContext platfor
     public const string AccountInUseMessage = "Esta conta do canal já está ligada a outra loja.";
 
     /// <summary>Publica a peça na conexão (cria o anúncio no canal com saldo e preço atuais).</summary>
+    /// <param name="mercadoLivre">Categoria, atributos, tipo e garantia (obrigatório no ML; guardado no anúncio).</param>
     /// <exception cref="InvalidOperationException">Peça não pode ser anunciada ou o canal não está disponível.</exception>
-    public async Task<ChannelListing> PublishAsync(Guid connectionId, Guid partId, CancellationToken ct = default)
+    public async Task<ChannelListing> PublishAsync(Guid connectionId, Guid partId, MercadoLivreListingOptions? mercadoLivre = null, CancellationToken ct = default)
     {
         var connection = await db.ChannelConnections.SingleOrDefaultAsync(c => c.Id == connectionId, ct)
             ?? throw new InvalidOperationException("Conexão não encontrada.");
+        if (connection.Status != ChannelConnectionStatus.Active) throw new InvalidOperationException("A conexão com o canal não está ativa. Confira em Canais de venda.");
         var part = await (from p in db.Parts
                           join s in db.Stocks on p.Id equals s.PartId
                           where p.Id == partId
-                          select new { p.Id, p.InternalCode, p.Title, p.Description, p.Price, p.Status, Available = s.OnHand - s.Reserved }).SingleOrDefaultAsync(ct)
+                          select new { p.Id, p.InternalCode, p.Title, p.Description, p.Price, p.Status, p.Condition, Available = s.OnHand - s.Reserved }).SingleOrDefaultAsync(ct)
             ?? throw new InvalidOperationException("Peça não encontrada.");
         if (part.Status != Domain.Catalog.PartStatus.Active) throw new InvalidOperationException("Só peça ativa pode ser anunciada.");
         if (await db.ChannelListings.AnyAsync(l => l.PartId == partId && l.ConnectionId == connectionId, ct))
             throw new InvalidOperationException("A peça já está anunciada neste canal.");
         var connector = await connectors.ResolveAsync(connection, ct) ?? throw new InvalidOperationException("Canal sem conector disponível.");
+        var photos = await db.PartPhotos.Where(p => p.PartId == partId).OrderBy(p => p.Position).Select(p => p.Id).ToListAsync(ct);
 
         var listing = new ChannelListing(connection.TenantId, partId, connectionId, clock.GetUtcNow());
         var quantity = Math.Max(0, part.Available);
         var externalId = await new LoggedChannelConnector(connector, log, partId)
-            .PublishAsync(new ListingDraft(part.Id, part.InternalCode, part.Title, part.Description, part.Price, quantity), ct);
+            .PublishAsync(new ListingDraft(part.Id, part.InternalCode, part.Title, part.Description, part.Price, quantity, part.Condition, photos, mercadoLivre), ct);
         listing.Published(externalId, quantity, part.Price, clock.GetUtcNow());
+        if (mercadoLivre is not null) listing.SetChannelData(MercadoLivre.MercadoLivreConnector.Serialize(mercadoLivre));
         db.ChannelListings.Add(listing);
         await db.SaveChangesAsync(ct);
         return listing;

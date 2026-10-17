@@ -21,6 +21,31 @@ public static class ChannelEndpoints
 {
     public static void MapChannelEndpoints(this RouteGroupBuilder panel, IConfiguration configuration)
     {
+        // Publicar peça no Mercado Livre (RF21 CA3): categoria sugerida, formulário de atributos e publicação. Catálogo (Dono e Operador).
+        var ml = panel.MapGroup("/pecas/{id:guid}/mercado-livre").RequirePermission(Permission.CatalogManage);
+
+        ml.MapGet("/categorias", async Task<Results<Ok<IReadOnlyList<CategoryOption>>, ProblemHttpResult>> (Guid id, IMercadoLivrePublishing service, CancellationToken ct) =>
+            await ChannelCallAsync(async () => TypedResults.Ok(await service.SuggestCategoriesAsync(id, ct))));
+
+        ml.MapGet("/formulario", async Task<Results<Ok<MercadoLivrePublishForm>, ProblemHttpResult>> (
+            Guid id, string? categoria, IMercadoLivrePublishing service, CancellationToken ct) =>
+            string.IsNullOrWhiteSpace(categoria)
+                ? AuthEndpoints.Problem(StatusCodes.Status400BadRequest, "Escolha a categoria.")
+                : await ChannelCallAsync(async () => TypedResults.Ok(await service.FormAsync(id, categoria.Trim(), ct))));
+
+        ml.MapPost("/anunciar", async Task<Results<Created<IReadOnlyList<ListingView>>, ProblemHttpResult>> (
+            Guid id, MercadoLivreListingOptions request, IMercadoLivrePublishing service, IChannelQueries queries, CancellationToken ct) =>
+        {
+            var result = await service.PublishAsync(id, request, ct);
+            return result.Outcome switch
+            {
+                PublishOutcome.Done => TypedResults.Created($"/api/painel/pecas/{id}/anuncios", await queries.ListingsForPartAsync(id, ct)),
+                PublishOutcome.Unavailable => AuthEndpoints.Problem(StatusCodes.Status503ServiceUnavailable, result.Message!),
+                PublishOutcome.Refused => AuthEndpoints.Problem(StatusCodes.Status422UnprocessableEntity, result.Message!),
+                _ => AuthEndpoints.Problem(StatusCodes.Status409Conflict, result.Message!),
+            };
+        });
+
         // Canais de venda (RF21): conectar, ver e desconectar contas. Só o Dono (dados e contratos da loja).
         var channels = panel.MapGroup("/canais").RequirePermission(Permission.StoreManage);
 
@@ -87,7 +112,7 @@ public static class ChannelEndpoints
             {
                 var connectionId = await channels.FakeConnectionIdAsync(ct)
                     ?? throw new InvalidOperationException("Conecte a loja ao canal simulado antes.");
-                await channels.PublishAsync(connectionId, request.PecaId, ct);
+                await channels.PublishAsync(connectionId, request.PecaId, ct: ct);
                 return TypedResults.Ok(await queries.ListingsForPartAsync(request.PecaId, ct));
             }
             catch (InvalidOperationException e)
@@ -95,6 +120,27 @@ public static class ChannelEndpoints
                 return AuthEndpoints.Problem(StatusCodes.Status409Conflict, e.Message);
             }
         });
+    }
+
+    /// <summary>Consultas ao ML pelo painel: sem conexão, categoria inválida ou ML fora do ar viram mensagem.</summary>
+    private static async Task<Results<Ok<T>, ProblemHttpResult>> ChannelCallAsync<T>(Func<Task<Ok<T>>> call)
+    {
+        try
+        {
+            return await call();
+        }
+        catch (ArgumentException e)
+        {
+            return AuthEndpoints.Problem(StatusCodes.Status400BadRequest, e.Message.Split(" (Parameter", 2)[0]);
+        }
+        catch (Exception e) when (e is InvalidOperationException or ChannelAuthorizationRevokedException)
+        {
+            return AuthEndpoints.Problem(StatusCodes.Status409Conflict, e.Message);
+        }
+        catch (ChannelConnectorException e)
+        {
+            return AuthEndpoints.Problem(StatusCodes.Status503ServiceUnavailable, e.Message);
+        }
     }
 
     private static ProblemHttpResult ConnectProblem(ConnectResult result) => result.Outcome switch

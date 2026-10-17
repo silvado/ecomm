@@ -5,6 +5,7 @@ using Ecommerce.Application.Integrations;
 using Ecommerce.Domain.Channels;
 using Ecommerce.Infrastructure.Integrations;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Ecommerce.Infrastructure.Channels;
 
@@ -115,13 +116,23 @@ public sealed class LoggedChannelConnector(IChannelConnector inner, IIntegration
         Logged.RunAsync(log, Channel, "consultar anúncio", () => inner.GetRemoteStateAsync(externalId, ct), _ => externalId, null, partId, ct);
 }
 
-/// <summary>Conector da conexão. Por ora só o simulado (com Channels:UseFakeChannel); ML, Meta e OLX entram no E2/E3.</summary>
-public sealed class ChannelConnectorResolver(IConfiguration configuration) : IChannelConnectorResolver
+/// <summary>
+/// Conector da conexão: Mercado Livre (RF21) e o simulado (com Channels:UseFakeChannel); Meta e OLX entram no E2/E3.
+/// O do ML é montado no escopo da loja (token do cofre, storage das fotos).
+/// </summary>
+public sealed class ChannelConnectorResolver(IConfiguration configuration, IServiceProvider services) : IChannelConnectorResolver
 {
-    public Task<IChannelConnector?> ResolveAsync(ChannelConnection connection, CancellationToken ct = default) =>
-        Task.FromResult<IChannelConnector?>(connection.Channel == FakeChannelProcessor.ChannelName && configuration.GetValue<bool>("Channels:UseFakeChannel")
-            ? new FakeChannelConnector()
-            : null);
+    public Task<IChannelConnector?> ResolveAsync(ChannelConnection connection, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        IChannelConnector? connector = connection.Channel switch
+        {
+            SalesChannel.MercadoLivre => ActivatorUtilities.CreateInstance<MercadoLivre.MercadoLivreConnector>(services, connection),
+            FakeChannelProcessor.ChannelName when configuration.GetValue<bool>("Channels:UseFakeChannel") => new FakeChannelConnector(),
+            _ => null,
+        };
+        return Task.FromResult(connector);
+    }
 }
 
 /// <summary>

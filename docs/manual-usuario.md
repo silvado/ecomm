@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 17/10/2026 (avisos do Mercado Livre).
+> Última atualização: 17/10/2026 (anunciar no Mercado Livre).
 
 ## Sumário
 
@@ -217,6 +217,18 @@ Use para cadastrar o estoque de uma vez, por exemplo na implantação da loja.
 - **Pausar:** o anúncio fica **Pausado por você** e não volta sozinho, mesmo com estoque. **Retomar** faz ele voltar a seguir o estoque.
 - **Conferência de hora em hora:** o sistema compara cada anúncio com o estoque da loja (situação, quantidade e preço) e corrige o canal se alguém mexeu lá. Vale o estoque da loja. Cada correção aparece em **Integrações** como "reconciliar anúncio", com o que mudou. A coluna **Conferido** mostra quando foi a última conferência.
 - **Anúncio excluído ou encerrado direto no canal:** fica com erro, para a loja decidir.
+
+**Anunciar no Mercado Livre** (seção Anúncios, com a conta conectada em **Canais de venda**, 4.6.1)
+1. A peça precisa estar **ativa**, com foto e com saldo (o Mercado Livre não aceita peça usada com quantidade zero).
+2. Clique em **Anunciar no Mercado Livre**. O sistema sugere a **categoria** pelo título da peça; troque se outra servir melhor.
+3. Preencha as características pedidas pela categoria. As marcadas com **\*** são obrigatórias. Já vêm preenchidos o **estado** (nova, usada, recondicionada), o **número de peça** (o primeiro código OEM) e o código interno da loja. Em **Mais características**, os campos opcionais ajudam o anúncio a aparecer nas buscas.
+4. Escolha o **tipo de anúncio** (Clássico ou Premium; as tarifas são as do Mercado Livre) e a **garantia**. Peça recondicionada exige garantia (90 dias ou mais).
+5. Clique em **Publicar no Mercado Livre**. O anúncio vai com o título, a descrição, o preço, a quantidade e as fotos da peça (até o limite da categoria).
+
+- Avisos aparecem antes de publicar: título maior que o aceito pela categoria (o excesso é cortado), mais fotos do que o limite, peça sem as medidas da embalagem (o frete do Mercado Livre pode sair errado).
+- Se o Mercado Livre **recusar**, a tela mostra o motivo que ele deu; corrija e publique de novo. Nada fica gravado.
+- Depois de publicado, o estoque da loja passa a mandar no anúncio, como nos outros canais. Mudou o preço na peça, muda no Mercado Livre.
+- Se o anúncio tiver a **automação de preços** ligada no Mercado Livre, ele não aceita preço vindo da plataforma: o anúncio fica com erro e o motivo aparece aqui.
 - **Erro na última atualização:** o canal não respondeu, mesmo depois das novas tentativas automáticas. A próxima mudança de estoque tenta de novo, e o detalhe fica em **Integrações**.
 
 ### 4.3.1 Veículos doadores e rastreabilidade
@@ -468,7 +480,7 @@ A loja virtual sempre tem as páginas **Política de privacidade** e **Termos de
 
 **Acesso:** menu **Canais de venda** (só o Dono).
 
-Aqui a loja liga as contas onde vende. Nesta versão dá para **conectar a conta do Mercado Livre**; publicar anúncios, receber as vendas e as perguntas de lá chegam nas próximas versões. Instagram e OLX também.
+Aqui a loja liga as contas onde vende. Nesta versão dá para **conectar a conta do Mercado Livre** e, depois, **anunciar** as peças pela seção Anúncios de cada peça (4.3); receber as vendas e as perguntas de lá chegam nas próximas versões. Instagram e OLX também.
 
 **Conectar o Mercado Livre**
 1. Clique em **Conectar Mercado Livre**. O painel abre o site do Mercado Livre.
@@ -720,7 +732,7 @@ Continuam disponíveis no migrador, para a equipe técnica: `criar-superadmin`, 
 
 Itens previstos que **ainda não estão no sistema**:
 
-- Mercado Livre: publicar anúncios (com categoria, atributos e compatibilidades), receber vendas, perguntas e avisos. A conexão da conta já funciona (4.6.1); em teste, o Mercado Livre é simulado (página "Mercado Livre simulado", sem conta real).
+- Mercado Livre: enviar a compatibilidade com veículos no anúncio, receber as vendas, perguntas e mensagens, editar categoria e características de um anúncio já publicado. Conectar a conta (4.6.1) e anunciar (4.3) já funcionam; em teste, o Mercado Livre é simulado (página "Mercado Livre simulado" e categorias de exemplo, sem conta real).
 - Instagram (catálogo Meta) e OLX: conectar a conta e publicar. A seção **Anúncios** e a atualização automática pelo estoque já estão prontas para recebê-los.
 - Emissão real de NF-e pela Focus NFe: hoje "pela plataforma" é simulado. "Fora da plataforma" já funciona.
 - NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
@@ -763,6 +775,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
 | 16/10/2026 | Base da IA (RF35/RF36): limite de cadastros com IA no mês explicado em 4.2 (Limites do plano); o cartão Seu plano passa a mostrar o uso real. |
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
+| 17/10/2026 | Anunciar no Mercado Livre (RF21, parte 3): categoria sugerida, características, tipo de anúncio e garantia, recusa com o motivo; estoque e preço mandando no anúncio (4.3). |
 | 17/10/2026 | Avisos do Mercado Livre (RF21, parte 2): anúncio mexido no Mercado Livre é conferido na hora (4.6.1). |
 | 16/10/2026 | Canais de venda (RF21, parte 1): nova seção 4.6.1 (conectar o Mercado Livre, renovação, autorizar de novo, desconectar), faixa de alerta e perfis; passo Mercado Livre dos primeiros passos leva à tela. |
 | 16/10/2026 | Cadastro por foto (RF30): **Preencher com IA** em 4.3 Peças (sugestão, destaque até revisar, veículos sugeridos, limite do plano) e selo IA na compatibilidade. |

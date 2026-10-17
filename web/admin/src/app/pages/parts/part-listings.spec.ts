@@ -59,4 +59,60 @@ describe('Anúncios da peça', () => {
     const { element } = await render([]);
     expect(element.textContent).toContain('ainda não está anunciada');
   });
+
+  it('anuncia no Mercado Livre: categoria sugerida, formulário pré-preenchido e publicação (RF21)', async () => {
+    const { fixture, backend, element } = await render([]);
+    element.querySelector<HTMLButtonElement>('[data-ml-start]')!.click();
+
+    backend.expectOne('/api/painel/pecas/p1/mercado-livre/categorias').flush([
+      { categoryId: 'MLB-FAROL', categoryName: 'Faróis', domainName: 'Faróis' },
+      { categoryId: 'MLB-OUTROS', categoryName: 'Outras peças', domainName: null },
+    ]);
+    await settle(fixture);
+    const form = backend.expectOne((r) => r.url === '/api/painel/pecas/p1/mercado-livre/formulario');
+    expect(form.request.params.get('categoria')).toBe('MLB-FAROL');
+    form.flush({
+      category: { categoryId: 'MLB-FAROL', name: 'Faróis', path: 'Peças > Faróis', maxTitleLength: 60, maxPictures: 12, listingAllowed: true },
+      attributes: [
+        { id: 'BRAND', name: 'Marca', valueType: 'string', required: true, conditionalRequired: false, multivalued: false, maxLength: 255, values: [], units: [], defaultUnit: null },
+        { id: 'ITEM_CONDITION', name: 'Condição do item', valueType: 'list', required: true, conditionalRequired: false, multivalued: false, maxLength: null,
+          values: [{ id: '2230284', name: 'Novo' }, { id: '2230581', name: 'Usado' }], units: [], defaultUnit: null },
+        { id: 'SIDE', name: 'Lado', valueType: 'list', required: false, conditionalRequired: false, multivalued: false, maxLength: null,
+          values: [{ id: 'S1', name: 'Esquerdo' }], units: [], defaultUnit: null },
+      ],
+      prefilled: [{ id: 'ITEM_CONDITION', valueId: '2230581', valueName: null }],
+      warnings: ['A peça está sem as medidas da embalagem.'],
+    });
+    await settle(fixture);
+
+    expect(element.querySelector('[data-ml-attribute="BRAND"]')!.textContent).toContain('Marca *');
+    expect(element.querySelector('details [data-ml-attribute="SIDE"]')).not.toBeNull();
+    expect(element.textContent).toContain('sem as medidas da embalagem');
+    const brand = element.querySelector<HTMLInputElement>('[data-ml-attribute="BRAND"] input')!;
+    brand.value = 'VW';
+    brand.dispatchEvent(new Event('input'));
+    await settle(fixture);
+    element.querySelector<HTMLButtonElement>('[data-ml-publish-button]')!.click();
+
+    const publish = backend.expectOne({ method: 'POST', url: '/api/painel/pecas/p1/mercado-livre/anunciar' });
+    expect(publish.request.body).toEqual({
+      categoryId: 'MLB-FAROL', listingTypeId: 'gold_special', warrantyType: null, warrantyTime: null,
+      attributes: [{ id: 'ITEM_CONDITION', valueId: '2230581', valueName: null }, { id: 'BRAND', valueId: null, valueName: 'VW' }],
+    });
+    publish.flush([listing({ channel: 'mercado-livre', externalId: 'MLB123' })]);
+    await settle(fixture);
+    expect(element.textContent).toContain('Mercado Livre');
+    expect(element.querySelector('[data-ml-start]')).toBeNull();
+    expect(element.querySelector('[data-ml-publish]')).toBeNull();
+  });
+
+  it('sem conta conectada mostra o motivo', async () => {
+    const { fixture, backend, element } = await render([]);
+    element.querySelector<HTMLButtonElement>('[data-ml-start]')!.click();
+    backend
+      .expectOne('/api/painel/pecas/p1/mercado-livre/categorias')
+      .flush({ title: 'Conecte a conta do Mercado Livre em Canais de venda antes de anunciar.' }, { status: 409, statusText: 'Conflict' });
+    await settle(fixture);
+    expect(element.querySelector('[data-ml-publish] [role=alert]')!.textContent).toContain('Conecte a conta do Mercado Livre');
+  });
 });

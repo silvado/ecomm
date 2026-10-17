@@ -173,6 +173,7 @@ public sealed class ChannelListing : ITenantOwned
 {
     public const int ExternalIdMaxLength = 60;
     public const int ErrorMaxLength = 500;
+    public const int ChannelDataMaxLength = 20_000;
 
     private ChannelListing() { }
 
@@ -199,6 +200,15 @@ public sealed class ChannelListing : ITenantOwned
     public DateTimeOffset? LastSyncedAt { get; private set; }
     public string? LastError { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
+
+    /// <summary>Opções do anúncio no canal (ML: categoria, atributos, tipo, garantia), em JSON, para editar e republicar.</summary>
+    public string? ChannelData { get; private set; }
+
+    public void SetChannelData(string? json)
+    {
+        if (json is { Length: > ChannelDataMaxLength }) throw new ArgumentException("Dados do anúncio grandes demais.", nameof(json));
+        ChannelData = json;
+    }
 
     /// <summary>Última conferência com o canal (reconciliação horária — RF27).</summary>
     public DateTimeOffset? LastReconciledAt { get; private set; }
@@ -264,7 +274,9 @@ public sealed class ChannelListing : ITenantOwned
             ListingAction.Resume or ListingAction.UpdateQuantity => ListingStatus.Active,
             _ => Status,
         };
-        Synced(quantity, price, now);
+        // Pausar não envia preço ao canal: o último preço enviado continua o anterior (senão, ao reativar, um preço mudado
+        // durante a pausa pareceria já estar no canal e não seria enviado).
+        Synced(quantity, action == ListingAction.Pause ? LastPushedPrice ?? price : price, now);
     }
 
     public void Failed(string error, DateTimeOffset now)

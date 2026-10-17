@@ -29,6 +29,16 @@ public sealed class ListingDecisionTests
     }
 
     [Fact]
+    public void Pausar_nao_conta_como_preco_enviado()
+    {
+        // Preço mudou junto com o saldo zerado: a pausa não leva preço, então o preço novo ainda precisa ir ao reativar.
+        var listing = Listing(2, 100m);
+        listing.Applied(ListingAction.Pause, 0, 120m, Now);
+
+        Assert.Equal((0, 100m), (listing.LastPushedQuantity!.Value, listing.LastPushedPrice!.Value));
+    }
+
+    [Fact]
     public void Ativo_so_atualiza_quando_quantidade_ou_preco_mudam()
     {
         var listing = Listing(2, 100m);

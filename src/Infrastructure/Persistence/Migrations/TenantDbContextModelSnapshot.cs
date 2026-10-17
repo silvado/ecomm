@@ -692,6 +692,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("ChannelData")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("channel_data");
+
                     b.Property<Guid>("ConnectionId")
                         .HasColumnType("uuid")
                         .HasColumnName("connection_id");

@@ -2,8 +2,13 @@ using Ecommerce.Domain.Channels;
 
 namespace Ecommerce.Application.Channels;
 
-/// <summary>Peça como o canal precisa para anunciar (o conector real acrescenta categoria, atributos e fotos — RF21).</summary>
-public sealed record ListingDraft(Guid PartId, string InternalCode, string Title, string Description, decimal Price, int Quantity);
+/// <summary>
+/// Peça como o canal precisa para anunciar. <see cref="PhotoIds"/>: fotos da peça na ordem (a primeira é a capa; o conector
+/// lê o original no storage). <see cref="MercadoLivre"/>: categoria, atributos, tipo e garantia escolhidos no painel (RF21 CA3).
+/// </summary>
+public sealed record ListingDraft(Guid PartId, string InternalCode, string Title, string Description, decimal Price, int Quantity,
+    Domain.Catalog.PartCondition Condition = Domain.Catalog.PartCondition.Used, IReadOnlyList<Guid>? PhotoIds = null,
+    MercadoLivreListingOptions? MercadoLivre = null);
 
 public enum RemoteListingStatus
 {

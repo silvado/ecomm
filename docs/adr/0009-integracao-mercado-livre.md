@@ -1,6 +1,6 @@
 # ADR-0009 — Integração com o Mercado Livre: conexão da conta (OAuth)
 
-- **Status:** Aceito (parte 1: conexão; parte 2: notificações; publicação e pedidos nos próximos PRs)
+- **Status:** Aceito (parte 1: conexão; parte 2: notificações; parte 3: publicação; compatibilidades e pedidos nos próximos PRs)
 - **Data:** 2026-10-16
 - **Requisitos:** RF21 (CA1, CA2, CA5), RF06, RF26, RF37, RNF05
 
@@ -126,6 +126,42 @@ Decisões:
   - Os demais tópicos ficam em `external_events` como ignorados até as próximas etapas: pedidos (`orders_v2`, `payments`), perguntas e mensagens (RF31, E5). Não vão para o log de integração, que encheria com milhares de avisos.
   - **Pendente:** recuperar o `missed_feeds` (por exemplo, depois de a API ficar fora do ar) quando os pedidos entrarem.
 - **Limite próprio:** `webhook-canal`, com 600 por minuto por IP (**HIPÓTESE**). O ML manda de dezenas de IPs e não pode receber 429.
+
+### 8. Publicação e sincronização (parte 3 — RF21 CA3, RF24)
+
+Fontes consultadas em 17/10/2026:
+- [Publicar produtos](https://developers.mercadolivre.com.br/pt_br/publicacao-de-produtos) (atualizada em 09/01/2026);
+- [User Products](https://developers.mercadolivre.com.br/pt_br/user-products) e [Preço por variação](https://developers.mercadolivre.com.br/pt_br/preco-variacao) (17/06/2026);
+- [Categorização](https://developers.mercadolivre.com.br/pt_br/categorizacao-de-produtos);
+- [Atributos](https://developers.mercadolivre.com.br/pt_br/atributos);
+- [Imagens](https://developers.mercadolivre.com.br/pt_br/trabalhar-com-imagens);
+- [Sincronização](https://developers.mercadolivre.com.br/pt_br/produto-sincronizacao-de-publicacoes) (24/03/2026);
+- [Automatização de preços](https://developers.mercadolivre.com.br/pt_br/automatizacoes-de-precos).
+
+O que essas páginas mudam no desenho:
+- **Modelo User Products:** ativado para todos os vendedores até 2025. O anúncio vai com `family_name` e **sem** `title` (o ML monta o título). A plataforma lê a tag `user_product_seller` em `/users/me` e usa `title` só para quem não tem a tag.
+- **Condição:** o campo `condition` está sendo substituído pelo atributo `ITEM_CONDITION`. Recondicionado só existe no atributo e exige garantia de 90 dias ou mais.
+- **Descrição:** vai em `POST /items/{id}/description`, depois do anúncio criado.
+- **Fotos:** `POST /pictures/items/upload`, multipart, só JPG/PNG e até 1920 px. A plataforma reprocessa o original da foto em JPG, sem metadados (`PhotoProcessor.ForChannelAsync`), e manda os ids no anúncio. Isso não depende de URL pública das fotos.
+- **Pausa:** zerar a quantidade só pausa item **novo**. Por isso a pausa e a reativação vão pelo `status` (`paused`/`active`), e a reativação manda a quantidade antes.
+- **Preço:** desde 18/03/2026, anúncio com automação de preços ligada recusa preço pela API (400 ou *warning*). O *warning* vira erro de validação no anúncio, com o motivo.
+
+Decisões:
+- **Formulário:**
+  - `/sites/MLB/domain_discovery/search` (limit 3) sugere a categoria pelo título;
+  - `/categories/{id}/attributes` dá os campos, sem os `read_only`, `fixed`, `inferred` e `others`. São obrigatórios os `required`, e os `new_required` em peça nova. Os `conditional_required` aparecem com aviso, e o ML recusa se faltarem;
+  - pré-preenche `ITEM_CONDITION` pela condição da peça, `PART_NUMBER` pelo primeiro OEM e `SELLER_SKU` pelo código interno;
+  - a API recusa antes de chamar o ML se faltar obrigatório, e descarta atributo que a categoria não tem.
+- **Opções guardadas:** categoria, atributos, tipo (`gold_special` Clássico ou `gold_pro` Premium) e garantia ficam no anúncio (`channel_listings.channel_data`, jsonb), para edição e republicação.
+- **Recusa do ML (400):** vira `ChannelValidationException`, com `cause[].message`. Na publicação, a tela mostra o motivo e nada é gravado. Na sincronização, o erro sobe para a fila: tenta de novo e, esgotadas as tentativas, a falha aparece em Integrações.
+- **`MercadoLivreConnector`:** implementa `IChannelConnector` e é montado pelo `ChannelConnectorResolver` no escopo da loja (token pelo `MercadoLivreCredentials`, fotos pelo storage). Entra no fluxo de propagação de estoque (RF24) e na reconciliação (RF27) já existentes.
+- **Correção no domínio (vale para todos os canais):** pausar não registra preço enviado. Antes, um preço mudado durante a pausa parecia já estar no canal e não era enviado ao reativar.
+- **ML simulado:** `FakeMercadoLivreApi` é um `HttpMessageHandler` em memória que responde nos formatos acima, com três categorias de exemplo de autopeças. O cliente HTTP real (`MercadoLivreApiClient`) roda em dev e nos testes contra ele.
+- **Pendente:**
+  - compatibilidades (próximo PR);
+  - frete/ME2 e medidas: hoje o anúncio usa o modo de envio da conta do vendedor; a tela avisa se faltam as medidas;
+  - categoria e atributos sugeridos pela IA (tarefa #200);
+  - editar anúncio publicado.
 
 ## Consequências
 

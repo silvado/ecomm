@@ -177,6 +177,11 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
   - **Desconectar:** revoga a autorização e apaga os tokens.
   - **HIPÓTESE:** uma conta do ML por loja.
   - **Pendente:** CA3 (publicação), pedidos; criar o app no DevCenter e ter um endereço HTTPS público para o retorno (VPS).
+- Feito (17/10/2026, parte 3): CA3, exceto compatibilidades.
+  - **Publicação:** na peça, **Anunciar no Mercado Livre**: categoria sugerida pelo preditor do ML; atributos da categoria com os obrigatórios e pré-preenchimento de condição, número de peça (OEM) e SKU; tipo Clássico ou Premium; garantia.
+  - **Envio:** anúncio no modelo User Products (`family_name`), fotos enviadas em JPG, descrição. Recusa do ML mostra o motivo.
+  - **Depois de publicado:** o estoque e o preço mandam no anúncio (RF24) e a conferência horária vale também para o ML (RF27).
+  - **Pendente:** compatibilidades no anúncio; editar anúncio publicado.
 - Feito (17/10/2026, parte 2): CA4 e CA5.
   - **Recebimento:** `POST /api/webhooks/canais/mercado-livre` confere o app (`application_id`) e, se configurada, a lista de IPs do ML; responde 200 na hora e grava no inbox com chave única.
   - **Roteamento:** a loja é achada pelo `user_id` do vendedor.

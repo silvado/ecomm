@@ -45,6 +45,7 @@ internal sealed class ChannelListingConfiguration : IEntityTypeConfiguration<Cha
         builder.Property(l => l.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(l => l.LastPushedPrice).HasPrecision(12, 2);
         builder.Property(l => l.LastError).HasMaxLength(ChannelListing.ErrorMaxLength);
+        builder.Property(l => l.ChannelData).HasColumnType("jsonb");
         builder.HasIndex(l => new { l.TenantId, l.PartId, l.ConnectionId }).IsUnique();
         builder.HasIndex(l => new { l.TenantId, l.ConnectionId, l.ExternalId }).IsUnique().HasFilter("external_id IS NOT NULL");
         builder.HasOne<Domain.Catalog.Part>().WithMany().HasForeignKey(l => l.PartId).OnDelete(DeleteBehavior.Restrict);
