@@ -220,7 +220,7 @@ export const epics = [
             title: 'Webhooks do Mercado Livre',
             rf: 'RF21, RF26',
             ac: 'Endpoint responde 2xx imediatamente; evento gravado com chave única; tenant resolvido pelo user_id; processamento busca o recurso na API.',
-            t: [['Endpoint, inbox e roteamento por vendedor', 8]],
+            t: [['Endpoint, inbox e roteamento por vendedor', 8, 'done']],
           },
           {
             title: 'Publicação de anúncios com atributos e compatibilidades',

@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 16/10/2026 (canais de venda: conexão do Mercado Livre).
+> Última atualização: 17/10/2026 (avisos do Mercado Livre).
 
 ## Sumário
 
@@ -482,6 +482,9 @@ Aqui a loja liga as contas onde vende. Nesta versão dá para **conectar a conta
 - Negou o acesso no Mercado Livre? Nada é conectado; é só tentar de novo quando quiser.
 - O plano da loja precisa incluir o Mercado Livre.
 
+**Avisos do Mercado Livre**
+Depois de conectada, a conta passa a avisar a plataforma do que muda lá. Nesta versão, se alguém mexer num anúncio da loja direto no Mercado Livre (pausar, mudar preço ou quantidade), o sistema confere o anúncio na hora e o corrige pelo estoque e preço da loja (aparece em **Integrações** como "aviso: anúncio alterado"). Os avisos de vendas e perguntas serão usados nas próximas versões.
+
 **Acesso renovado sozinho**
 O Mercado Livre libera o acesso por algumas horas de cada vez. O sistema renova sozinho, antes de vencer, sem você fazer nada. As renovações aparecem em **Integrações** (serviço Mercado Livre).
 
@@ -760,5 +763,6 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
 | 16/10/2026 | Base da IA (RF35/RF36): limite de cadastros com IA no mês explicado em 4.2 (Limites do plano); o cartão Seu plano passa a mostrar o uso real. |
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
+| 17/10/2026 | Avisos do Mercado Livre (RF21, parte 2): anúncio mexido no Mercado Livre é conferido na hora (4.6.1). |
 | 16/10/2026 | Canais de venda (RF21, parte 1): nova seção 4.6.1 (conectar o Mercado Livre, renovação, autorizar de novo, desconectar), faixa de alerta e perfis; passo Mercado Livre dos primeiros passos leva à tela. |
 | 16/10/2026 | Cadastro por foto (RF30): **Preencher com IA** em 4.3 Peças (sugestão, destaque até revisar, veículos sugeridos, limite do plano) e selo IA na compatibilidade. |

@@ -34,6 +34,12 @@ public sealed class MercadoLivreOptions
 
     public string ApiUrl { get; set; } = "https://api.mercadolibre.com";
 
+    /// <summary>
+    /// IPs de onde o ML envia avisos (lista publicada em https://developers.mercadolivre.com.br/pt_br/produto-receba-notificacoes).
+    /// Vazio = não confere o IP (só o application_id). A lista muda: fica na configuração, não no código.
+    /// </summary>
+    public List<string> NotificationIps { get; set; } = [];
+
     /// <summary>Renova o acesso quando falta menos que isto para vencer (o acesso dura 6 h).</summary>
     public TimeSpan RenewBefore { get; set; } = TimeSpan.FromMinutes(90);
 

@@ -70,6 +70,10 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy("webhook", http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
+    // Avisos de canais (RF21): o ML manda de dezenas de IPs e desativa os tópicos de quem não responde 200. HIPÓTESE: 600 por minuto por IP.
+    o.AddPolicy(Ecommerce.Api.Channels.ChannelWebhookEndpoints.RateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 600, Window = TimeSpan.FromMinutes(1) }));
     // Área do cliente (RF16): pedir link (pode virar e-mail) e abrir sessão (adivinhar link). HIPÓTESE: 10 por minuto por IP,
     // além do limite de links por e-mail.
     o.AddPolicy(CustomerEndpoints.RateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
@@ -204,6 +208,7 @@ if (app.Configuration.GetValue<bool>("Payments:UseFakeGateway"))
 }
 
 app.MapSubscriptionWebhook();
+app.MapMercadoLivreWebhook();
 if (app.Configuration.GetValue<bool>("Billing:UseFakeGateway"))
 {
     // Cobrança simulada da assinatura (RF38): quita faturas sem dinheiro algum. Jamais em produção.

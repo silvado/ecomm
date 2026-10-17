@@ -171,6 +171,7 @@ public static class DependencyInjection
         // RF26: avisos de canais (inbox → loja). Canal simulado só em dev/testes; os reais entram no E2.
         services.AddScoped<ChannelAccountDirectory>();
         services.AddScoped<ChannelProcessors>();
+        services.AddScoped<IChannelEventProcessor, Channels.MercadoLivre.MercadoLivreChannelProcessor>();
         if (configuration.GetValue<bool>("Channels:UseFakeChannel"))
             services.AddScoped<IChannelEventProcessor, FakeChannelProcessor>();
         // E2: anúncios nos canais e propagação de estoque (RF24/RF25).

@@ -1,6 +1,6 @@
 # ADR-0009 — Integração com o Mercado Livre: conexão da conta (OAuth)
 
-- **Status:** Aceito (parte 1: conexão; publicação, notificações e pedidos nos próximos PRs)
+- **Status:** Aceito (parte 1: conexão; parte 2: notificações; publicação e pedidos nos próximos PRs)
 - **Data:** 2026-10-16
 - **Requisitos:** RF21 (CA1, CA2, CA5), RF06, RF26, RF37, RNF05
 
@@ -102,6 +102,30 @@ A conexão não é apagada, porque os anúncios apontam para ela. Conectar a mes
 `MercadoLivre:UseFake` liga `FakeMercadoLivreAuth`, e a API recusa subir em produção com essa opção. A "página de autorização" fica em `/api/dev/mercado-livre/autorizar`: autorizar volta ao painel com `code=SIM-{vendedor}`, e negar volta com `error=access_denied`.
 
 O simulado reproduz o uso único do refresh dentro de cada processo, e o teste aceita um refresh emitido por outro processo (no compose, API e Worker não compartilham memória). O contrato do cliente real (`MercadoLivreAuthClient`) é testado contra respostas no formato da documentação.
+
+### 7. Notificações (parte 2 — RF21 CA4/CA5)
+
+Fonte: [Notificações](https://developers.mercadolivre.com.br/pt_br/produto-receba-notificacoes) (página atualizada em 14/09/2026, consultada em 17/10/2026).
+
+O que a documentação define:
+- **Formato:** o ML faz um POST JSON na URL de notificações do app, com `resource`, `user_id` (número ou texto), `topic`, `application_id`, `attempts`, `sent` e `received`. Alguns tópicos trazem também `_id`/`id` e `actions`.
+- **Resposta:** é preciso responder **200 em até 500 ms**, senão os tópicos são desativados. O ML recomenda responder logo e consultar o recurso por uma fila.
+- **Novas tentativas:** duram 1 hora. Os avisos perdidos ficam 2 dias em `GET /missed_feeds?app_id=`.
+- **Origem:** não há assinatura. O ML publica a lista de IPs de origem.
+
+Decisões:
+- **Endpoint:** `POST /api/webhooks/canais/mercado-livre`, cadastrado no app como URL de notificações (`https://<api da plataforma>/api/webhooks/canais/mercado-livre`). Tópicos para assinar: `orders_v2`, `items`, `questions`, `messages`, `payments`.
+- **O que o endpoint faz:**
+  - confere o `application_id`, que tem de ser o app da plataforma;
+  - confere o IP de origem, se `MercadoLivre:NotificationIps` estiver configurado. A lista muda, por isso fica na configuração e não no código;
+  - grava no inbox do RF26 e responde 200; repetido também recebe 200.
+- **Chave de repetição:** o `_id`/`id` quando vem; sem ele, `tópico|recurso|received`.
+- **Roteamento:** o RF26 já existente acha a loja pelo `user_id` no mapa da plataforma (CA5). Conta sem loja fica "sem dono" no inbox, com log crítico.
+- **Processamento, uma vez por loja** (`MercadoLivreChannelProcessor`):
+  - `items` de um anúncio da loja pede a conferência dele (`ReconcileListing`, RF27). Ela consulta o canal e corrige pelo estoque local, então o conteúdo do aviso nunca é confiado.
+  - Os demais tópicos ficam em `external_events` como ignorados até as próximas etapas: pedidos (`orders_v2`, `payments`), perguntas e mensagens (RF31, E5). Não vão para o log de integração, que encheria com milhares de avisos.
+  - **Pendente:** recuperar o `missed_feeds` (por exemplo, depois de a API ficar fora do ar) quando os pedidos entrarem.
+- **Limite próprio:** `webhook-canal`, com 600 por minuto por IP (**HIPÓTESE**). O ML manda de dezenas de IPs e não pode receber 429.
 
 ## Consequências
 
