@@ -50,12 +50,15 @@ export interface MessageFailure {
 export interface IntegrationSummary {
   pendingFailures: number;
   failedCallsLast24h: number;
+  /** Conexões de canal que pedem nova autorização (RF21 CA2). */
+  channelsNeedingReauth?: number;
 }
 
 export const CHANNEL_LABELS: Record<string, string> = {
   'mercado-pago': 'Mercado Pago',
   cielo: 'Cielo',
   'melhor-envio': 'Melhor Envio',
+  'mercado-livre': 'Mercado Livre',
   fake: 'Simulado (desenvolvimento)',
 };
 

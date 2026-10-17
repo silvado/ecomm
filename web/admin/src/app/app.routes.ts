@@ -50,6 +50,8 @@ export const routes: Routes = [
       { path: 'pagamentos', loadComponent: () => import('./pages/payments/payments').then((m) => m.PaymentsPage), canActivate: [permissionGuard('vaultManage')], title: 'Pagamentos' },
       { path: 'cofre', loadComponent: () => import('./pages/vault/vault').then((m) => m.VaultPage), canActivate: [permissionGuard('vaultManage')], title: 'Cofre' },
       { path: 'primeiros-passos', loadComponent: () => import('./pages/onboarding/onboarding').then((m) => m.OnboardingPage), canActivate: [permissionGuard('storeManage')], title: 'Primeiros passos' },
+      { path: 'canais', loadComponent: () => import('./pages/channels/channels').then((m) => m.ChannelsPage), canActivate: [permissionGuard('storeManage')], title: 'Canais de venda' },
+      { path: 'canais/mercado-livre/retorno', loadComponent: () => import('./pages/channels/channel-return').then((m) => m.ChannelReturnPage), canActivate: [permissionGuard('storeManage')], title: 'Mercado Livre' },
       { path: 'loja', loadComponent: () => import('./pages/store/store').then((m) => m.StorePage), canActivate: [permissionGuard('storeManage')], title: 'Dados da loja' },
       { path: 'assinatura', loadComponent: () => import('./pages/subscription/subscription').then((m) => m.SubscriptionPage), canActivate: [permissionGuard('planManage')], title: 'Assinatura' },
       { path: 'privacidade', loadComponent: () => import('./pages/privacy/privacy').then((m) => m.PrivacyPage), canActivate: [permissionGuard('dataExport')], title: 'Privacidade' },

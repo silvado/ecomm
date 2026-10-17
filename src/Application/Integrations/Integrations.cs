@@ -28,7 +28,8 @@ public sealed record MessageFailureView(
     Guid Id, DateTimeOffset FailedAt, string Description, int Attempts, string ErrorType, string? ErrorSummary, MessageFailureStatus Status,
     DateTimeOffset? ReplayedAt, string? ReplayedByEmail, string? CorrelationId);
 
-public sealed record IntegrationSummary(int PendingFailures, int FailedCallsLast24h);
+/// <param name="ChannelsNeedingReauth">Conexões de canal que pedem nova autorização (RF21 CA2): alerta no painel.</param>
+public sealed record IntegrationSummary(int PendingFailures, int FailedCallsLast24h, int ChannelsNeedingReauth = 0);
 
 public enum ReplayOutcome
 {

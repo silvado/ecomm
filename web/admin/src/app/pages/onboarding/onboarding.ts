@@ -20,14 +20,14 @@ export interface OnboardingView {
   canPublish: boolean;
 }
 
-/** Onde cada passo se resolve no painel. Canais ainda sem tela de conexão (E2). */
+/** Onde cada passo se resolve no painel. Instagram e OLX ainda sem tela de conexão (E2/E3). */
 export const STEP_INFO: Record<OnboardingStep, { title: string; hint: string; link: string | null }> = {
   company: { title: 'Dados da loja', hint: 'Revise nome, cores, logo e textos e clique em Salvar.', link: '/loja' },
   domain: { title: 'Domínio próprio', hint: 'Em Dados da loja → Domínio próprio. Sem ele, a loja usa o endereço da plataforma.', link: '/loja' },
   payment: { title: 'Pagamento', hint: 'Conecte o Mercado Pago ou a Cielo para receber dos compradores.', link: '/pagamentos' },
   fiscal: { title: 'Nota fiscal', hint: 'Em Dados da loja → Nota fiscal: escolha como a loja emite (pode ser "não emite pela plataforma").', link: '/loja' },
   shipping: { title: 'Frete', hint: 'Em Dados da loja → Entrega e retirada: CEP de origem ou retirada no balcão.', link: '/loja' },
-  mercadoLivre: { title: 'Mercado Livre', hint: 'A conexão com a conta chega numa próxima versão.', link: null },
+  mercadoLivre: { title: 'Mercado Livre', hint: 'Em Canais de venda: conecte a conta principal da loja no Mercado Livre.', link: '/canais' },
   instagram: { title: 'Instagram', hint: 'A conexão com o catálogo chega numa próxima versão.', link: null },
   olx: { title: 'OLX', hint: 'A conexão chega numa próxima versão.', link: null },
 };

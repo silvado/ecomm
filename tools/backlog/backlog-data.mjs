@@ -214,7 +214,7 @@ export const epics = [
             title: 'Conexão OAuth do vendedor',
             rf: 'RF21',
             ac: 'Um app para todos os tenants; autorização OAuth por tenant; tokens no cofre; renovação automática; falha marca conexão para reautorizar e alerta.',
-            t: [['Fluxo OAuth e armazenamento de tokens', 8], ['Renovação automática e alertas', 4]],
+            t: [['Fluxo OAuth e armazenamento de tokens', 8, 'done'], ['Renovação automática e alertas', 4, 'done']],
           },
           {
             title: 'Webhooks do Mercado Livre',

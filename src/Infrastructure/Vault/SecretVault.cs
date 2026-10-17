@@ -103,7 +103,8 @@ public sealed class SecretVault(TenantDbContext db, IOptions<VaultOptions> optio
     /// <summary>Últimos 4 caracteres de segredos de texto com pelo menos 12 caracteres; nada para binários e segredos curtos.</summary>
     private static string HintFor(SecretKind kind, ReadOnlySpan<byte> value)
     {
-        if (kind is SecretKind.A1Certificate or SecretKind.A1CertificatePassword) return string.Empty;
+        // Tokens OAuth guardam o par de acesso (JSON): o fim do texto não ajuda a reconhecer nada.
+        if (kind is SecretKind.A1Certificate or SecretKind.A1CertificatePassword or SecretKind.OAuthToken) return string.Empty;
         string text;
         try { text = new UTF8Encoding(false, throwOnInvalidBytes: true).GetString(value); }
         catch (DecoderFallbackException) { return string.Empty; }

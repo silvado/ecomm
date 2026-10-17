@@ -34,7 +34,13 @@ public sealed class ChannelService(TenantDbContext db, PlatformDbContext platfor
     {
         var tenantId = db.RequireTenantId();
         var existing = await db.ChannelConnections.SingleOrDefaultAsync(c => c.Channel == channel && c.ExternalAccountId == externalAccountId, ct);
-        if (existing is not null) return existing;
+        if (existing is not null)
+        {
+            // Desconectada antes: o mapa da plataforma saiu junto e volta agora (se outra loja não pegou a conta).
+            if (!await platform.ChannelAccounts.AnyAsync(a => a.Channel == channel && a.ExternalAccountId == externalAccountId, ct))
+                await MapAccountAsync(new ChannelAccount(tenantId, channel, externalAccountId, clock.GetUtcNow()), ct);
+            return existing;
+        }
         // RF37: o canal precisa estar no plano (o simulado, só de dev, não entra na conta).
         if (channel != Integrations.FakeChannelProcessor.ChannelName)
         {
@@ -44,15 +50,7 @@ public sealed class ChannelService(TenantDbContext db, PlatformDbContext platfor
 
         var now = clock.GetUtcNow();
         var account = new ChannelAccount(tenantId, channel, externalAccountId, now);
-        platform.ChannelAccounts.Add(account);
-        try
-        {
-            await platform.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
-        {
-            throw new InvalidOperationException("Esta conta do canal já está ligada a outra loja.", e);
-        }
+        await MapAccountAsync(account, ct);
 
         var connection = new ChannelConnection(tenantId, channel, externalAccountId, now);
         db.ChannelConnections.Add(connection);
@@ -69,6 +67,30 @@ public sealed class ChannelService(TenantDbContext db, PlatformDbContext platfor
         }
         return connection;
     }
+
+    /// <summary>Tira a conta do mapa da plataforma (loja desconectou): os avisos do canal deixam de vir para a loja.</summary>
+    public async Task UnmapAccountAsync(string channel, string externalAccountId, CancellationToken ct = default)
+    {
+        var tenantId = db.RequireTenantId();
+        await platform.ChannelAccounts.Where(a => a.TenantId == tenantId && a.Channel == channel && a.ExternalAccountId == externalAccountId)
+            .ExecuteDeleteAsync(ct);
+    }
+
+    private async Task MapAccountAsync(ChannelAccount account, CancellationToken ct)
+    {
+        platform.ChannelAccounts.Add(account);
+        try
+        {
+            await platform.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            platform.Entry(account).State = EntityState.Detached;
+            throw new InvalidOperationException(AccountInUseMessage, e);
+        }
+    }
+
+    public const string AccountInUseMessage = "Esta conta do canal já está ligada a outra loja.";
 
     /// <summary>Publica a peça na conexão (cria o anúncio no canal com saldo e preço atuais).</summary>
     /// <exception cref="InvalidOperationException">Peça não pode ser anunciada ou o canal não está disponível.</exception>
