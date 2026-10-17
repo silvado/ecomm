@@ -177,6 +177,10 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
   - **Desconectar:** revoga a autorização e apaga os tokens.
   - **HIPÓTESE:** uma conta do ML por loja.
   - **Pendente:** CA3 (publicação), pedidos; criar o app no DevCenter e ter um endereço HTTPS público para o retorno (VPS).
+- Feito (17/10/2026, parte 6):
+  - **Envio:** enviado (com rastreio) e entregue nas vendas do ML, pelo aviso de envio e conferido ao importar a venda; não entregue ou cancelado vai para o histórico.
+  - **Avisos perdidos:** recuperados de hora em hora pelo `missed_feeds`.
+  - **Pendente:** NF-e da venda; cancelar no ML pelo painel.
 - Feito (17/10/2026, parte 5): vendas do ML no painel (RF17 CA2).
   - **Venda paga no ML:** vira pedido unificado, com origem Mercado Livre, baixa atômica das peças e atualização dos outros canais.
   - **Sem saldo:** "conflito de estoque" em análise, sem cancelar sozinho (Q01).

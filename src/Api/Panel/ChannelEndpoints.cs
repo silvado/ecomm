@@ -214,6 +214,14 @@ public static class ChannelEndpoints
             <p><label>Id do vendedor<br><input name="vendedor" required style="width:100%"></label></p>
             <p><button style="width:100%;min-height:48px">Cancelar venda</button></p>
             </form>
+            <form method="post" action="{path}/envio">
+            <p><label>Avançar o envio (id do pedido no ML)<br><input name="pedido" required style="width:100%"></label></p>
+            <p><label>Id do vendedor<br><input name="vendedor" required style="width:100%"></label></p>
+            <p><label>Situação<br><select name="situacao" style="width:100%"><option value="shipped">Enviado</option><option value="delivered">Entregue</option>
+            <option value="not_delivered">Não entregue</option></select></label></p>
+            <p><label>Rastreio (opcional)<br><input name="rastreio" style="width:100%"></label></p>
+            <p><button style="width:100%;min-height:48px">Atualizar envio</button></p>
+            </form>
             </body></html>
             """, "text/html; charset=utf-8")).ExcludeFromDescription();
 
@@ -228,6 +236,8 @@ public static class ChannelEndpoints
             return Results.Content($"<p style=\"font-family:system-ui\">Venda {orderId} feita. Veja em Pedidos no painel. <a href=\"{path}\">Voltar</a></p>", "text/html; charset=utf-8");
         }).DisableAntiforgery().ExcludeFromDescription();
 
+        MapFakeShipmentChange(app, path);
+
         app.MapPost(path + "/cancelar", async (HttpRequest request, IMessageBus bus, CancellationToken ct) =>
         {
             var form = await request.ReadFormAsync(ct);
@@ -238,6 +248,22 @@ public static class ChannelEndpoints
             return Results.Content($"<p style=\"font-family:system-ui\">Venda {orderId} cancelada. <a href=\"{path}\">Voltar</a></p>", "text/html; charset=utf-8");
         }).DisableAntiforgery().ExcludeFromDescription();
     }
+
+    private static void MapFakeShipmentChange(IEndpointRouteBuilder app, string path) =>
+        app.MapPost(path + "/envio", async (HttpRequest request, IMessageBus bus, CancellationToken ct) =>
+        {
+            var form = await request.ReadFormAsync(ct);
+            var orderId = form["pedido"].ToString().Trim();
+            var seller = form["vendedor"].ToString().Trim();
+            var status = form["situacao"].ToString() is "shipped" or "delivered" or "not_delivered" ? form["situacao"].ToString() : "shipped";
+            if (Ecommerce.Infrastructure.Channels.MercadoLivre.FakeMercadoLivreApi.ShipmentOf(orderId) is not { } shipmentId)
+                return Results.BadRequest("Venda não encontrada no Mercado Livre simulado.");
+            var tracking = form["rastreio"].ToString().Trim();
+            Ecommerce.Infrastructure.Channels.MercadoLivre.FakeMercadoLivreApi.SetShipment(shipmentId, status, tracking.Length > 0 ? tracking : null);
+            await bus.InvokeAsync<ReceiveChannelEventOutcome>(new ReceiveChannelEvent(Domain.Channels.SalesChannel.MercadoLivre,
+                $"shipments|/shipments/{shipmentId}|{status}", seller, "shipments", $"/shipments/{shipmentId}", null), ct);
+            return Results.Content($"<p style=\"font-family:system-ui\">Envio da venda {orderId}: {status}. <a href=\"{path}\">Voltar</a></p>", "text/html; charset=utf-8");
+        }).DisableAntiforgery().ExcludeFromDescription();
 
     private static Task<ReceiveChannelEventOutcome> NotifyOrderAsync(IMessageBus bus, string seller, string orderId, string change, CancellationToken ct) =>
         bus.InvokeAsync<ReceiveChannelEventOutcome>(new ReceiveChannelEvent(Domain.Channels.SalesChannel.MercadoLivre, $"orders_v2|/orders/{orderId}|{change}",

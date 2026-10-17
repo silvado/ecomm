@@ -81,6 +81,7 @@ public sealed class CustomerOrder : ITenantOwned
     public const int CancelReasonMaxLength = 200;
     public const int TrackingCodeMaxLength = 60;
     public const int ExternalIdMaxLength = 100;
+    public const int ExternalShipmentIdMaxLength = 40;
 
     /// <summary>Nome mostrado na venda de balcão sem cliente informado.</summary>
     public const string WalkInCustomer = "Consumidor final";
@@ -110,6 +111,16 @@ public sealed class CustomerOrder : ITenantOwned
     public string? ExternalId { get; private set; }
 
     public OrderStatus Status { get; private set; }
+
+    /// <summary>Envio do pedido no canal (Mercado Envios) — o canal avisa as mudanças por ele.</summary>
+    public string? ExternalShipmentId { get; private set; }
+
+    public void LinkShipment(string? shipmentId)
+    {
+        var id = shipmentId?.Trim();
+        if (id is { Length: > ExternalShipmentIdMaxLength }) throw new ArgumentException("Id do envio no canal grande demais.", nameof(shipmentId));
+        ExternalShipmentId = string.IsNullOrEmpty(id) ? null : id;
+    }
 
     /// <summary>
     /// SHA-256 do token do link de acompanhamento do comprador (o token nunca é gravado). O navegador sorteia o token a

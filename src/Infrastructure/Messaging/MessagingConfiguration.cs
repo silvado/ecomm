@@ -52,6 +52,7 @@ public static class MessagingConfiguration
         opts.CodeGeneration.AlwaysUseServiceLocationFor<Platform.PlanDirectory>(); // plano da loja (banco plataforma)
         opts.CodeGeneration.AlwaysUseServiceLocationFor<Channels.MercadoLivre.MercadoLivreCredentials>(); // cofre e escopo da loja
         opts.CodeGeneration.AlwaysUseServiceLocationFor<Application.Channels.IChannelConnectorResolver>(); // monta o conector do ML no escopo da loja
+        opts.CodeGeneration.AlwaysUseServiceLocationFor<Channels.MercadoLivre.MercadoLivreApiClient>(); // cliente HTTP tipado (fábrica do HttpClient)
         opts.CodeGeneration.AlwaysUseServiceLocationFor<Application.Ai.IAiCompletion>(); // registro e limite da loja do escopo
         opts.CodeGeneration.AlwaysUseServiceLocationFor<Billing.SubscriptionPayments>(); // faturas da assinatura (banco plataforma)
         opts.Policies.AddMiddleware(typeof(TenantMessageMiddleware));
