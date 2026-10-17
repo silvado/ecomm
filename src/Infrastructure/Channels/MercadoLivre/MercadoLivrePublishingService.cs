@@ -9,9 +9,10 @@ namespace Ecommerce.Infrastructure.Channels.MercadoLivre;
 /// <summary>
 /// Publicar peça no ML (RF21 CA3) na loja do escopo: sugere a categoria pelo título, monta o formulário com os atributos
 /// da categoria (pré-preenche condição, marca vazia, número de peça pelo primeiro OEM e o SKU pelo código interno), confere
-/// os obrigatórios e publica pela conexão ativa da loja. Compatibilidades com veículos entram no próximo passo do RF21.
+/// os obrigatórios, publica pela conexão ativa da loja e, em seguida, envia as compatibilidades da peça.
 /// </summary>
-public sealed class MercadoLivrePublishingService(TenantDbContext db, ChannelService channels, MercadoLivreApiClient api, MercadoLivreCredentials credentials)
+public sealed class MercadoLivrePublishingService(
+    TenantDbContext db, ChannelService channels, MercadoLivreApiClient api, MercadoLivreCredentials credentials, IMercadoLivreCompatibilities compatibilities)
     : IMercadoLivrePublishing
 {
     public static readonly IReadOnlySet<string> ListingTypes = new HashSet<string>(StringComparer.Ordinal) { "gold_special", "gold_pro" };
@@ -84,7 +85,14 @@ public sealed class MercadoLivrePublishingService(TenantDbContext db, ChannelSer
             var cleaned = options with { Attributes = options.Attributes.Where(a => known.Contains(a.Id)).ToList() };
 
             var listing = await channels.PublishAsync(connection.Id, partId, cleaned, ct);
-            return new PublishResult(PublishOutcome.Done, ListingId: listing.Id);
+            // Compatibilidades logo em seguida: falhar aqui não desfaz o anúncio (dá para reenviar pelo anúncio).
+            CompatibilityReport report;
+            try { report = await compatibilities.SyncAsync(listing.Id, ct); }
+            catch (Exception e) when (e is ChannelConnectorException or ChannelAuthorizationRevokedException or InvalidOperationException)
+            {
+                report = new CompatibilityReport(0, [], $"As compatibilidades não foram enviadas: {e.Message}");
+            }
+            return new PublishResult(PublishOutcome.Done, ListingId: listing.Id, Compatibilities: report);
         }
         catch (ChannelValidationException e)
         {

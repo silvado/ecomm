@@ -177,6 +177,11 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
   - **Desconectar:** revoga a autorização e apaga os tokens.
   - **HIPÓTESE:** uma conta do ML por loja.
   - **Pendente:** CA3 (publicação), pedidos; criar o app no DevCenter e ter um endereço HTTPS público para o retorno (VPS).
+- Feito (17/10/2026, parte 4): compatibilidades do CA3.
+  - **Envio:** os veículos da peça vão ao anúncio como famílias do catálogo de veículos do ML (marca, modelo, ano e, quando a peça não serve em todas as versões do ano, motor).
+  - **Quando:** logo depois de publicar e pelo botão **Enviar compatibilidades**.
+  - **Fora do catálogo do ML:** o veículo que não for achado com segurança fica de fora e aparece num relatório.
+  - **Pendente:** remover do anúncio o veículo tirado da peça; restrições de posição; sugestões do ML.
 - Feito (17/10/2026, parte 3): CA3, exceto compatibilidades.
   - **Publicação:** na peça, **Anunciar no Mercado Livre**: categoria sugerida pelo preditor do ML; atributos da categoria com os obrigatórios e pré-preenchimento de condição, número de peça (OEM) e SKU; tipo Clássico ou Premium; garantia.
   - **Envio:** anúncio no modelo User Products (`family_name`), fotos enviadas em JPG, descrição. Recusa do ML mostra o motivo.

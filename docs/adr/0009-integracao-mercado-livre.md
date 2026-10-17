@@ -1,6 +1,6 @@
 # ADR-0009 — Integração com o Mercado Livre: conexão da conta (OAuth)
 
-- **Status:** Aceito (parte 1: conexão; parte 2: notificações; parte 3: publicação; compatibilidades e pedidos nos próximos PRs)
+- **Status:** Aceito (parte 1: conexão; parte 2: notificações; parte 3: publicação; parte 4: compatibilidades; pedidos no próximo PR)
 - **Data:** 2026-10-16
 - **Requisitos:** RF21 (CA1, CA2, CA5), RF06, RF26, RF37, RNF05
 
@@ -162,6 +162,34 @@ Decisões:
   - frete/ME2 e medidas: hoje o anúncio usa o modo de envio da conta do vendedor; a tela avisa se faltam as medidas;
   - categoria e atributos sugeridos pela IA (tarefa #200);
   - editar anúncio publicado.
+
+### 9. Compatibilidades (parte 4 — RF21 CA3)
+
+Fontes consultadas em 17/10/2026:
+- [Compatibilidades entre itens e produtos de Autopeças](https://developers.mercadolivre.com.br/pt_br/compatibilidades-itens-e-produtos-de-autopecas) (atualizada em 14/07/2026);
+- [Referências de domínios, produtos e atributos para Autopeças](https://developers.mercadolivre.com.br/pt_br/referencias-de-dominios-produtos-e-atributos-para-autopecas) (15/06/2026).
+
+O que essas páginas definem:
+- **Envio:** `POST /items/{id}/compatibilities` acrescenta veículos (os já cadastrados ficam). Pode ir por produto, por família (`products_families`: domínio + atributos) ou pelos dois, com até 10 famílias e 200 veículos por chamada e 100 chamadas por minuto por app.
+- **`creation_source`:** é obrigatório; o valor genérico é `DEFAULT`.
+- **Domínio do Brasil:** `MLB-CARS_AND_VANS`, com os atributos `BRAND`, `MODEL`, `VEHICLE_YEAR`, `SHORT_VERSION` e `ENGINE`.
+- **Valores:** saem de `POST /catalog_domains/MLB-CARS_AND_VANS/attributes/{atributo}/top_values`, filtrados pelos atributos já conhecidos.
+- **Busca de veículos (`products_search/chunks`):** deixou de existir em 15/07/2026.
+
+Decisões:
+- **Famílias (`MercadoLivreCompatibilityService`):** cada compatibilidade da peça (versão + anos) vira uma família por ano: marca + modelo + `VEHICLE_YEAR`.
+  - Se a peça serve em **todas** as versões do modelo naquele ano (pela nossa tabela, RF09), a família vai sem motor.
+  - Senão, vai com `ENGINE`. O motor do ML é o de maior sobreposição de palavras com a nossa motorização, exigindo a mesma cilindrada e sem empate. Na dúvida, o veículo fica de fora.
+- **Nunca enviar veículo a mais:** a marca e o modelo são achados pelo nome normalizado (sem acento nem caixa). O que não casar vai para a lista "não encontrados", e a loja inclui pelo gerenciador do ML.
+- **Cache:** os valores do catálogo do ML (iguais para todas as lojas) ficam 1 dia em memória.
+- **Lotes:** de 10 famílias, com até 120 famílias por envio (**HIPÓTESE**). O que passar disso vai para "não encontrados".
+- **Quando:**
+  - logo depois de publicar, sem desfazer o anúncio se falhar;
+  - pelo botão **Enviar compatibilidades** no anúncio (`POST /api/painel/anuncios/{id}/compatibilidades`).
+- **Pendente:**
+  - **Remoção:** tirar um veículo da peça não o tira do anúncio. Exige listar e apagar as compatibilidades `source: SELLER`.
+  - **Restrições de posição (`POSITION`) e notas.**
+  - **Sugestões do ML** (`pending_compatibilities`).
 
 ## Consequências
 

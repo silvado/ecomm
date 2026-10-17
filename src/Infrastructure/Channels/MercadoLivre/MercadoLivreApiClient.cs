@@ -123,6 +123,41 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
             : [];
     }
 
+    /// <summary>Domínio de veículos do Brasil para compatibilidades (referencias-de-dominios-produtos-e-atributos-para-autopecas).</summary>
+    public const string VehicleDomain = Site + "-CARS_AND_VANS";
+
+    /// <summary>
+    /// Valores de um atributo do catálogo de veículos, filtrados pelos já conhecidos (ex.: modelos de uma marca):
+    /// <c>POST /catalog_domains/{domínio}/attributes/{atributo}/top_values</c>.
+    /// </summary>
+    public async Task<IReadOnlyList<AttributeValueOption>> TopValuesAsync(string token, string attributeId, IReadOnlyList<(string Id, string ValueId)> known, CancellationToken ct)
+    {
+        var body = new JsonObject
+        {
+            ["known_attributes"] = new JsonArray(known.Select(k => (JsonNode)new JsonObject { ["id"] = k.Id, ["value_id"] = k.ValueId }).ToArray()),
+        };
+        using var response = await SendAsync(HttpMethod.Post, $"/catalog_domains/{VehicleDomain}/attributes/{Uri.EscapeDataString(attributeId)}/top_values", token,
+            JsonContent.Create(body), ct);
+        var list = await JsonAsync(response, ct);
+        return list.ValueKind != JsonValueKind.Array
+            ? []
+            : list.EnumerateArray().Where(v => Text(v, "id") is not null && Text(v, "name") is not null)
+                .Select(v => new AttributeValueOption(Text(v, "id")!, Text(v, "name")!)).ToList();
+    }
+
+    /// <summary>
+    /// Acrescenta compatibilidades ao anúncio (as já cadastradas ficam): <c>POST /items/{id}/compatibilities</c> com
+    /// <c>products_families</c> (até 10 por chamada e 200 veículos no total). Fonte:
+    /// https://developers.mercadolivre.com.br/pt_br/compatibilidades-itens-e-produtos-de-autopecas
+    /// </summary>
+    /// <returns>Quantos veículos o ML ligou ao anúncio.</returns>
+    public async Task<int> AddCompatibilitiesAsync(string token, string itemId, JsonObject body, CancellationToken ct)
+    {
+        using var response = await SendAsync(HttpMethod.Post, $"/items/{Uri.EscapeDataString(itemId)}/compatibilities", token, JsonContent.Create(body), ct);
+        var result = await JsonAsync(response, ct);
+        return result.TryGetProperty("created_compatibilities_count", out var count) && count.TryGetInt32(out var n) ? n : 0;
+    }
+
     /// <summary>Nulo se o anúncio não existe (404).</summary>
     public async Task<JsonElement?> GetItemAsync(string token, string itemId, CancellationToken ct)
     {

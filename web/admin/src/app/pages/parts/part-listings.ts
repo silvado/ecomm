@@ -71,6 +71,13 @@ export interface MercadoLivrePublishForm {
   warnings: string[];
 }
 
+/** Compatibilidades enviadas ao anúncio do ML: aceitas, não achadas no catálogo de veículos do ML e erro. */
+export interface CompatibilityReport {
+  sent: number;
+  unmapped: string[];
+  error: string | null;
+}
+
 export interface MercadoLivreListingOptions {
   categoryId: string;
   listingTypeId: string;
@@ -102,8 +109,14 @@ export class ListingsApi {
     );
   }
 
-  publishMercadoLivre(partId: string, options: MercadoLivreListingOptions): Promise<ListingView[]> {
-    return firstValueFrom(this.http.post<ListingView[]>(`/api/painel/pecas/${partId}/mercado-livre/anunciar`, options));
+  publishMercadoLivre(partId: string, options: MercadoLivreListingOptions): Promise<{ listings: ListingView[]; compatibilities: CompatibilityReport | null }> {
+    return firstValueFrom(
+      this.http.post<{ listings: ListingView[]; compatibilities: CompatibilityReport | null }>(`/api/painel/pecas/${partId}/mercado-livre/anunciar`, options),
+    );
+  }
+
+  sendCompatibilities(listingId: string): Promise<CompatibilityReport> {
+    return firstValueFrom(this.http.post<CompatibilityReport>(`/api/painel/anuncios/${listingId}/compatibilidades`, {}));
   }
 }
 
@@ -141,6 +154,9 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
                   } @else if (l.status === 'pausedByUser') {
                     <button type="button" class="link" (click)="change(l, 'retomar')" [disabled]="busy()" data-resume>Retomar</button>
                   }
+                  @if (l.channel === 'mercado-livre' && l.externalId) {
+                    <br /><button type="button" class="link" (click)="sendCompatibilities(l)" [disabled]="busy()" data-ml-compat>Enviar compatibilidades</button>
+                  }
                 </td>
               </tr>
             }
@@ -149,6 +165,25 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
         <small class="muted">Sem estoque, o anúncio pausa sozinho e volta quando houver saldo. Pausado por você só volta quando você retomar. De hora em hora conferimos o anúncio no canal e corrigimos o que estiver diferente do estoque.</small>
       } @else {
         <p class="muted">A peça ainda não está anunciada em nenhum canal.</p>
+      }
+
+      @if (compatibilityReport(); as r) {
+        <div class="notice" role="status" data-compat-report>
+          @if (r.sent > 0) {
+            <p class="ok">Compatibilidades enviadas ao Mercado Livre: {{ r.sent }} veículo(s) ligados ao anúncio.</p>
+          } @else if (!r.unmapped.length && !r.error) {
+            <p class="muted">A peça não tem veículos em Compatibilidade: nada foi enviado ao Mercado Livre.</p>
+          }
+          @if (r.unmapped.length) {
+            <p class="warn">
+              Não achamos no catálogo de veículos do Mercado Livre (inclua pelo gerenciador de compatibilidades do Mercado Livre):
+              {{ r.unmapped.join('; ') }}.
+            </p>
+          }
+          @if (r.error) {
+            <p class="error">{{ r.error }}</p>
+          }
+        </div>
       }
 
       @if (!hasMercadoLivre()) {
@@ -267,6 +302,7 @@ export class PartListings implements OnInit {
   protected readonly categories = signal<CategoryOption[]>([]);
   protected readonly form = signal<MercadoLivrePublishForm | null>(null);
   protected readonly publishError = signal<string | null>(null);
+  protected readonly compatibilityReport = signal<CompatibilityReport | null>(null);
   protected readonly requiredAttributes = computed(() => (this.form()?.attributes ?? []).filter((a) => a.required));
   protected readonly optionalAttributes = computed(() => (this.form()?.attributes ?? []).filter((a) => !a.required));
   protected values: Record<string, { valueId: string | null; valueName: string | null }> = {};
@@ -320,8 +356,7 @@ export class PartListings implements OnInit {
     const f = this.form();
     if (!f) return;
     await this.run(async () => {
-      this.listings.set(
-        await this.api.publishMercadoLivre(this.partId(), {
+      const published = await this.api.publishMercadoLivre(this.partId(), {
           categoryId: f.category.categoryId,
           listingTypeId: this.listingType,
           attributes: Object.entries(this.values)
@@ -329,10 +364,23 @@ export class PartListings implements OnInit {
             .map(([id, v]) => ({ id, valueId: v.valueId, valueName: v.valueName })),
           warrantyType: this.warrantyType || null,
           warrantyTime: this.warrantyType ? this.warrantyTime || null : null,
-        }),
-      );
+        });
+      this.listings.set(published.listings);
+      this.compatibilityReport.set(published.compatibilities);
       this.cancel();
     });
+  }
+
+  protected async sendCompatibilities(listing: ListingView): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      this.compatibilityReport.set(await this.api.sendCompatibilities(listing.id));
+    } catch (error) {
+      this.error.set(problemTitle(error));
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   private async loadForm(categoryId: string): Promise<void> {
