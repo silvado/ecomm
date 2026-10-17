@@ -33,6 +33,27 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
         [OtherCategory] = ("Outras peças", "Acessórios para Veículos > Peças de Carros > Outras"),
     };
 
+    /// <summary>Catálogo de veículos de exemplo (marca → modelo → motores), no formato do top_values.</summary>
+    private static readonly Dictionary<(string Id, string Name), Dictionary<(string Id, string Name), string[]>> Vehicles = new()
+    {
+        [("60249", "Volkswagen")] = new()
+        {
+            [("62109", "Gol")] = ["1.0 8V", "1.6 8V", "1.0 12V"],
+            [("SIM-FOX", "Fox")] = ["1.0 8V", "1.6 8V"],
+            [("SIM-VOY", "Voyage")] = ["1.6 8V"],
+        },
+        [("67781", "Fiat")] = new()
+        {
+            [("SIM-UNO", "Uno")] = ["1.0 Fire", "1.0 Evo"],
+            [("SIM-STR", "Strada")] = ["1.3 Firefly", "1.4 Fire"],
+        },
+    };
+
+    private static readonly ConcurrentDictionary<string, List<JsonObject>> Compatible = new();
+
+    /// <summary>Famílias de veículos ligadas ao anúncio (o que foi enviado em products_families).</summary>
+    public static IReadOnlyList<JsonObject> CompatibilitiesOf(string itemId) => Compatible.TryGetValue(itemId, out var list) ? list : [];
+
     /// <summary>O que foi publicado (para os testes conferirem o corpo enviado).</summary>
     public static JsonObject? Item(string itemId) => Items.TryGetValue(itemId, out var item) ? item : null;
 
@@ -67,6 +88,9 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
             ("POST", ["items", var id, "description"]) => Describe(id, await BodyAsync(request, cancellationToken)),
             ("PUT", ["items", var id]) => Update(id, await BodyAsync(request, cancellationToken)),
             ("GET", ["items", var id]) => Get(id),
+            ("POST", ["catalog_domains", MercadoLivreApiClient.VehicleDomain, "attributes", var attribute, "top_values"]) =>
+                Json(TopValues(attribute, await BodyAsync(request, cancellationToken))),
+            ("POST", ["items", var id, "compatibilities"]) => Compatibilities(id, await BodyAsync(request, cancellationToken)),
             _ => NotFound(),
         };
     }
@@ -161,6 +185,34 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
     {
         var item = Items.GetOrAdd(id, Unknown);
         return item.ContainsKey("removed") ? NotFound() : Json((JsonObject)item.DeepClone());
+    }
+
+    private static JsonArray TopValues(string attribute, JsonObject body)
+    {
+        var known = (body["known_attributes"] as JsonArray ?? []).OfType<JsonObject>().ToDictionary(k => (string)k["id"]!, k => (string?)k["value_id"]);
+        var brand = Vehicles.Keys.FirstOrDefault(b => known.TryGetValue("BRAND", out var id) && id == b.Id);
+        var models = brand.Id is null ? null : Vehicles[brand];
+        var model = models?.Keys.FirstOrDefault(m => known.TryGetValue("MODEL", out var id) && id == m.Id);
+        IEnumerable<(string Id, string Name)> values = attribute switch
+        {
+            "BRAND" => Vehicles.Keys,
+            "MODEL" => models is null ? [] : models.Keys,
+            "ENGINE" when models is not null && model is { Id: not null } m => models[m].Select((e, i) => ($"SIM-ENG-{m.Id}-{i}", e)),
+            "VEHICLE_YEAR" => Enumerable.Range(1990, 37).Select(y => ($"SIM-Y{y}", y.ToString(System.Globalization.CultureInfo.InvariantCulture))),
+            _ => [],
+        };
+        return new JsonArray(values.Select(v => (JsonNode)new JsonObject { ["id"] = v.Id, ["name"] = v.Name, ["metric"] = 1 }).ToArray());
+    }
+
+    private static HttpResponseMessage Compatibilities(string id, JsonObject body)
+    {
+        if (!Items.ContainsKey(id)) return NotFound();
+        var families = (body["products_families"] as JsonArray ?? []).OfType<JsonObject>().ToList();
+        if (families.Count == 0 || families.Count > 10) return Error("Mais de 10 domínios de produto foram especificados.");
+        if (families.Any(f => (string?)f["creation_source"] is null)) return Error("creation_source é obrigatório.");
+        if (families.Any(f => (string?)f["domain_id"] != MercadoLivreApiClient.VehicleDomain)) return Error("domain_id inválido.");
+        Compatible.AddOrUpdate(id, _ => families.Select(f => (JsonObject)f.DeepClone()).ToList(), (_, list) => [.. list, .. families.Select(f => (JsonObject)f.DeepClone())]);
+        return Json(new JsonObject { ["created_compatibilities_count"] = families.Count * 3 }, HttpStatusCode.Created);
     }
 
     private static JsonObject Unknown(string id) => new() { ["id"] = id, ["status"] = "active", ["available_quantity"] = 0, ["price"] = 0 };

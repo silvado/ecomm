@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 17/10/2026 (anunciar no Mercado Livre).
+> Última atualização: 17/10/2026 (compatibilidade no anúncio do Mercado Livre).
 
 ## Sumário
 
@@ -228,6 +228,8 @@ Use para cadastrar o estoque de uma vez, por exemplo na implantação da loja.
 - Avisos aparecem antes de publicar: título maior que o aceito pela categoria (o excesso é cortado), mais fotos do que o limite, peça sem as medidas da embalagem (o frete do Mercado Livre pode sair errado).
 - Se o Mercado Livre **recusar**, a tela mostra o motivo que ele deu; corrija e publique de novo. Nada fica gravado.
 - Depois de publicado, o estoque da loja passa a mandar no anúncio, como nos outros canais. Mudou o preço na peça, muda no Mercado Livre.
+- **Compatibilidade:** logo depois de publicar, os veículos cadastrados em **Compatibilidade** vão para o anúncio, ano a ano. Quando a peça não serve em todas as motorizações daquele ano, vai também o motor. A tela mostra quantos veículos o Mercado Livre ligou ao anúncio e os que **não foram achados** no catálogo de veículos dele; esses, inclua pelo gerenciador de compatibilidades do Mercado Livre.
+- Incluiu veículos na peça depois de publicar? Use **Enviar compatibilidades** no anúncio. Tirar um veículo da peça ainda não o tira do anúncio: remova-o no Mercado Livre.
 - Se o anúncio tiver a **automação de preços** ligada no Mercado Livre, ele não aceita preço vindo da plataforma: o anúncio fica com erro e o motivo aparece aqui.
 - **Erro na última atualização:** o canal não respondeu, mesmo depois das novas tentativas automáticas. A próxima mudança de estoque tenta de novo, e o detalhe fica em **Integrações**.
 
@@ -732,7 +734,7 @@ Continuam disponíveis no migrador, para a equipe técnica: `criar-superadmin`, 
 
 Itens previstos que **ainda não estão no sistema**:
 
-- Mercado Livre: enviar a compatibilidade com veículos no anúncio, receber as vendas, perguntas e mensagens, editar categoria e características de um anúncio já publicado. Conectar a conta (4.6.1) e anunciar (4.3) já funcionam; em teste, o Mercado Livre é simulado (página "Mercado Livre simulado" e categorias de exemplo, sem conta real).
+- Mercado Livre: receber as vendas, perguntas e mensagens; editar categoria e características de um anúncio já publicado; tirar do anúncio um veículo removido da peça e informar posição (dianteira, lado) por veículo. Conectar a conta (4.6.1) e anunciar (4.3) já funcionam; em teste, o Mercado Livre é simulado (página "Mercado Livre simulado" e categorias de exemplo, sem conta real).
 - Instagram (catálogo Meta) e OLX: conectar a conta e publicar. A seção **Anúncios** e a atualização automática pelo estoque já estão prontas para recebê-los.
 - Emissão real de NF-e pela Focus NFe: hoje "pela plataforma" é simulado. "Fora da plataforma" já funciona.
 - NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
@@ -775,6 +777,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
 | 16/10/2026 | Base da IA (RF35/RF36): limite de cadastros com IA no mês explicado em 4.2 (Limites do plano); o cartão Seu plano passa a mostrar o uso real. |
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
+| 17/10/2026 | Compatibilidade no anúncio do Mercado Livre (RF21, parte 4): envio ao publicar, botão Enviar compatibilidades e veículos não achados (4.3). |
 | 17/10/2026 | Anunciar no Mercado Livre (RF21, parte 3): categoria sugerida, características, tipo de anúncio e garantia, recusa com o motivo; estoque e preço mandando no anúncio (4.3). |
 | 17/10/2026 | Avisos do Mercado Livre (RF21, parte 2): anúncio mexido no Mercado Livre é conferido na hora (4.6.1). |
 | 16/10/2026 | Canais de venda (RF21, parte 1): nova seção 4.6.1 (conectar o Mercado Livre, renovação, autorizar de novo, desconectar), faixa de alerta e perfis; passo Mercado Livre dos primeiros passos leva à tela. |

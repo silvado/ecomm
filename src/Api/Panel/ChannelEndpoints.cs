@@ -16,6 +16,9 @@ public sealed record OAuthReturnRequest(string? Code, string? State, string? Err
 
 public sealed record AuthorizationStart(string AuthorizationUrl);
 
+/// <summary>Anúncios da peça depois de publicar no ML e o resultado do envio das compatibilidades.</summary>
+public sealed record PublishedView(IReadOnlyList<ListingView> Listings, CompatibilityReport? Compatibilities);
+
 /// <summary>Anúncios das peças nos canais (E2): o painel vê a situação e pausa ou retoma (pausa do lojista — RF24 CA2).</summary>
 public static class ChannelEndpoints
 {
@@ -33,18 +36,24 @@ public static class ChannelEndpoints
                 ? AuthEndpoints.Problem(StatusCodes.Status400BadRequest, "Escolha a categoria.")
                 : await ChannelCallAsync(async () => TypedResults.Ok(await service.FormAsync(id, categoria.Trim(), ct))));
 
-        ml.MapPost("/anunciar", async Task<Results<Created<IReadOnlyList<ListingView>>, ProblemHttpResult>> (
+        ml.MapPost("/anunciar", async Task<Results<Created<PublishedView>, ProblemHttpResult>> (
             Guid id, MercadoLivreListingOptions request, IMercadoLivrePublishing service, IChannelQueries queries, CancellationToken ct) =>
         {
             var result = await service.PublishAsync(id, request, ct);
             return result.Outcome switch
             {
-                PublishOutcome.Done => TypedResults.Created($"/api/painel/pecas/{id}/anuncios", await queries.ListingsForPartAsync(id, ct)),
+                PublishOutcome.Done => TypedResults.Created($"/api/painel/pecas/{id}/anuncios",
+                    new PublishedView(await queries.ListingsForPartAsync(id, ct), result.Compatibilities)),
                 PublishOutcome.Unavailable => AuthEndpoints.Problem(StatusCodes.Status503ServiceUnavailable, result.Message!),
                 PublishOutcome.Refused => AuthEndpoints.Problem(StatusCodes.Status422UnprocessableEntity, result.Message!),
                 _ => AuthEndpoints.Problem(StatusCodes.Status409Conflict, result.Message!),
             };
         });
+
+        // Reenviar as compatibilidades da peça ao anúncio do ML (depois de mudar os veículos da peça).
+        panel.MapPost("/anuncios/{id:guid}/compatibilidades", async Task<Results<Ok<CompatibilityReport>, ProblemHttpResult>> (
+            Guid id, IMercadoLivreCompatibilities service, CancellationToken ct) =>
+            await ChannelCallAsync(async () => TypedResults.Ok(await service.SyncAsync(id, ct)))).RequirePermission(Permission.CatalogManage);
 
         // Canais de venda (RF21): conectar, ver e desconectar contas. Só o Dono (dados e contratos da loja).
         var channels = panel.MapGroup("/canais").RequirePermission(Permission.StoreManage);

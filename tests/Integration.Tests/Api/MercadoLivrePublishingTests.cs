@@ -26,6 +26,7 @@ public sealed class MercadoLivrePublishingTests(ApiFactory api) : IClassFixture<
     private sealed record StartDto(string AuthorizationUrl);
     private sealed record IdDto(Guid Id);
     private sealed record ListingDto(Guid Id, string Channel, string? ExternalId, string Status);
+    private sealed record PublishedDto(List<ListingDto> Listings);
     private sealed record CategoryDto(string CategoryId, string CategoryName);
     private sealed record SpecDto(string Id, string Name, bool Required);
     private sealed record ValueDto(string Id, string? ValueId, string? ValueName);
@@ -82,7 +83,7 @@ public sealed class MercadoLivrePublishingTests(ApiFactory api) : IClassFixture<
     {
         var response = await SendAsync(api.PanelClient(), token, HttpMethod.Post, $"/api/painel/pecas/{partId}/mercado-livre/anunciar", Options());
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        return (await response.Content.ReadFromJsonAsync<List<ListingDto>>())!.Single(l => l.Channel == SalesChannel.MercadoLivre).ExternalId!;
+        return (await response.Content.ReadFromJsonAsync<PublishedDto>())!.Listings.Single(l => l.Channel == SalesChannel.MercadoLivre).ExternalId!;
     }
 
     private async Task<T> InTenantAsync<T>(Guid tenantId, Func<TenantDbContext, Task<T>> query)

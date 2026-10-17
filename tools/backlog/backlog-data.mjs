@@ -226,7 +226,7 @@ export const epics = [
             title: 'Publicação de anúncios com atributos e compatibilidades',
             rf: 'RF21, RF09',
             ac: 'Publica peça com categoria, atributos obrigatórios e compatibilidades criadas pelo vendedor; atualiza preço/quantidade; pausa e reativa.',
-            t: [['Escolha de categoria e atributos obrigatórios', 16, 'done'], ['Envio de compatibilidades', 12], ['Atualização, pausa e reativação', 6, 'done']],
+            t: [['Escolha de categoria e atributos obrigatórios', 16, 'done'], ['Envio de compatibilidades', 12, 'done'], ['Atualização, pausa e reativação', 6, 'done']],
           },
           {
             title: 'Pedidos do Mercado Livre no painel',

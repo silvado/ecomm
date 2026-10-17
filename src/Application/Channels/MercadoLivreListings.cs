@@ -44,7 +44,22 @@ public enum PublishOutcome
     Unavailable,
 }
 
-public sealed record PublishResult(PublishOutcome Outcome, string? Message = null, Guid? ListingId = null);
+/// <param name="Compatibilities">Resultado do envio das compatibilidades logo depois de publicar (nulo se não houve envio).</param>
+public sealed record PublishResult(PublishOutcome Outcome, string? Message = null, Guid? ListingId = null, CompatibilityReport? Compatibilities = null);
+
+/// <summary>
+/// Compatibilidades da peça enviadas ao anúncio do ML (RF21 CA3): <see cref="Sent"/> famílias aceitas (marca, modelo, ano e,
+/// quando preciso, motor), <see cref="Unmapped"/> veículos que não foram achados no catálogo de veículos do ML (a loja
+/// inclui pelo gerenciador de compatibilidades do ML) e <see cref="Error"/> quando o ML recusou ou não respondeu.
+/// </summary>
+public sealed record CompatibilityReport(int Sent, IReadOnlyList<string> Unmapped, string? Error = null);
+
+/// <summary>Envia ao anúncio do ML as compatibilidades cadastradas na peça (loja do escopo).</summary>
+public interface IMercadoLivreCompatibilities
+{
+    /// <exception cref="InvalidOperationException">Anúncio não é do ML, não está publicado ou a conexão não está ativa.</exception>
+    Task<CompatibilityReport> SyncAsync(Guid listingId, CancellationToken ct = default);
+}
 
 /// <summary>
 /// Publicar uma peça no Mercado Livre (RF21 CA3), na loja do escopo e na conta do ML ligada a ela. As consultas (preditor,

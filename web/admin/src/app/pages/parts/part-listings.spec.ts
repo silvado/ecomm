@@ -99,9 +99,19 @@ describe('Anúncios da peça', () => {
       categoryId: 'MLB-FAROL', listingTypeId: 'gold_special', warrantyType: null, warrantyTime: null,
       attributes: [{ id: 'ITEM_CONDITION', valueId: '2230581', valueName: null }, { id: 'BRAND', valueId: null, valueName: 'VW' }],
     });
-    publish.flush([listing({ channel: 'mercado-livre', externalId: 'MLB123' })]);
+    publish.flush({
+      listings: [listing({ channel: 'mercado-livre', externalId: 'MLB123' })],
+      compatibilities: { sent: 12, unmapped: ['Ford Ka 2015'], error: null },
+    });
     await settle(fixture);
     expect(element.textContent).toContain('Mercado Livre');
+    expect(element.querySelector('[data-compat-report]')!.textContent).toContain('12 veículo(s)');
+    expect(element.querySelector('[data-compat-report]')!.textContent).toContain('Ford Ka 2015');
+
+    element.querySelector<HTMLButtonElement>('[data-ml-compat]')!.click();
+    backend.expectOne({ method: 'POST', url: '/api/painel/anuncios/l1/compatibilidades' }).flush({ sent: 3, unmapped: [], error: null });
+    await settle(fixture);
+    expect(element.querySelector('[data-compat-report]')!.textContent).toContain('3 veículo(s)');
     expect(element.querySelector('[data-ml-start]')).toBeNull();
     expect(element.querySelector('[data-ml-publish]')).toBeNull();
   });
