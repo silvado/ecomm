@@ -184,7 +184,40 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
         var buyer = order.TryGetProperty("buyer", out var b) ? Text(b, "nickname") ?? (Text(b, "id") is { } id ? $"Comprador {id} no Mercado Livre" : null) : null;
         DateTimeOffset? paidAt = Text(order, "date_closed") is { } closed && DateTimeOffset.TryParse(closed, CultureInfo.InvariantCulture, DateTimeStyles.None, out var at)
             ? at.ToUniversalTime() : null;
-        return new ChannelOrderSnapshot(Text(order, "id") ?? orderId, Text(order, "status") ?? string.Empty, buyer, shipping, paidAt, items);
+        var shipmentId = order.TryGetProperty("shipping", out var s2) ? Text(s2, "id") : null;
+        return new ChannelOrderSnapshot(Text(order, "id") ?? orderId, Text(order, "status") ?? string.Empty, buyer, shipping, paidAt, items, shipmentId);
+    }
+
+    /// <summary>
+    /// Envio (<c>GET /shipments/{id}</c>, cabeçalho <c>x-format-new: true</c> obrigatório desde 12/10/2025):
+    /// https://developers.mercadolivre.com.br/pt_br/gerenciamento-de-envios. Nulo se não existe.
+    /// </summary>
+    public async Task<ChannelShipmentSnapshot?> GetShipmentAsync(string token, string shipmentId, CancellationToken ct)
+    {
+        using var response = await SendAsync(HttpMethod.Get, $"/shipments/{Uri.EscapeDataString(shipmentId)}", token, null, ct, allowNotFound: true,
+            headers: [("x-format-new", "true")]);
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
+        var shipment = await JsonAsync(response, ct);
+        return new ChannelShipmentSnapshot(Text(shipment, "id") ?? shipmentId, Text(shipment, "status") ?? string.Empty, Text(shipment, "substatus"),
+            Text(shipment, "tracking_number"));
+    }
+
+    /// <summary>
+    /// Avisos que o ML não conseguiu entregar (guardados por 2 dias): <c>GET /missed_feeds?app_id=…&amp;topic=…</c>.
+    /// Devolve o corpo original de cada aviso (<c>request.data</c>), para reentrar pelo mesmo caminho do webhook. Fonte:
+    /// https://developers.mercadolivre.com.br/pt_br/produto-receba-notificacoes (Histórico das notificações).
+    /// </summary>
+    public async Task<IReadOnlyList<string>> MissedFeedsAsync(string token, string appId, string topic, int offset, int limit, CancellationToken ct)
+    {
+        var site = topic == "items" ? $"&site_id={Site}" : string.Empty;
+        using var response = await SendAsync(HttpMethod.Get,
+            $"/missed_feeds?app_id={Uri.EscapeDataString(appId)}&topic={Uri.EscapeDataString(topic)}{site}&offset={offset}&limit={limit}", token, null, ct);
+        var body = await JsonAsync(response, ct);
+        return body.TryGetProperty("messages", out var messages) && messages.ValueKind == JsonValueKind.Array
+            ? messages.EnumerateArray()
+                .Select(m => m.TryGetProperty("request", out var r) && r.TryGetProperty("data", out var d) && d.ValueKind == JsonValueKind.String ? d.GetString() : null)
+                .OfType<string>().ToList()
+            : [];
     }
 
     /// <summary>Nulo se o anúncio não existe (404).</summary>
@@ -195,10 +228,12 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
         return await JsonAsync(response, ct);
     }
 
-    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string token, HttpContent? content, CancellationToken ct, bool allowNotFound = false)
+    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string token, HttpContent? content, CancellationToken ct, bool allowNotFound = false,
+        (string Name, string Value)[]? headers = null)
     {
         using var request = new HttpRequestMessage(method, Api + path) { Content = content };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        foreach (var (name, value) in headers ?? []) request.Headers.Add(name, value);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         HttpResponseMessage response;
         try

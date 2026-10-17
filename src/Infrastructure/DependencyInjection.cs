@@ -144,6 +144,7 @@ public static class DependencyInjection
             mlApi.ConfigurePrimaryHttpMessageHandler(() => new Channels.MercadoLivre.FakeMercadoLivreApi());
         services.AddScoped<Application.Channels.IMercadoLivrePublishing, Channels.MercadoLivre.MercadoLivrePublishingService>();
         services.AddScoped<Application.Channels.IMercadoLivreCompatibilities, Channels.MercadoLivre.MercadoLivreCompatibilityService>();
+        services.AddSingleton<Channels.MercadoLivre.MercadoLivreMissedFeedsJob>();
         services.AddScoped<Application.Channels.IChannelConnections, Channels.MercadoLivre.ChannelConnectionService>();
         // RNF04: registro de acesso a dados pessoais e anonimização do comprador.
         services.AddScoped<Application.Privacy.PanelActor>();

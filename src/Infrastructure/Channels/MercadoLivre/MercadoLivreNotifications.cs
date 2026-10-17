@@ -68,10 +68,14 @@ public static class MercadoLivreNotifications
         return (NotificationCheck.Valid, new MercadoLivreNotification(key, userId, topic, resource, application));
     }
 
+    /// <summary>Id do envio em <c>/shipments/41297142475</c> (nulo em outros recursos).</summary>
+    public static string? ShipmentId(string resource) => NumericId(resource, "/shipments/");
+
     /// <summary>Id do pedido em <c>/orders/2000003508419013</c> (nulo em outros recursos).</summary>
-    public static string? OrderId(string resource)
+    public static string? OrderId(string resource) => NumericId(resource, "/orders/");
+
+    private static string? NumericId(string resource, string prefix)
     {
-        const string prefix = "/orders/";
         if (!resource.StartsWith(prefix, StringComparison.Ordinal)) return null;
         var id = resource[prefix.Length..].Split('/', '?')[0];
         return id.Length is > 0 and <= 30 && id.All(char.IsAsciiDigit) ? id : null;
@@ -102,6 +106,7 @@ public static class MercadoLivreNotifications
 /// Processa, na loja do escopo, os avisos do ML que já passaram pelo inbox (RF26: uma vez por aviso):
 /// <list type="bullet">
 /// <item><c>orders_v2</c>: consulta o pedido no ML (o aviso nunca é confiado) e manda importá-lo (<see cref="ImportChannelOrder"/>).</item>
+/// <item><c>shipments</c>: manda conferir o envio e levar a situação ao pedido (<see cref="SyncChannelShipment"/>).</item>
 /// <item><c>items</c> de um anúncio da loja: pede a conferência dele com o canal (reconciliação — RF27).</item>
 /// </list>
 /// Perguntas, mensagens e pagamentos (o status do pedido já cobre o pagamento) ficam registrados e são ignorados.
@@ -128,6 +133,15 @@ public sealed class MercadoLivreChannelProcessor(TenantDbContext db, IIntegratio
             await bus.PublishAsync(new ImportChannelOrder(connection.Id, order), new DeliveryOptions { TenantId = db.RequireTenantId().ToString() });
             return true;
         }
+        if (topic == "shipments" && MercadoLivreNotifications.ShipmentId(resource) is { } shipmentId)
+        {
+            var connection = await db.ChannelConnections.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Channel == SalesChannel.MercadoLivre && c.Status == ChannelConnectionStatus.Active, ct);
+            if (connection is null) return false;
+            await bus.PublishAsync(new SyncChannelShipment(connection.Id, shipmentId), new DeliveryOptions { TenantId = db.RequireTenantId().ToString() });
+            return true;
+        }
+
         if (topic == "items" && MercadoLivreNotifications.ItemId(resource) is { } itemId)
         {
             var listingId = await (from l in db.ChannelListings.AsNoTracking()

@@ -21,6 +21,8 @@ builder.Services.AddHostedService<IntegrationLogRetention>();
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Vault.CertificateExpiryMonitor>();
 // RF27: reconciliação horária dos anúncios com os canais.
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Channels.ChannelReconciliationScheduler>();
+// Avisos do Mercado Livre que não chegaram (RF21): de hora em hora, pelo missed_feeds.
+builder.Services.AddHostedService<Ecommerce.Infrastructure.Channels.MercadoLivre.MercadoLivreMissedFeedsJob>();
 // RF03: verificação dos domínios próprios a cada 5 min.
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Platform.DomainVerificationJob>();
 // RF38: mensalidades da assinatura (a cada hora, idempotente).

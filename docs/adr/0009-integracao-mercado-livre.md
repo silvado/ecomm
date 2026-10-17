@@ -1,6 +1,6 @@
 # ADR-0009 — Integração com o Mercado Livre: conexão da conta (OAuth)
 
-- **Status:** Aceito (partes 1 a 5: conexão, notificações, publicação, compatibilidades e vendas; envio/entrega das vendas em seguida)
+- **Status:** Aceito (partes 1 a 6: conexão, notificações, publicação, compatibilidades, vendas, envio/entrega e avisos perdidos)
 - **Data:** 2026-10-16
 - **Requisitos:** RF21 (CA1, CA2, CA5), RF06, RF26, RF37, RNF05
 
@@ -215,6 +215,24 @@ Decisões:
   - NF-e da venda no ML;
   - recuperar avisos perdidos (`missed_feeds`);
   - cancelamento feito no painel não é enviado ao ML.
+
+### 11. Envio, entrega e avisos perdidos (parte 6)
+
+Fontes:
+- [Gerenciamento de envios](https://developers.mercadolivre.com.br/pt_br/gerenciamento-de-envios): `GET /shipments/{id}` com `x-format-new: true`, cabeçalho obrigatório desde 12/10/2025;
+- [Notificações](https://developers.mercadolivre.com.br/pt_br/produto-receba-notificacoes): `GET /missed_feeds?app_id=` guarda 2 dias, com `site_id` obrigatório para `items`.
+
+Decisões:
+- **Id do envio:** o pedido do ML guarda o id do envio (`customer_orders.external_shipment_id`, indexado), tirado de `shipping.id` do pedido.
+- **`SyncChannelShipment`:** é disparado pelo aviso `shipments` e logo depois de importar a venda, porque o envio pode ter andado antes de a venda chegar aqui. Ele consulta o envio e aplica:
+  - `shipped` → Enviado, com o `tracking_number`;
+  - `delivered` → Entregue, passando por Enviado se esse aviso se perdeu;
+  - `not_delivered`/`cancelled` → só anotação no histórico, uma por situação. A loja resolve com o ML (reclamação, devolução).
+- **`MercadoLivreMissedFeedsJob`** (Worker, de hora em hora, 3 minutos depois de subir):
+  - lê o `missed_feeds` do app para `orders_v2`, `shipments` e `items`, em páginas de 50, até 10 páginas por tópico;
+  - reinjeta o corpo original de cada aviso (`request.data`) no inbox. A chave é a mesma do aviso original, então nada se repete;
+  - usa o token de qualquer conexão ativa, porque a consulta é do app.
+- **Código gerado pelo Wolverine:** o cliente HTTP tipado do ML entra em `AlwaysUseServiceLocationFor`; sem isso, a geração do handler falha.
 
 ## Consequências
 

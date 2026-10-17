@@ -103,7 +103,10 @@ public static class ChannelOrderHandler
 
         var order = CustomerOrder.PlaceChannelOrder(tenantId, number, OrderOrigin.MercadoLivre, snapshot.ExternalId, snapshot.BuyerName ?? string.Empty,
             orderLines, Math.Max(0, decimal.Round(snapshot.ShippingCost, 2)), reason, snapshot.PaidAt ?? now, now);
+        order.LinkShipment(snapshot.ShipmentId);
         db.CustomerOrders.Add(order);
+        // O envio pode ter andado antes de a venda chegar aqui (aviso de envio sem pedido): confere logo em seguida.
+        if (order.ExternalShipmentId is { } shipmentId) outgoing.Add(new SyncChannelShipment(command.ConnectionId, shipmentId));
         db.OrderHistory.Add(new OrderHistoryEntry(tenantId, order.Id, null, order.Status, OrderActor.System, null,
             $"Venda no Mercado Livre (pedido {snapshot.ExternalId}){(reason is null ? string.Empty : " · " + reason)}", now));
         return (new ChannelOrderResult(reason is null ? ChannelOrderOutcome.Created : ChannelOrderOutcome.CreatedForReview, order.Id, order.Number), outgoing);
