@@ -34,6 +34,7 @@ public static partial class MessageFailures
         [typeof(Application.Integrations.ProcessChannelEvent)] = "Processar aviso de canal",
         [typeof(Application.Channels.SyncListing)] = "Atualizar anúncio no canal",
         [typeof(Application.Channels.ReconcileChannels)] = "Reconciliar anúncios com os canais",
+        [typeof(Application.Channels.RenewChannelCredentials)] = "Renovar o acesso aos canais de venda",
         [typeof(Application.Channels.ReconcileListing)] = "Conferir anúncio no canal",
         [typeof(Application.Inventory.StockChanged)] = "Avisar os canais da mudança de estoque",
         [typeof(Application.Fiscal.SendInvoice)] = "Enviar NF-e ao provedor fiscal",

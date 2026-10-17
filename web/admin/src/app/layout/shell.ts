@@ -34,6 +34,7 @@ const FAILURE_CHECK_MS = 2 * 60 * 1000;
         @if (auth.can('storeManage')) {
           <a routerLink="/primeiros-passos" routerLinkActive="active">Primeiros passos</a>
           <a routerLink="/loja" routerLinkActive="active">Dados da loja</a>
+          <a routerLink="/canais" routerLinkActive="active">Canais de venda</a>
         }
         @if (auth.can('vaultManage')) {
           <a routerLink="/pagamentos" routerLinkActive="active">Pagamentos</a>
@@ -72,6 +73,16 @@ const FAILURE_CHECK_MS = 2 * 60 * 1000;
         <a routerLink="/integracoes">Ver e reprocessar</a>
       </p>
     }
+    @if (channelsNeedingReauth()) {
+      <p class="alert-bar" role="alert" data-reauth-alert>
+        A conexão com o Mercado Livre precisa ser autorizada de novo: os anúncios não estão sendo atualizados.
+        @if (auth.can('storeManage')) {
+          <a routerLink="/canais">Abrir Canais de venda</a>
+        } @else {
+          Avise o Dono da loja.
+        }
+      </p>
+    }
     @if (certificateAlert(); as a) {
       <p class="alert-bar" role="alert" data-certificate-alert>
         {{ certificateText(a) }} <a routerLink="/cofre">Abrir o Cofre</a>
@@ -88,6 +99,8 @@ export class Shell implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly pendingFailures = signal(0);
+  /** RF21 CA2: canal que pede nova autorização (o ML recusou a renovação). */
+  protected readonly channelsNeedingReauth = signal(0);
   protected readonly certificateAlert = signal<CertificateAlert | null>(null);
   protected readonly certificateText = alertText;
   private readonly subscription = inject(SubscriptionApi);
@@ -124,7 +137,9 @@ export class Shell implements OnInit {
 
   private async checkFailures(): Promise<void> {
     try {
-      this.pendingFailures.set((await this.integrations.summary()).pendingFailures);
+      const summary = await this.integrations.summary();
+      this.pendingFailures.set(summary.pendingFailures);
+      this.channelsNeedingReauth.set(summary.channelsNeedingReauth ?? 0);
     } catch {
       // Aviso é só um atalho: se a consulta falhar, o painel segue normal.
     }

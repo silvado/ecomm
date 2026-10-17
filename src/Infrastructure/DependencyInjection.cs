@@ -131,6 +131,14 @@ public static class DependencyInjection
             return ActivatorUtilities.CreateInstance<Ai.QuotaAiCompletion>(sp, (Application.Ai.IAiCompletion)audited);
         });
         services.AddScoped<Application.Ai.IAiUsage, Ai.AiUsageService>();
+        // Mercado Livre (RF21, ADR-0009): um app da plataforma; tokens de cada loja no cofre. Segredo do app só em variável de ambiente.
+        services.Configure<Channels.MercadoLivre.MercadoLivreOptions>(configuration.GetSection(Channels.MercadoLivre.MercadoLivreOptions.Section));
+        if (configuration.GetValue<bool>($"{Channels.MercadoLivre.MercadoLivreOptions.Section}:UseFake"))
+            services.AddSingleton<Application.Channels.IMercadoLivreAuth, Channels.MercadoLivre.FakeMercadoLivreAuth>();
+        else
+            services.AddHttpClient<Application.Channels.IMercadoLivreAuth, Channels.MercadoLivre.MercadoLivreAuthClient>(http => http.Timeout = TimeSpan.FromSeconds(20));
+        services.AddScoped<Channels.MercadoLivre.MercadoLivreCredentials>();
+        services.AddScoped<Application.Channels.IChannelConnections, Channels.MercadoLivre.ChannelConnectionService>();
         // RNF04: registro de acesso a dados pessoais e anonimização do comprador.
         services.AddScoped<Application.Privacy.PanelActor>();
         services.AddScoped<Application.Privacy.IPersonalDataAccessLog, Privacy.PersonalDataAccessLog>();

@@ -170,6 +170,13 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 - CA3: publicação com categoria, atributos obrigatórios da categoria e compatibilidades.
 - CA4: webhooks (`orders_v2`, `items`, `questions`, `messages`, `payments`) respondem 2xx imediatamente, gravam o evento bruto e enfileiram; o processamento busca o recurso na API (`GET resource`).
 - CA5: a notificação é associada ao tenant pelo `user_id` do vendedor.
+- Feito (16/10/2026, parte 1 — [ADR-0009](adr/0009-integracao-mercado-livre.md)): CA1 e CA2.
+  - **Conexão:** tela **Canais de venda** (só o Dono) com OAuth (state de uso único e PKCE S256), tokens no cofre e a conta (`user_id`) no mapa da plataforma, base do CA5.
+  - **Renovação:** antes de vencer, de hora em hora no Worker e na hora de usar, com trava (o refresh é de uso único).
+  - **Recusa do ML:** a conexão fica "autorizar de novo", com faixa de alerta no painel e a sincronização parada.
+  - **Desconectar:** revoga a autorização e apaga os tokens.
+  - **HIPÓTESE:** uma conta do ML por loja.
+  - **Pendente:** CA3 (publicação), CA4 (notificações), pedidos; criar o app no DevCenter e ter um endereço HTTPS público para o retorno (VPS).
 
 ### RF22 — Instagram / catálogo Meta · E2
 - CA1: feed de catálogo por tenant em URL pública não adivinhável (token), no formato aceito pelo Commerce Manager.

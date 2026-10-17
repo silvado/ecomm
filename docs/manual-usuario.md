@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 16/10/2026 (cadastro por foto com IA).
+> Última atualização: 16/10/2026 (canais de venda: conexão do Mercado Livre).
 
 ## Sumário
 
@@ -18,6 +18,7 @@
    - 4.5 [Venda de balcão](#45-venda-de-balcão)
    - 4.5.1 [Integrações](#451-integrações)
    - 4.6 [Dados da loja](#46-dados-da-loja)
+   - 4.6.1 [Canais de venda](#461-canais-de-venda)
    - 4.7 [Pagamentos](#47-pagamentos)
    - 4.7.1 [Cofre e certificado digital](#471-cofre-e-certificado-digital)
    - 4.8 [Usuários](#48-usuários)
@@ -67,6 +68,7 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Integrações (log e reprocessar falhas) | ✔ | ✔ |
 | Primeiros passos e publicar a loja | ✔ | — |
 | Dados da loja | ✔ | — |
+| Canais de venda (conectar o Mercado Livre) | ✔ | — |
 | Pagamentos (chaves dos gateways) | ✔ | — |
 | Cofre (certificado digital A1 e chaves guardadas) | ✔ | — |
 | Usuários | ✔ | — |
@@ -120,7 +122,7 @@ Toda loja nova começa **em implantação**: a loja virtual mostra **"Loja em br
 | **Pagamento** | Pagamentos: conecte o Mercado Pago ou a Cielo | Obrigatório |
 | **Nota fiscal** | Dados da loja → Nota fiscal: escolha como a loja emite (vale "não emite pela plataforma") | Opcional |
 | **Frete** | Dados da loja → Entrega e retirada: CEP de origem ou retirada no balcão | Obrigatório |
-| **Mercado Livre, Instagram, OLX** | Só aparecem se o plano inclui o canal; a conexão chega numa próxima versão | Opcional |
+| **Mercado Livre, Instagram, OLX** | Só aparecem se o plano inclui o canal. O Mercado Livre se conecta em **Canais de venda** (4.6.1) e o passo se conclui com a conta conectada; Instagram e OLX chegam numa próxima versão | Opcional |
 
 - O passo fica **Concluído** sozinho quando a configuração é salva na tela dele; dá para fazer aos poucos e voltar depois.
 - **Configurar** abre a tela do passo. **Pular** esconde um passo opcional da lista de pendências; **Mostrar de novo** desfaz.
@@ -462,6 +464,38 @@ A loja virtual sempre tem as páginas **Política de privacidade** e **Termos de
 - Recomendamos revisar os textos com um advogado.
 - Vale também para a loja personalizada: são textos jurídicos da loja, não aparência.
 
+### 4.6.1 Canais de venda
+
+**Acesso:** menu **Canais de venda** (só o Dono).
+
+Aqui a loja liga as contas onde vende. Nesta versão dá para **conectar a conta do Mercado Livre**; publicar anúncios, receber as vendas e as perguntas de lá chegam nas próximas versões. Instagram e OLX também.
+
+**Conectar o Mercado Livre**
+1. Clique em **Conectar Mercado Livre**. O painel abre o site do Mercado Livre.
+2. Entre com a **conta principal** da loja no Mercado Livre (a de administrador). Conta de colaborador não consegue autorizar.
+3. Confira o pedido de acesso e clique em **Autorizar**. O Mercado Livre devolve você ao painel, que conclui a conexão sozinho.
+4. A conta aparece como **Conectada**, com o apelido da loja no Mercado Livre.
+
+- Cada loja liga **uma** conta do Mercado Livre. Para trocar de conta, desconecte a atual antes.
+- Uma conta do Mercado Livre só pode estar ligada a **uma loja** da plataforma.
+- O link de autorização vale **10 minutos** e uma vez só. Se demorar ou recarregar a página de volta, clique em **Conectar** de novo.
+- Negou o acesso no Mercado Livre? Nada é conectado; é só tentar de novo quando quiser.
+- O plano da loja precisa incluir o Mercado Livre.
+
+**Acesso renovado sozinho**
+O Mercado Livre libera o acesso por algumas horas de cada vez. O sistema renova sozinho, antes de vencer, sem você fazer nada. As renovações aparecem em **Integrações** (serviço Mercado Livre).
+
+**Autorizar de novo**
+Se o Mercado Livre recusar a renovação (por exemplo, a senha da conta foi trocada ou o acesso foi retirado lá no Mercado Livre), a conexão fica como **Autorizar de novo**:
+- uma faixa aparece no topo do painel para todos os perfis;
+- os anúncios dessa conta **param de ser atualizados** pelo estoque da loja até a nova autorização;
+- clique em **Autorizar de novo** e repita os passos acima com a mesma conta.
+
+**Desconectar**
+Clique em **Desconectar** e confirme. O sistema retira a autorização da plataforma na sua conta do Mercado Livre e apaga o acesso guardado. Os anúncios que já existem no Mercado Livre continuam lá, mas deixam de acompanhar o estoque da loja. Conectar a mesma conta de novo retoma tudo.
+
+> O acesso ao Mercado Livre fica guardado no **Cofre** da loja, cifrado, e nunca é mostrado.
+
 ### 4.7 Pagamentos
 
 **Acesso:** menu **Pagamentos** (só Dono).
@@ -683,7 +717,8 @@ Continuam disponíveis no migrador, para a equipe técnica: `criar-superadmin`, 
 
 Itens previstos que **ainda não estão no sistema**:
 
-- Integrações com Mercado Livre, Instagram (catálogo Meta) e OLX: conectar a conta e publicar. A seção **Anúncios** e a atualização automática pelo estoque já estão prontas para recebê-los.
+- Mercado Livre: publicar anúncios (com categoria, atributos e compatibilidades), receber vendas, perguntas e avisos. A conexão da conta já funciona (4.6.1); em teste, o Mercado Livre é simulado (página "Mercado Livre simulado", sem conta real).
+- Instagram (catálogo Meta) e OLX: conectar a conta e publicar. A seção **Anúncios** e a atualização automática pelo estoque já estão prontas para recebê-los.
 - Emissão real de NF-e pela Focus NFe: hoje "pela plataforma" é simulado. "Fora da plataforma" já funciona.
 - NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
 - Frete real (Melhor Envio): hoje o frete é simulado.
@@ -725,4 +760,5 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
 | 16/10/2026 | Base da IA (RF35/RF36): limite de cadastros com IA no mês explicado em 4.2 (Limites do plano); o cartão Seu plano passa a mostrar o uso real. |
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
+| 16/10/2026 | Canais de venda (RF21, parte 1): nova seção 4.6.1 (conectar o Mercado Livre, renovação, autorizar de novo, desconectar), faixa de alerta e perfis; passo Mercado Livre dos primeiros passos leva à tela. |
 | 16/10/2026 | Cadastro por foto (RF30): **Preencher com IA** em 4.3 Peças (sugestão, destaque até revisar, veículos sugeridos, limite do plano) e selo IA na compatibilidade. |

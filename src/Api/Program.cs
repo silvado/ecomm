@@ -218,6 +218,13 @@ if (app.Configuration.GetValue<bool>("Channels:UseFakeChannel"))
     app.MapFakeChannelWebhook();
 }
 
+if (app.Configuration.GetValue<bool>("MercadoLivre:UseFake"))
+{
+    // Mercado Livre simulado (RF21): qualquer "vendedor" autoriza. Jamais em produção.
+    if (app.Environment.IsProduction()) throw new InvalidOperationException("MercadoLivre:UseFake não pode ser usado em produção.");
+    app.MapFakeMercadoLivreAuthorization();
+}
+
 if (app.Configuration.GetValue<bool>("Dns:UseFake"))
 {
     // DNS simulado (RF03): qualquer um "prova" um domínio. Jamais em produção.

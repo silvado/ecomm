@@ -2,11 +2,18 @@ using Ecommerce.Domain.Common;
 
 namespace Ecommerce.Domain.Channels;
 
+/// <summary>Nomes dos canais de venda (também a chave do recurso no plano — <see cref="Platform.PlanFeature.ForChannel"/>).</summary>
+public static class SalesChannel
+{
+    public const string MercadoLivre = "mercado-livre";
+}
+
 public enum ChannelConnectionStatus
 {
     Active,
     /// <summary>Token vencido ou revogado: a loja precisa autorizar de novo (RF21 CA2).</summary>
     ReauthRequired,
+    /// <summary>Desconectada pela loja: nada sincroniza; conectar a mesma conta de novo reativa.</summary>
     Disabled,
 }
 
@@ -18,6 +25,8 @@ public sealed class ChannelConnection : ITenantOwned
 {
     public const int ChannelMaxLength = 30;
     public const int ExternalAccountMaxLength = 60;
+    public const int AccountNameMaxLength = 100;
+    public const int StatusReasonMaxLength = 300;
 
     private ChannelConnection() { }
 
@@ -43,8 +52,94 @@ public sealed class ChannelConnection : ITenantOwned
     public ChannelConnectionStatus Status { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
 
+    /// <summary>Nome da conta no canal (apelido do vendedor no ML), para a loja reconhecer qual conta está ligada.</summary>
+    public string? AccountName { get; private set; }
+
+    /// <summary>Quando o acesso atual vence (os tokens ficam no cofre). Nulo em canais sem token.</summary>
+    public DateTimeOffset? TokenExpiresAt { get; private set; }
+
+    /// <summary>Por que a conexão pede nova autorização (mensagem para a loja).</summary>
+    public string? StatusReason { get; private set; }
+
+    public DateTimeOffset? UpdatedAt { get; private set; }
+
     public void ChangeStatus(ChannelConnectionStatus status) =>
         Status = Enum.IsDefined(status) ? status : throw new ArgumentOutOfRangeException(nameof(status));
+
+    /// <summary>A loja autorizou (ou autorizou de novo) a conta: volta a sincronizar.</summary>
+    public void Authorized(string? accountName, DateTimeOffset tokenExpiresAt, DateTimeOffset now)
+    {
+        AccountName = Cut(accountName?.Trim(), AccountNameMaxLength);
+        TokenExpiresAt = tokenExpiresAt;
+        Status = ChannelConnectionStatus.Active;
+        StatusReason = null;
+        UpdatedAt = now;
+    }
+
+    /// <summary>Acesso renovado (RF21 CA2).</summary>
+    public void TokenRenewed(DateTimeOffset tokenExpiresAt, DateTimeOffset now)
+    {
+        TokenExpiresAt = tokenExpiresAt;
+        UpdatedAt = now;
+    }
+
+    /// <summary>O canal recusou a renovação (revogado, senha trocada, vencido): só a loja resolve, autorizando de novo.</summary>
+    public void RequireReauthorization(string reason, DateTimeOffset now)
+    {
+        if (Status == ChannelConnectionStatus.Disabled) return;
+        Status = ChannelConnectionStatus.ReauthRequired;
+        StatusReason = Cut(reason, StatusReasonMaxLength);
+        UpdatedAt = now;
+    }
+
+    /// <summary>Desconectada pela loja: os anúncios ficam como estão e param de sincronizar.</summary>
+    public void Disconnect(DateTimeOffset now)
+    {
+        Status = ChannelConnectionStatus.Disabled;
+        TokenExpiresAt = null;
+        StatusReason = null;
+        UpdatedAt = now;
+    }
+
+    private static string? Cut(string? text, int max) => text is { Length: > 0 } ? (text.Length > max ? text[..max] : text) : null;
+}
+
+/// <summary>
+/// Autorização OAuth em andamento (RF21 CA1): liga o <c>state</c> devolvido pelo canal à loja e a quem pediu, e guarda o
+/// verificador PKCE. Vale 10 minutos e é usada uma vez só (apagada ao concluir). Só o hash do <c>state</c> fica no banco.
+/// </summary>
+public sealed class ChannelAuthorization : ITenantOwned
+{
+    public static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(10);
+
+    private ChannelAuthorization() { }
+
+    public ChannelAuthorization(Guid tenantId, string channel, string stateHash, string codeVerifier, Guid userId, DateTimeOffset now)
+    {
+        if (tenantId == Guid.Empty) throw new ArgumentException("Loja obrigatória.", nameof(tenantId));
+        ArgumentException.ThrowIfNullOrWhiteSpace(channel);
+        ArgumentException.ThrowIfNullOrWhiteSpace(stateHash);
+        ArgumentException.ThrowIfNullOrWhiteSpace(codeVerifier);
+        Id = Guid.CreateVersion7();
+        TenantId = tenantId;
+        Channel = channel;
+        StateHash = stateHash;
+        CodeVerifier = codeVerifier;
+        UserId = userId;
+        CreatedAt = now;
+        ExpiresAt = now + Lifetime;
+    }
+
+    public Guid Id { get; private set; }
+    public Guid TenantId { get; private set; }
+    public string Channel { get; private set; } = string.Empty;
+    public string StateHash { get; private set; } = string.Empty;
+    public string CodeVerifier { get; private set; } = string.Empty;
+    public Guid UserId { get; private set; }
+    public DateTimeOffset CreatedAt { get; private set; }
+    public DateTimeOffset ExpiresAt { get; private set; }
+
+    public bool IsExpired(DateTimeOffset now) => now >= ExpiresAt;
 }
 
 public enum ListingStatus

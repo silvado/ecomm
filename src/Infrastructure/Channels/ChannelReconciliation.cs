@@ -148,7 +148,11 @@ public sealed partial class ChannelReconciliationScheduler(IServiceScopeFactory 
             .Select(a => a.TenantId).Distinct().ToListAsync(ct);
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         foreach (var tenantId in tenants)
+        {
+            // Primeiro renova os acessos que vencem em breve (RF21 CA2), depois confere os anúncios.
+            await bus.PublishAsync(new RenewChannelCredentials(), new DeliveryOptions { TenantId = tenantId.ToString() });
             await bus.PublishAsync(new ReconcileChannels(), new DeliveryOptions { TenantId = tenantId.ToString() });
+        }
         LogScheduled(logger, tenants.Count);
         return tenants.Count;
     }

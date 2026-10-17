@@ -14,7 +14,23 @@ internal sealed class ChannelConnectionConfiguration : IEntityTypeConfiguration<
         builder.Property(c => c.Channel).HasMaxLength(ChannelConnection.ChannelMaxLength).IsRequired();
         builder.Property(c => c.ExternalAccountId).HasMaxLength(ChannelConnection.ExternalAccountMaxLength).IsRequired();
         builder.Property(c => c.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(c => c.AccountName).HasMaxLength(ChannelConnection.AccountNameMaxLength);
+        builder.Property(c => c.StatusReason).HasMaxLength(ChannelConnection.StatusReasonMaxLength);
         builder.HasIndex(c => new { c.TenantId, c.Channel, c.ExternalAccountId }).IsUnique();
+    }
+}
+
+/// <summary>Autorizações OAuth em andamento (RF21): procuradas pelo hash do state, na loja do escopo.</summary>
+internal sealed class ChannelAuthorizationConfiguration : IEntityTypeConfiguration<ChannelAuthorization>
+{
+    public void Configure(EntityTypeBuilder<ChannelAuthorization> builder)
+    {
+        builder.HasKey(a => a.Id);
+        builder.Property(a => a.Id).ValueGeneratedNever();
+        builder.Property(a => a.Channel).HasMaxLength(ChannelConnection.ChannelMaxLength).IsRequired();
+        builder.Property(a => a.StateHash).HasMaxLength(64).IsRequired();
+        builder.Property(a => a.CodeVerifier).HasMaxLength(128).IsRequired();
+        builder.HasIndex(a => new { a.TenantId, a.StateHash }).IsUnique();
     }
 }
 

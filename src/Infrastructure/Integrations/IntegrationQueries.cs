@@ -65,7 +65,8 @@ public sealed class IntegrationQueries(TenantDbContext db, PlatformDbContext pla
         var since = clock.GetUtcNow().AddDays(-1);
         return new IntegrationSummary(
             await db.MessageFailures.CountAsync(f => f.Status == MessageFailureStatus.Pending, ct),
-            await db.IntegrationLogs.CountAsync(l => !l.Success && l.At >= since, ct));
+            await db.IntegrationLogs.CountAsync(l => !l.Success && l.At >= since, ct),
+            await db.ChannelConnections.CountAsync(c => c.Status == Domain.Channels.ChannelConnectionStatus.ReauthRequired, ct));
     }
 
     public async Task<ReplayOutcome> ReplayAsync(Guid failureId, Guid userId, CancellationToken ct = default)
