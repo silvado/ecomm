@@ -232,7 +232,7 @@ export const epics = [
             title: 'Pedidos do Mercado Livre no painel',
             rf: 'RF17, RF21',
             ac: 'Venda no ML cria pedido unificado, baixa o estoque atomicamente e propaga; venda sem saldo vira conflito de estoque com alerta.',
-            t: [['Processamento de orders_v2 e pagamentos', 12]],
+            t: [['Processamento de orders_v2 e pagamentos', 12, 'done']],
           },
           {
             title: 'Importação dos anúncios existentes',

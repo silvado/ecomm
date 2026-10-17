@@ -198,6 +198,9 @@ const ACTION_LABELS: Record<OrderAction, string> = {
           @if (o.origin === 'counter') {
             <h3>Venda no balcão</h3>
             <p class="muted">As peças saíram na hora da venda.</p>
+          } @else if (o.origin === 'mercadoLivre') {
+            <h3>Entrega pelo Mercado Livre</h3>
+            <p class="muted">Endereço, etiqueta e envio ficam no Mercado Livre (Minhas vendas). Frete pago pelo comprador: {{ o.shippingTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}.</p>
           } @else {
             <h3>{{ deliveryLabels[o.deliveryMethod] }}</h3>
             @if (o.address; as a) {
@@ -375,6 +378,7 @@ export class OrdersPage implements OnInit {
         return 'As peças são baixadas do estoque agora; se alguma já foi vendida, a aprovação é recusada.';
       case 'cancelar':
         if (o.origin === 'counter') return 'Para corrigir uma venda lançada errado: as peças voltam ao estoque. Devolva o dinheiro ao cliente, se for o caso.';
+        if (o.origin === 'mercadoLivre') return 'As peças voltam ao estoque aqui. Cancele também a venda no Mercado Livre: o cancelamento não é enviado para lá.';
         return o.status === 'pendingPayment'
           ? 'As peças reservadas voltam a ficar disponíveis.'
           : 'As peças voltam ao estoque. O estorno do pagamento, se houver, é feito no gateway.';

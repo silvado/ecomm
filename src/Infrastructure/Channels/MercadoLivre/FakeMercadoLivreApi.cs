@@ -50,6 +50,44 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
     };
 
     private static readonly ConcurrentDictionary<string, List<JsonObject>> Compatible = new();
+    private static readonly ConcurrentDictionary<string, JsonObject> Orders = new();
+
+    /// <summary>
+    /// Simula uma venda paga no ML (formato de https://developers.mercadolivre.com.br/pt_br/gerenciamento-de-vendas): baixa
+    /// a quantidade do anúncio aqui, como o ML faz, e devolve o id do pedido (para mandar o aviso orders_v2).
+    /// </summary>
+    public static string Sell(string itemId, int quantity, string sellerId, decimal? unitPrice = null, string title = "Peça vendida no ML")
+    {
+        var item = Items.GetOrAdd(itemId, Unknown);
+        var price = unitPrice ?? (item["price"] is { } p && decimal.TryParse(p.ToJsonString(), System.Globalization.CultureInfo.InvariantCulture, out var stored) && stored > 0 ? stored : 100m);
+        if (item["available_quantity"] is { } q && int.TryParse(q.ToJsonString(), out var left)) item["available_quantity"] = Math.Max(0, left - quantity);
+        var id = Random.Shared.NextInt64(2_000_000_000_000_000, 2_999_999_999_999_999).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        Orders[id] = new JsonObject
+        {
+            ["id"] = long.Parse(id, System.Globalization.CultureInfo.InvariantCulture),
+            ["status"] = "paid",
+            ["date_closed"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz", System.Globalization.CultureInfo.InvariantCulture),
+            ["total_amount"] = price * quantity,
+            ["order_items"] = new JsonArray(new JsonObject
+            {
+                ["item"] = new JsonObject { ["id"] = itemId, ["title"] = title },
+                ["quantity"] = quantity,
+                ["unit_price"] = price,
+                ["currency_id"] = "BRL",
+            }),
+            ["payments"] = new JsonArray(new JsonObject { ["status"] = "approved", ["shipping_cost"] = 25.9m, ["total_paid_amount"] = price * quantity + 25.9m }),
+            ["buyer"] = new JsonObject { ["id"] = 266272126, ["nickname"] = "COMPRADOR_TESTE" },
+            ["seller"] = new JsonObject { ["id"] = long.Parse(sellerId, System.Globalization.CultureInfo.InvariantCulture) },
+            ["tags"] = new JsonArray("paid", "test_order"),
+        };
+        return id;
+    }
+
+    /// <summary>Simula o cancelamento da venda no ML.</summary>
+    public static void CancelOrder(string orderId)
+    {
+        if (Orders.TryGetValue(orderId, out var order)) order["status"] = "cancelled";
+    }
 
     /// <summary>Famílias de veículos ligadas ao anúncio (o que foi enviado em products_families).</summary>
     public static IReadOnlyList<JsonObject> CompatibilitiesOf(string itemId) => Compatible.TryGetValue(itemId, out var list) ? list : [];
@@ -91,6 +129,7 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
             ("POST", ["catalog_domains", MercadoLivreApiClient.VehicleDomain, "attributes", var attribute, "top_values"]) =>
                 Json(TopValues(attribute, await BodyAsync(request, cancellationToken))),
             ("POST", ["items", var id, "compatibilities"]) => Compatibilities(id, await BodyAsync(request, cancellationToken)),
+            ("GET", ["orders", var id]) => Orders.TryGetValue(id, out var order) ? Json((JsonObject)order.DeepClone()) : NotFound(),
             _ => NotFound(),
         };
     }

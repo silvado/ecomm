@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 17/10/2026 (compatibilidade no anúncio do Mercado Livre).
+> Última atualização: 17/10/2026 (vendas do Mercado Livre em Pedidos).
 
 ## Sumário
 
@@ -294,7 +294,14 @@ O cadastro do veículo mostra todas as peças ligadas a ele. Um veículo só pod
 
 **Encontrar pedidos**
 - **Busca**: número do pedido, nome, e-mail, CPF ou CNPJ do comprador.
-- **Origem**: **Loja virtual** ou **Balcão**. Mercado Livre e OLX entram aqui quando estiverem disponíveis.
+- **Origem**: **Loja virtual**, **Balcão** ou **Mercado Livre**. OLX entra aqui quando estiver disponível.
+
+**Vendas do Mercado Livre** (com a conta conectada em **Canais de venda**, 4.6.1)
+- Cada venda paga no Mercado Livre entra sozinha em **Pedidos**, com origem **Mercado Livre**, o número do pedido de lá, o apelido do comprador, as peças, os preços pagos e o frete pago pelo comprador. As peças são baixadas do estoque na hora, e os outros canais e a loja virtual se atualizam.
+- **Conflito de estoque:** se a peça já tinha sido vendida em outro lugar (na loja virtual ou no balcão) antes de a venda do Mercado Livre chegar, o pedido entra **Em análise** com o motivo "Conflito de estoque", e nada é baixado. A loja decide: repor a peça e **Aprovar**, ou cancelar. O sistema não cancela sozinho.
+- **Venda cancelada no Mercado Livre:** o pedido é cancelado aqui também, e as peças voltam ao estoque.
+- **Cancelar aqui não cancela lá:** se a loja cancelar um pedido do Mercado Livre pelo painel, cancele também a venda no Mercado Livre.
+- Endereço, etiqueta e envio ficam no Mercado Livre (**Minhas vendas**). Venda de anúncio que não foi publicado pela plataforma não entra.
 - **Período**: datas **De** e **Até** (dias no horário de Brasília).
 - **Situação**: marque uma ou várias.
 - **Limpar filtros** volta à lista completa.
@@ -734,7 +741,7 @@ Continuam disponíveis no migrador, para a equipe técnica: `criar-superadmin`, 
 
 Itens previstos que **ainda não estão no sistema**:
 
-- Mercado Livre: receber as vendas, perguntas e mensagens; editar categoria e características de um anúncio já publicado; tirar do anúncio um veículo removido da peça e informar posição (dianteira, lado) por veículo. Conectar a conta (4.6.1) e anunciar (4.3) já funcionam; em teste, o Mercado Livre é simulado (página "Mercado Livre simulado" e categorias de exemplo, sem conta real).
+- Mercado Livre: acompanhar envio e entrega das vendas no painel, emitir a NF-e da venda pelo Mercado Livre, recuperar avisos perdidos; receber perguntas e mensagens; editar categoria e características de um anúncio já publicado; tirar do anúncio um veículo removido da peça e informar posição (dianteira, lado) por veículo. Conectar a conta (4.6.1) e anunciar (4.3) já funcionam; em teste, o Mercado Livre é simulado (página "Mercado Livre simulado" e categorias de exemplo, sem conta real).
 - Instagram (catálogo Meta) e OLX: conectar a conta e publicar. A seção **Anúncios** e a atualização automática pelo estoque já estão prontas para recebê-los.
 - Emissão real de NF-e pela Focus NFe: hoje "pela plataforma" é simulado. "Fora da plataforma" já funciona.
 - NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
@@ -777,6 +784,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
 | 16/10/2026 | Base da IA (RF35/RF36): limite de cadastros com IA no mês explicado em 4.2 (Limites do plano); o cartão Seu plano passa a mostrar o uso real. |
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
+| 17/10/2026 | Vendas do Mercado Livre em Pedidos (RF21, parte 5): origem Mercado Livre, baixa do estoque, conflito de estoque em análise e cancelamento vindo do ML (4.4). |
 | 17/10/2026 | Compatibilidade no anúncio do Mercado Livre (RF21, parte 4): envio ao publicar, botão Enviar compatibilidades e veículos não achados (4.3). |
 | 17/10/2026 | Anunciar no Mercado Livre (RF21, parte 3): categoria sugerida, características, tipo de anúncio e garantia, recusa com o motivo; estoque e preço mandando no anúncio (4.3). |
 | 17/10/2026 | Avisos do Mercado Livre (RF21, parte 2): anúncio mexido no Mercado Livre é conferido na hora (4.6.1). |

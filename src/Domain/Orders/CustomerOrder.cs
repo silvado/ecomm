@@ -11,6 +11,8 @@ public enum OrderOrigin
     Site,
     /// <summary>Venda de balcão lançada no painel (RF18).</summary>
     Counter,
+    /// <summary>Venda no Mercado Livre importada pela integração (RF21); o envio é do ML.</summary>
+    MercadoLivre,
 }
 
 /// <summary>Como o cliente pagou no balcão (RF18).</summary>
@@ -165,7 +167,7 @@ public sealed class CustomerOrder : ITenantOwned
 
     public IReadOnlyList<OrderItem> Items => _items;
 
-    public DeliveryAddress? Address => DeliveryMethod == DeliveryMethod.Shipping
+    public DeliveryAddress? Address => DeliveryMethod == DeliveryMethod.Shipping && DeliveryPostalCode is not null
         ? new DeliveryAddress(DeliveryPostalCode!, DeliveryStreet!, DeliveryNumber!, DeliveryComplement, DeliveryDistrict!, DeliveryCity!, DeliveryState!)
         : null;
 
@@ -292,6 +294,49 @@ public sealed class CustomerOrder : ITenantOwned
         foreach (var line in lines) order._items.Add(new OrderItem(order, line));
         order.ItemsTotal = order._items.Sum(i => i.UnitPrice * i.Quantity);
         order.Total = order.ItemsTotal;
+        return order;
+    }
+
+    /// <summary>
+    /// Venda num canal (Mercado Livre — RF21): chega já paga, com as peças baixadas pelo chamador (linha sem saldo tem a
+    /// reserva "liberada": nada a devolver). <paramref name="reviewReason"/> preenchido (conflito de estoque, anúncio que não
+    /// é da plataforma) deixa o pedido em análise para a loja decidir (Q01). Endereço e frete ficam no canal.
+    /// </summary>
+    public static CustomerOrder PlaceChannelOrder(Guid tenantId, long number, OrderOrigin origin, string externalId, string buyerName,
+        IReadOnlyList<OrderLine> lines, decimal shippingTotal, string? reviewReason, DateTimeOffset paidAt, DateTimeOffset now)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(number);
+        if (origin is OrderOrigin.Site or OrderOrigin.Counter) throw new ArgumentException("Origem de canal inválida.", nameof(origin));
+        var id = externalId?.Trim() ?? string.Empty;
+        if (id.Length is 0 or > ExternalIdMaxLength) throw new ArgumentException("Id do pedido no canal inválido.", nameof(externalId));
+        ValidateLines(lines);
+        if (shippingTotal < 0) throw new ArgumentException("Frete inválido.", nameof(shippingTotal));
+        var name = Collapse(buyerName);
+        var order = new CustomerOrder
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = tenantId,
+            Number = number,
+            Origin = origin,
+            ExternalId = id,
+            Status = OrderStatus.Paid,
+            // Chave única do pedido (o índice do hash vale para todas as origens): canal + id do pedido lá.
+            AccessTokenHash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"{origin}:{id}")),
+            PlacedAt = now,
+            PaymentDeadline = now,
+            PaidAt = paidAt,
+            BuyerName = name.Length == 0 ? "Comprador do canal" : (name.Length > NameMaxLength ? name[..NameMaxLength] : name),
+            BuyerEmail = string.Empty,
+            BuyerPhone = string.Empty,
+            BuyerCpf = string.Empty,
+            DeliveryMethod = DeliveryMethod.Shipping,
+            ShippingCarrier = origin == OrderOrigin.MercadoLivre ? "Mercado Envios" : null,
+            ShippingTotal = shippingTotal,
+        };
+        foreach (var line in lines) order._items.Add(new OrderItem(order, line));
+        order.ItemsTotal = order._items.Sum(i => i.UnitPrice * i.Quantity);
+        order.Total = order.ItemsTotal + order.ShippingTotal;
+        if (!string.IsNullOrWhiteSpace(reviewReason)) order.FlagForReview(reviewReason);
         return order;
     }
 

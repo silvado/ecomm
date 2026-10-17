@@ -177,6 +177,11 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
   - **Desconectar:** revoga a autorização e apaga os tokens.
   - **HIPÓTESE:** uma conta do ML por loja.
   - **Pendente:** CA3 (publicação), pedidos; criar o app no DevCenter e ter um endereço HTTPS público para o retorno (VPS).
+- Feito (17/10/2026, parte 5): vendas do ML no painel (RF17 CA2).
+  - **Venda paga no ML:** vira pedido unificado, com origem Mercado Livre, baixa atômica das peças e atualização dos outros canais.
+  - **Sem saldo:** "conflito de estoque" em análise, sem cancelar sozinho (Q01).
+  - **Cancelada no ML:** cancela aqui e devolve as peças.
+  - **Pendente:** envio e entrega; NF-e da venda; avisos perdidos.
 - Feito (17/10/2026, parte 4): compatibilidades do CA3.
   - **Envio:** os veículos da peça vão ao anúncio como famílias do catálogo de veículos do ML (marca, modelo, ano e, quando a peça não serve em todas as versões do ano, motor).
   - **Quando:** logo depois de publicar e pelo botão **Enviar compatibilidades**.
