@@ -40,6 +40,17 @@ public sealed class StockReservation : ITenantOwned
     /// Baixa direta já feita (venda de balcão, RF18): nasce convertida, sem prazo. Ligada à linha do pedido, permite
     /// devolver a peça ao estoque se a venda for cancelada.
     /// </summary>
+    /// <summary>
+    /// Venda de canal que chegou sem saldo (conflito de estoque — Q01): nada foi baixado, então a "reserva" nasce liberada
+    /// (cancelar o pedido não devolve nada). Se a loja confirmar a venda, a baixa entra como direta, se houver saldo.
+    /// </summary>
+    public static StockReservation Unfulfilled(Guid tenantId, Guid partId, int quantity, string reference, DateTimeOffset now)
+    {
+        var reservation = Sold(tenantId, partId, quantity, reference, now);
+        reservation.Status = ReservationStatus.Released;
+        return reservation;
+    }
+
     public static StockReservation Sold(Guid tenantId, Guid partId, int quantity, string reference, DateTimeOffset now)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);

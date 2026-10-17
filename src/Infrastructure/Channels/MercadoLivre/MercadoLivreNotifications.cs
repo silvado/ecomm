@@ -68,6 +68,15 @@ public static class MercadoLivreNotifications
         return (NotificationCheck.Valid, new MercadoLivreNotification(key, userId, topic, resource, application));
     }
 
+    /// <summary>Id do pedido em <c>/orders/2000003508419013</c> (nulo em outros recursos).</summary>
+    public static string? OrderId(string resource)
+    {
+        const string prefix = "/orders/";
+        if (!resource.StartsWith(prefix, StringComparison.Ordinal)) return null;
+        var id = resource[prefix.Length..].Split('/', '?')[0];
+        return id.Length is > 0 and <= 30 && id.All(char.IsAsciiDigit) ? id : null;
+    }
+
     /// <summary>Id do anúncio em <c>/items/MLB123</c> (nulo em outros recursos).</summary>
     public static string? ItemId(string resource)
     {
@@ -90,16 +99,35 @@ public static class MercadoLivreNotifications
 }
 
 /// <summary>
-/// Processa, na loja do escopo, os avisos do ML que já passaram pelo inbox (RF26: uma vez por aviso). Nesta etapa:
-/// <c>items</c> de um anúncio da loja pede a conferência dele com o canal (reconciliação — RF27); os demais tópicos
-/// (vendas, perguntas, mensagens, pagamentos) ficam registrados e são ignorados até as próximas etapas do RF21.
+/// Processa, na loja do escopo, os avisos do ML que já passaram pelo inbox (RF26: uma vez por aviso):
+/// <list type="bullet">
+/// <item><c>orders_v2</c>: consulta o pedido no ML (o aviso nunca é confiado) e manda importá-lo (<see cref="ImportChannelOrder"/>).</item>
+/// <item><c>items</c> de um anúncio da loja: pede a conferência dele com o canal (reconciliação — RF27).</item>
+/// </list>
+/// Perguntas, mensagens e pagamentos (o status do pedido já cobre o pagamento) ficam registrados e são ignorados.
 /// </summary>
-public sealed class MercadoLivreChannelProcessor(TenantDbContext db, IIntegrationLog log, IMessageBus bus) : IChannelEventProcessor
+public sealed class MercadoLivreChannelProcessor(TenantDbContext db, IIntegrationLog log, IMessageBus bus, MercadoLivreApiClient api, MercadoLivreCredentials credentials)
+    : IChannelEventProcessor
 {
     public string Source => SalesChannel.MercadoLivre;
 
     public async Task<bool> ProcessAsync(Guid externalEventId, string topic, string resource, CancellationToken ct = default)
     {
+        if (topic == "orders_v2" && MercadoLivreNotifications.OrderId(resource) is { } orderId)
+        {
+            var connection = await db.ChannelConnections.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Channel == SalesChannel.MercadoLivre && c.Status == ChannelConnectionStatus.Active, ct);
+            if (connection is null) return false;
+            string token;
+            try { token = await credentials.AccessTokenAsync(connection.Id, ct); }
+            catch (ChannelAuthorizationRevokedException) { return false; } // a loja autoriza de novo; o pedido volta no próximo aviso
+            // ML fora do ar sobe a exceção: a fila tenta de novo (RF28).
+            var order = await Integrations.Logged.RunAsync(log, Source, "consultar venda", () => api.GetOrderAsync(token, orderId, ct),
+                o => o is null ? $"pedido {orderId} não encontrado" : $"pedido {orderId} · {o.Status}", null, null, ct);
+            if (order is null) return false;
+            await bus.PublishAsync(new ImportChannelOrder(connection.Id, order), new DeliveryOptions { TenantId = db.RequireTenantId().ToString() });
+            return true;
+        }
         if (topic == "items" && MercadoLivreNotifications.ItemId(resource) is { } itemId)
         {
             var listingId = await (from l in db.ChannelListings.AsNoTracking()

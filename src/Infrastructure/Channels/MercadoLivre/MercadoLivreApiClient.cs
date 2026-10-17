@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -156,6 +157,34 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
         using var response = await SendAsync(HttpMethod.Post, $"/items/{Uri.EscapeDataString(itemId)}/compatibilities", token, JsonContent.Create(body), ct);
         var result = await JsonAsync(response, ct);
         return result.TryGetProperty("created_compatibilities_count", out var count) && count.TryGetInt32(out var n) ? n : 0;
+    }
+
+    /// <summary>
+    /// Pedido do vendedor (<c>GET /orders/{id}</c>): status, itens (anúncio, quantidade, preço), pagamentos e comprador.
+    /// Fonte: https://developers.mercadolivre.com.br/pt_br/gerenciamento-de-vendas. Nulo se não existe.
+    /// </summary>
+    public async Task<ChannelOrderSnapshot?> GetOrderAsync(string token, string orderId, CancellationToken ct)
+    {
+        using var response = await SendAsync(HttpMethod.Get, $"/orders/{Uri.EscapeDataString(orderId)}", token, null, ct, allowNotFound: true);
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
+        var order = await JsonAsync(response, ct);
+        var items = order.TryGetProperty("order_items", out var list) && list.ValueKind == JsonValueKind.Array
+            ? list.EnumerateArray().Select(i =>
+            {
+                var item = i.TryGetProperty("item", out var it) ? it : default;
+                return new ChannelOrderItem(Text(item, "id") ?? string.Empty, Text(item, "title") ?? string.Empty,
+                    i.TryGetProperty("quantity", out var q) && q.TryGetInt32(out var qi) ? qi : 0,
+                    i.TryGetProperty("unit_price", out var p) && p.ValueKind == JsonValueKind.Number ? p.GetDecimal() : 0m);
+            }).Where(i => i.ExternalItemId.Length > 0 && i.Quantity > 0).ToList()
+            : [];
+        var shipping = order.TryGetProperty("payments", out var payments) && payments.ValueKind == JsonValueKind.Array
+            ? payments.EnumerateArray().Where(p => Text(p, "status") == "approved")
+                .Sum(p => p.TryGetProperty("shipping_cost", out var s) && s.ValueKind == JsonValueKind.Number ? s.GetDecimal() : 0m)
+            : 0m;
+        var buyer = order.TryGetProperty("buyer", out var b) ? Text(b, "nickname") ?? (Text(b, "id") is { } id ? $"Comprador {id} no Mercado Livre" : null) : null;
+        DateTimeOffset? paidAt = Text(order, "date_closed") is { } closed && DateTimeOffset.TryParse(closed, CultureInfo.InvariantCulture, DateTimeStyles.None, out var at)
+            ? at.ToUniversalTime() : null;
+        return new ChannelOrderSnapshot(Text(order, "id") ?? orderId, Text(order, "status") ?? string.Empty, buyer, shipping, paidAt, items);
     }
 
     /// <summary>Nulo se o anúncio não existe (404).</summary>

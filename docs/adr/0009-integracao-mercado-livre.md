@@ -1,6 +1,6 @@
 # ADR-0009 — Integração com o Mercado Livre: conexão da conta (OAuth)
 
-- **Status:** Aceito (parte 1: conexão; parte 2: notificações; parte 3: publicação; parte 4: compatibilidades; pedidos no próximo PR)
+- **Status:** Aceito (partes 1 a 5: conexão, notificações, publicação, compatibilidades e vendas; envio/entrega das vendas em seguida)
 - **Data:** 2026-10-16
 - **Requisitos:** RF21 (CA1, CA2, CA5), RF06, RF26, RF37, RNF05
 
@@ -190,6 +190,31 @@ Decisões:
   - **Remoção:** tirar um veículo da peça não o tira do anúncio. Exige listar e apagar as compatibilidades `source: SELLER`.
   - **Restrições de posição (`POSITION`) e notas.**
   - **Sugestões do ML** (`pending_compatibilities`).
+
+### 10. Vendas no painel (parte 5 — RF21, RF17 CA2, Q01)
+
+Fonte: [Gerenciar orders](https://developers.mercadolivre.com.br/pt_br/gerenciamento-de-vendas) (atualizada em 21/09/2026).
+
+O que a documentação define:
+- **Recurso:** `GET /orders/{id}` traz `status`, `order_items` (anúncio, quantidade, `unit_price`), `payments` (com `shipping_cost`), `buyer` e `date_closed`. Em `date_closed`, o ML já descontou a quantidade do anúncio.
+- **Quando o pedido aparece:** no MLB, os anúncios são de pagamento imediato, e o pedido só aparece ao vendedor com o pagamento aprovado.
+
+Decisões:
+- **Importação:** o aviso `orders_v2` (inbox → loja) leva o `MercadoLivreChannelProcessor` a consultar o pedido e publicar `ImportChannelOrder` com o retrato do pedido.
+- **`ChannelOrderHandler`, na transação do Wolverine:**
+  - **Pedido `paid` ainda não importado:** vira `CustomerOrder` com origem `MercadoLivre` e `ExternalId` igual ao id do pedido. O índice único (loja, origem, id externo) já existia, e a corrida perdida tenta de novo e vê o pedido.
+  - **Baixa:** cada peça (anúncio da plataforma nesta conexão → peça) é baixada por `UPDATE` condicional, com movimento `DirectSale` e `StockChanged` (RNF02).
+  - **Sem saldo (Q01):** a linha não é baixada e a reserva nasce liberada, então cancelar não devolve nada. O pedido entra em análise com "Conflito de estoque", e a loja decide: aprovar, que baixa se houver saldo, ou cancelar. Nunca cancela sozinho.
+  - **Item que não é anúncio da plataforma:** fica fora do pedido e aparece no motivo. Pedido sem nenhum item da plataforma é ignorado.
+  - **`cancelled`/`invalid` no ML:** cancela o pedido aqui e devolve as peças baixadas.
+- **Entrega:** fica no ML. A regra `ck_customer_orders_delivery` passou a aceitar entrega sem CEP nem frete cotado para a origem `MercadoLivre`, e o frete pago pelo comprador entra no total.
+- **Comprador:** só o apelido; o ML não fornece e-mail nem documento.
+- **Dev:** a página `/api/dev/mercado-livre/vendas` (ML simulado) simula uma compra ou um cancelamento, e o aviso entra pelo mesmo caminho do webhook.
+- **Pendente:**
+  - envio e entrega (`shipments`) no painel;
+  - NF-e da venda no ML;
+  - recuperar avisos perdidos (`missed_feeds`);
+  - cancelamento feito no painel não é enviado ao ML.
 
 ## Consequências
 

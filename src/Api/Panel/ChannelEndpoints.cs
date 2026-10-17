@@ -2,6 +2,7 @@ using Ecommerce.Api.Auth;
 using Ecommerce.Application.Channels;
 using Ecommerce.Domain.Identity;
 using Ecommerce.Infrastructure.Channels;
+using Ecommerce.Application.Integrations;
 using Ecommerce.Infrastructure.Integrations;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Wolverine;
@@ -163,7 +164,9 @@ public static class ChannelEndpoints
     /// Só com o ML simulado: a "página de autorização" do Mercado Livre. Autorizar volta ao painel com <c>code=SIM-{vendedor}</c>;
     /// negar volta com <c>error=access_denied</c>, como o ML real.
     /// </summary>
-    public static void MapFakeMercadoLivreAuthorization(this IEndpointRouteBuilder app) =>
+    public static void MapFakeMercadoLivreAuthorization(this IEndpointRouteBuilder app)
+    {
+        MapFakeMercadoLivreSales(app);
         app.MapGet(Ecommerce.Infrastructure.Channels.MercadoLivre.FakeMercadoLivreAuth.SimulationPath, (string state, IMercadoLivreAuth auth) =>
         {
             var back = ((Ecommerce.Infrastructure.Channels.MercadoLivre.FakeMercadoLivreAuth)auth).RedirectUri;
@@ -186,4 +189,57 @@ public static class ChannelEndpoints
                 </body></html>
                 """, "text/html; charset=utf-8");
         }).ExcludeFromDescription();
+    }
+
+    /// <summary>
+    /// Só com o ML simulado: "vender" (ou cancelar a venda de) um anúncio, como um comprador faria no ML. O aviso orders_v2
+    /// entra pelo mesmo caminho do webhook real (inbox, roteamento pelo vendedor, consulta do pedido).
+    /// </summary>
+    private static void MapFakeMercadoLivreSales(IEndpointRouteBuilder app)
+    {
+        const string path = "/api/dev/mercado-livre/vendas";
+        app.MapGet(path, () => TypedResults.Content($"""
+            <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>Vendas no Mercado Livre simulado</title><meta name="robots" content="noindex"></head>
+            <body style="font-family:system-ui;max-width:460px;margin:3rem auto;padding:0 1rem">
+            <h1>Mercado Livre simulado: vendas</h1><p>Ambiente de desenvolvimento: simula um comprador no ML.</p>
+            <form method="post" action="{path}">
+            <p><label>Anúncio (ex.: MLB1234567890)<br><input name="anuncio" required style="width:100%"></label></p>
+            <p><label>Id do vendedor (a conta em Canais de venda)<br><input name="vendedor" required style="width:100%"></label></p>
+            <p><label>Quantidade<br><input name="quantidade" type="number" value="1" min="1" style="width:100%"></label></p>
+            <p><button style="width:100%;min-height:48px">Comprar</button></p>
+            </form>
+            <form method="post" action="{path}/cancelar">
+            <p><label>Cancelar a venda (id do pedido no ML)<br><input name="pedido" required style="width:100%"></label></p>
+            <p><label>Id do vendedor<br><input name="vendedor" required style="width:100%"></label></p>
+            <p><button style="width:100%;min-height:48px">Cancelar venda</button></p>
+            </form>
+            </body></html>
+            """, "text/html; charset=utf-8")).ExcludeFromDescription();
+
+        app.MapPost(path, async (HttpRequest request, IMessageBus bus, CancellationToken ct) =>
+        {
+            var form = await request.ReadFormAsync(ct);
+            var seller = form["vendedor"].ToString().Trim();
+            if (!seller.All(char.IsAsciiDigit) || seller.Length == 0) return Results.BadRequest("Informe o id do vendedor.");
+            var quantity = int.TryParse(form["quantidade"], out var q) && q > 0 ? q : 1;
+            var orderId = Ecommerce.Infrastructure.Channels.MercadoLivre.FakeMercadoLivreApi.Sell(form["anuncio"].ToString().Trim(), quantity, seller);
+            await NotifyOrderAsync(bus, seller, orderId, "pago", ct);
+            return Results.Content($"<p style=\"font-family:system-ui\">Venda {orderId} feita. Veja em Pedidos no painel. <a href=\"{path}\">Voltar</a></p>", "text/html; charset=utf-8");
+        }).DisableAntiforgery().ExcludeFromDescription();
+
+        app.MapPost(path + "/cancelar", async (HttpRequest request, IMessageBus bus, CancellationToken ct) =>
+        {
+            var form = await request.ReadFormAsync(ct);
+            var orderId = form["pedido"].ToString().Trim();
+            var seller = form["vendedor"].ToString().Trim();
+            Ecommerce.Infrastructure.Channels.MercadoLivre.FakeMercadoLivreApi.CancelOrder(orderId);
+            await NotifyOrderAsync(bus, seller, orderId, "cancelado", ct);
+            return Results.Content($"<p style=\"font-family:system-ui\">Venda {orderId} cancelada. <a href=\"{path}\">Voltar</a></p>", "text/html; charset=utf-8");
+        }).DisableAntiforgery().ExcludeFromDescription();
+    }
+
+    private static Task<ReceiveChannelEventOutcome> NotifyOrderAsync(IMessageBus bus, string seller, string orderId, string change, CancellationToken ct) =>
+        bus.InvokeAsync<ReceiveChannelEventOutcome>(new ReceiveChannelEvent(Domain.Channels.SalesChannel.MercadoLivre, $"orders_v2|/orders/{orderId}|{change}",
+            seller, "orders_v2", $"/orders/{orderId}", null), ct);
 }

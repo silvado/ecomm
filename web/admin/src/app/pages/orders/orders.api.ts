@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview' | 'shipped' | 'delivered' | 'pickedUp' | 'returned';
 export type ReturnReason = 'regret' | 'defect' | 'wrongPart' | 'other';
 export type RefundMethod = 'gateway' | 'pix' | 'cash' | 'storeCredit' | 'other';
-export type OrderOrigin = 'site' | 'counter';
+export type OrderOrigin = 'site' | 'counter' | 'mercadoLivre';
 export type CounterPaymentMethod = 'cash' | 'pix' | 'debitCard' | 'creditCard' | 'other';
 export type DeliveryMethod = 'shipping' | 'pickup';
 export type OrderActor = 'buyer' | 'user' | 'payment' | 'system';
@@ -38,7 +38,7 @@ export const REFUND_METHOD_LABELS: Record<RefundMethod, string> = {
   other: 'Outra',
 };
 
-export const ORDER_ORIGIN_LABELS: Record<OrderOrigin, string> = { site: 'Loja virtual', counter: 'Balcão' };
+export const ORDER_ORIGIN_LABELS: Record<OrderOrigin, string> = { site: 'Loja virtual', counter: 'Balcão', mercadoLivre: 'Mercado Livre' };
 
 export const PAYMENT_METHOD_LABELS: Record<CounterPaymentMethod, string> = {
   cash: 'Dinheiro',

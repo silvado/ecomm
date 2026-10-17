@@ -59,8 +59,10 @@ internal sealed class CustomerOrderConfiguration : IEntityTypeConfiguration<Cust
         {
             t.HasCheckConstraint("ck_customer_orders_totals", "items_total > 0 AND shipping_total >= 0 AND total = items_total + shipping_total");
             t.HasCheckConstraint("ck_customer_orders_counter_payment", "(origin = 'Counter') = (payment_method IS NOT NULL)");
+            // Venda de canal (Mercado Livre): endereço e frete ficam no canal, que faz o envio.
             t.HasCheckConstraint("ck_customer_orders_delivery",
                 "(delivery_method = 'Shipping' AND (delivery_postal_code IS NOT NULL OR anonymized_at IS NOT NULL) AND shipping_service_id IS NOT NULL)"
+                + " OR (delivery_method = 'Shipping' AND origin = 'MercadoLivre')"
                 + " OR (delivery_method = 'Pickup' AND pickup_address IS NOT NULL)");
         });
     }

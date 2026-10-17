@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1011** |
 
-Progresso: 683 h de 1011 h em tarefas concluídas (68%).
+Progresso: 695 h de 1011 h em tarefas concluídas (69%).
 
 Referência: 6 h produtivas/dia ≈ 169 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -271,11 +271,11 @@ Mercado Livre e Instagram (catálogo Meta) sincronizados com o estoque único.
 - [x] Envio de compatibilidades — 12 h
 - [x] Atualização, pausa e reativação — 6 h
 
-#### Pedidos do Mercado Livre no painel — 12 h  `RF17, RF21`
+#### Pedidos do Mercado Livre no painel — 12 h  `RF17, RF21` · **concluído**
 
 **Critérios de aceite:** Venda no ML cria pedido unificado, baixa o estoque atomicamente e propaga; venda sem saldo vira conflito de estoque com alerta.
 
-- [ ] Processamento de orders_v2 e pagamentos — 12 h
+- [x] Processamento de orders_v2 e pagamentos — 12 h
 
 #### Importação dos anúncios existentes — 12 h  `RF11`
 
