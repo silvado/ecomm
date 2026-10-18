@@ -22,7 +22,7 @@ public static class SyncGuardianHandler
         IOptions<PlatformOptions> platform, IMessageBus bus, TimeProvider clock, CancellationToken ct)
     {
         var tenantId = db.RequireTenantId();
-        var enabled = await db.StoreSettings.AsNoTracking().Select(s => (bool?)s.SyncAlertsEnabled).FirstOrDefaultAsync(ct) ?? true;
+        var enabled = await db.StoreSettings.AsNoTracking().Select(s => (bool?)s.SyncAlertsEnabled).FirstOrDefaultAsync(ct) ?? false;
         var owners = command.Owners.Select(o => o.Email.Trim()).Where(e => e.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         if (!enabled || owners.Count == 0) return SyncAlertOutcome.Skipped;
 

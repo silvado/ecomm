@@ -409,7 +409,7 @@ A loja conversa com serviços externos: gateway de pagamento (Mercado Pago ou Ci
   - falha pendente das últimas 24 horas;
   - chamada a um serviço que falhou 3 vezes ou mais nas últimas 2 horas e ainda não voltou a dar certo (uma falha isolada não conta: o sistema tenta de novo sozinho).
 - A sugestão de **O que fazer** segue regras fixas: conectar a conta de novo em **Canais de venda**, corrigir um dado da peça, clicar em **Reprocessar** quando o serviço voltar, esperar o serviço fora do ar ou falar com o suporte.
-- **Alerta por e-mail** (só o Dono liga ou desliga): a cada 15 minutos o guardião confere a loja e, se aparecer problema novo, os Donos recebem um e-mail com cada problema, o erro e o que fazer. O mesmo problema só é avisado de novo **depois de 24 horas**, se continuar. Vem **ligado**; para desligar, desmarque **Avisar os Donos por e-mail quando a sincronização falhar**.
+- **Alerta por e-mail** (só o Dono liga ou desliga): a cada 15 minutos o guardião confere a loja e, se aparecer problema novo, os Donos recebem um e-mail com cada problema, o erro e o que fazer. O mesmo problema só é avisado de novo **depois de 24 horas**, se continuar. Vem **desligado**; para ligar, marque **Avisar os Donos por e-mail quando a sincronização falhar**. Desligado, o diagnóstico continua aparecendo nesta tela.
 - No e-mail, a IA explica o erro em palavras simples. Se a explicação citar um número que não está no erro, trouxer link ou e-mail, ou se a IA estiver fora do ar, vale um texto padrão. A IA nunca decide o que fazer nem mexe na loja.
 
 **Falhas pendentes**

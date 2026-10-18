@@ -12,7 +12,7 @@ public sealed class SyncGuardianService(TenantDbContext db, TimeProvider clock) 
         (await SyncGuardianQuery.LoadAsync(db, clock.GetUtcNow(), ct)).Select(p => SyncGuardianRules.Diagnose(p)).OrderByDescending(d => d.LastAt).ToList();
 
     public async Task<SyncGuardianSettingsView> SettingsAsync(CancellationToken ct = default) =>
-        new(await db.StoreSettings.AsNoTracking().Select(s => (bool?)s.SyncAlertsEnabled).FirstOrDefaultAsync(ct) ?? true);
+        new(await db.StoreSettings.AsNoTracking().Select(s => (bool?)s.SyncAlertsEnabled).FirstOrDefaultAsync(ct) ?? false);
 
     public async Task<SyncGuardianSettingsView> SaveAsync(bool enabled, CancellationToken ct = default)
     {

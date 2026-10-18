@@ -6,6 +6,7 @@ using Ecommerce.Application.Reports;
 using Ecommerce.Domain.Channels;
 using Ecommerce.Domain.Identity;
 using Ecommerce.Domain.Integrations;
+using Ecommerce.Domain.Inventory;
 using Ecommerce.Infrastructure.Email;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Infrastructure.Reports;
@@ -20,7 +21,7 @@ namespace Ecommerce.Integration.Tests.Api;
 /// <summary>
 /// RF33 — guardião da sincronização: problemas das consultas (canal sem autorização, falha em segundo plano, chamada que
 /// segue falhando), diagnóstico com ação sugerida no painel e por e-mail aos Donos, sem repetir o mesmo problema em 24
-/// horas; desligado não avisa; cada loja vê só os seus problemas.
+/// horas; vem desligado e, desligado, não avisa; cada loja vê só os seus problemas.
 /// </summary>
 public sealed class SyncGuardianTests(ApiFactory api) : IClassFixture<ApiFactory>
 {
@@ -44,6 +45,19 @@ public sealed class SyncGuardianTests(ApiFactory api) : IClassFixture<ApiFactory
         return await scope.ServiceProvider.GetRequiredService<IMessageBus>().InvokeForTenantAsync<SyncAlertOutcome>(tenantId.ToString(),
             new CheckSyncHealth(owners.Select(o => new DailySummaryRecipient(o)).ToList()));
     }
+
+    /// <summary>O aviso por e-mail vem desligado: liga direto no banco (o painel é testado à parte).</summary>
+    private Task<int> EnableAlertsAsync(Guid tenantId) => InTenantAsync(tenantId, async db =>
+    {
+        var settings = await db.StoreSettings.FirstOrDefaultAsync();
+        if (settings is null)
+        {
+            settings = new StoreSettings(tenantId);
+            db.StoreSettings.Add(settings);
+        }
+        settings.SetSyncAlerts(true);
+        return await db.SaveChangesAsync();
+    });
 
     private Task<int> AddReauthConnectionAsync(Guid tenantId) => InTenantAsync(tenantId, db =>
     {
@@ -84,6 +98,7 @@ public sealed class SyncGuardianTests(ApiFactory api) : IClassFixture<ApiFactory
     {
         var tenant = await api.CreateTenantAsync();
         var operatorSession = await api.SessionForAsync(tenant, TenantRole.Operator);
+        await EnableAlertsAsync(tenant.Id);
         await AddReauthConnectionAsync(tenant.Id);
         await AddFailureAsync(tenant.Id, "Atualizar anúncio no canal", "HTTP 400: item.attributes.BRAND is required");
         await AddFailedCallsAsync(tenant.Id, 3);
@@ -120,22 +135,31 @@ public sealed class SyncGuardianTests(ApiFactory api) : IClassFixture<ApiFactory
     }
 
     [Fact]
-    public async Task Sem_problema_ou_desligado_nao_avisa_e_so_o_Dono_desliga()
+    public async Task Vem_desligado_sem_problema_nao_avisa_e_so_o_Dono_liga_ou_desliga()
     {
         var tenant = await api.CreateTenantAsync();
         var owner = await api.SessionForAsync(tenant);
         var operatorSession = await api.SessionForAsync(tenant, TenantRole.Operator);
-        Assert.Equal(new SettingsDto(true), await (await GetAsync(api.PanelClient(), owner, "/api/painel/guardiao")).Content.ReadFromJsonAsync<SettingsDto>());
+        Assert.Equal(new SettingsDto(false), await (await GetAsync(api.PanelClient(), owner, "/api/painel/guardiao")).Content.ReadFromJsonAsync<SettingsDto>());
 
-        // Duas falhas da mesma chamada ainda não são problema; uma que voltou a dar certo também não.
-        await AddFailedCallsAsync(tenant.Id, 2);
-        Assert.Equal(SyncAlertOutcome.Skipped, await CheckAsync(tenant.Id, "dono@loja.test"));
-
-        Assert.Equal(HttpStatusCode.Forbidden, (await SendAsync(api.PanelClient(), operatorSession, HttpMethod.Put, "/api/painel/guardiao", new { ativo = false })).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await SendAsync(api.PanelClient(), owner, HttpMethod.Put, "/api/painel/guardiao", new { ativo = false })).StatusCode);
+        // Desligado (padrão): canal sem autorização não vira e-mail.
         await AddReauthConnectionAsync(tenant.Id);
         Assert.Equal(SyncAlertOutcome.Skipped, await CheckAsync(tenant.Id, "dono@loja.test"));
+
+        // Só o Dono liga; ligado, duas falhas da mesma chamada ainda não são problema.
+        var other = await api.CreateTenantAsync();
+        var otherOwner = await api.SessionForAsync(other);
+        Assert.Equal(HttpStatusCode.Forbidden, (await SendAsync(api.PanelClient(), operatorSession, HttpMethod.Put, "/api/painel/guardiao", new { ativo = true })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await SendAsync(api.PanelClient(), otherOwner, HttpMethod.Put, "/api/painel/guardiao", new { ativo = true })).StatusCode);
+        await AddFailedCallsAsync(other.Id, 2);
+        Assert.Equal(SyncAlertOutcome.Skipped, await CheckAsync(other.Id, "dono@loja.test"));
+
+        Assert.Equal(HttpStatusCode.OK, (await SendAsync(api.PanelClient(), owner, HttpMethod.Put, "/api/painel/guardiao", new { ativo = true })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await SendAsync(api.PanelClient(), owner, HttpMethod.Put, "/api/painel/guardiao", new { ativo = false })).StatusCode);
+        Assert.Equal(new SettingsDto(false), await (await GetAsync(api.PanelClient(), owner, "/api/painel/guardiao")).Content.ReadFromJsonAsync<SettingsDto>());
+        Assert.Equal(SyncAlertOutcome.Skipped, await CheckAsync(tenant.Id, "dono@loja.test"));
         Assert.False(await InTenantAsync(tenant.Id, db => db.SyncAlerts.AnyAsync()));
+        Assert.False(await InTenantAsync(other.Id, db => db.SyncAlerts.AnyAsync()));
     }
 
     [Fact]
@@ -148,6 +172,7 @@ public sealed class SyncGuardianTests(ApiFactory api) : IClassFixture<ApiFactory
                                                              join u in db.UserAccounts on m.UserId equals u.Id
                                                              where m.TenantId == tenant.Id && m.Role == TenantRole.Owner
                                                              select u.Email).FirstAsync());
+        await EnableAlertsAsync(tenant.Id);
         await AddReauthConnectionAsync(tenant.Id);
 
         var scheduler = ActivatorUtilities.CreateInstance<SyncGuardianScheduler>(api.Services);
@@ -164,6 +189,8 @@ public sealed class SyncGuardianTests(ApiFactory api) : IClassFixture<ApiFactory
         var tenant = await api.CreateTenantAsync();
         var other = await api.CreateTenantAsync();
         var otherOwner = await api.SessionForAsync(other);
+        await EnableAlertsAsync(tenant.Id);
+        await EnableAlertsAsync(other.Id);
         await AddReauthConnectionAsync(tenant.Id);
         await AddFailureAsync(tenant.Id, "Atualizar anúncio no canal", "HTTP 500");
         Assert.Equal(SyncAlertOutcome.Sent, await CheckAsync(tenant.Id, "a@loja.test"));

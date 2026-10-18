@@ -55,7 +55,7 @@ Texto recusado, ou IA fora do ar, dá lugar a uma explicação fixa. A IA nunca 
 - **Agendador:** `SyncGuardianScheduler` (Worker) roda a cada 15 minutos. Para cada loja publicada e não suspensa, publica `CheckSyncHealth` com os e-mails dos Donos. Usa a mesma consulta de Donos do resumo diário (`StoreOwners`).
 - **Sem repetir:** `sync_alerts` (com RLS) guarda as chaves avisadas. Um problema só volta a ser avisado depois de 24 horas, se continuar; um problema novo sai sozinho.
 - **Concorrência:** duas rodadas ao mesmo tempo se enfileiram num `pg_advisory_xact_lock` por loja, dentro da transação do handler. A segunda vê o alerta da primeira.
-- **Configuração:** em `store_settings.sync_alerts_enabled`. **HIPÓTESE:** ligado por padrão, também nas lojas existentes. Só o Dono desliga (Integrações).
+- **Configuração:** em `store_settings.sync_alerts_enabled`. Desligado por padrão, também nas lojas existentes (decisão do usuário, 18/10/2026). Só o Dono liga ou desliga (Integrações).
 
 ### 4. Envio e painel
 

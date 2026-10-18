@@ -294,7 +294,7 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
   - O diagnóstico aparece em **Integrações** (Dono e Operador), sem IA.
 - CA2: envia alerta por e-mail; WhatsApp quando houver provedor definido (Q12).
   - Feito (18/10/2026): e-mail aos Donos da loja, conferido a cada 15 minutos. O mesmo problema só é avisado de novo depois de 24 horas, se continuar.
-  - **HIPÓTESE:** ligado por padrão, inclusive nas lojas existentes; o Dono desliga em Integrações. Só lojas publicadas e não suspensas.
+  - Desligado por padrão, inclusive nas lojas existentes (decisão do usuário, 18/10/2026); o Dono liga em Integrações. Só lojas publicadas e não suspensas.
   - WhatsApp segue pendente (Q12).
 
 ### RF34 — Resumo diário · E5

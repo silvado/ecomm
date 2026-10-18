@@ -85,7 +85,7 @@ export class SyncGuardianSection implements OnInit {
   protected readonly busy = signal(false);
   protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected enabled = true;
+  protected enabled = false;
   protected readonly when = (iso: string) => WHEN.format(new Date(iso));
 
   async ngOnInit(): Promise<void> {

@@ -104,8 +104,8 @@ public sealed class StoreSettings : ITenantOwned
         DailySummaryHour = hour;
     }
 
-    /// <summary>RF33: alerta por e-mail aos Donos quando a sincronização falha. HIPÓTESE: ligado por padrão.</summary>
-    public bool SyncAlertsEnabled { get; private set; } = true;
+    /// <summary>RF33: alerta por e-mail aos Donos quando a sincronização falha. Decisão do usuário (18/10/2026): desligado por padrão; o Dono liga em Integrações.</summary>
+    public bool SyncAlertsEnabled { get; private set; }
 
     public void SetSyncAlerts(bool enabled) => SyncAlertsEnabled = enabled;
 
