@@ -802,6 +802,98 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.ToTable("channel_connections", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Channels.ChannelImport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AlreadyLinkedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("already_linked_count");
+
+                    b.Property<Guid>("ConnectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("connection_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("CreatedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_count");
+
+                    b.Property<string>("Cursor")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("cursor");
+
+                    b.Property<string>("ExternalIds")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("external_ids")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("failure_reason");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<string>("Issues")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("issues")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<int>("LinkedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("linked_count");
+
+                    b.Property<int>("ProcessedItems")
+                        .HasColumnType("integer")
+                        .HasColumnName("processed_items");
+
+                    b.Property<int>("RejectedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("rejected_count");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<bool>("Truncated")
+                        .HasColumnType("boolean")
+                        .HasColumnName("truncated");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_channel_imports");
+
+                    b.HasIndex("TenantId", "CreatedAt")
+                        .HasDatabaseName("ix_channel_imports_tenant_id_created_at");
+
+                    b.ToTable("channel_imports", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_channel_imports_progress", "processed_items >= 0");
+                        });
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Channels.ChannelListing", b =>
                 {
                     b.Property<Guid>("Id")

@@ -264,6 +264,101 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
         return await JsonAsync(response, ct);
     }
 
+    /// <summary>Tamanho da página da lista de anúncios do vendedor.</summary>
+    public const int SearchPageSize = 100;
+
+    /// <summary>
+    /// Uma página dos anúncios do vendedor (RF11 CA2): <c>GET /users/{id}/items/search</c> no modo <c>search_type=scan</c>
+    /// (permite passar de 1.000 anúncios), seguindo o <c>scroll_id</c>. Fonte: "Itens e buscas"
+    /// (https://developers.mercadolivre.com.br/itens-e-buscas). HIPÓTESE até testar com o app real: a resposta traz os ids
+    /// em <c>results</c> e o cursor em <c>scroll_id</c>; página vazia encerra.
+    /// </summary>
+    public async Task<(IReadOnlyList<string> Ids, string? NextCursor)> SearchSellerItemsAsync(string token, string sellerId, string? cursor, CancellationToken ct)
+    {
+        var path = $"/users/{Uri.EscapeDataString(sellerId)}/items/search?search_type=scan&limit={SearchPageSize.ToString(CultureInfo.InvariantCulture)}";
+        if (!string.IsNullOrEmpty(cursor)) path += "&scroll_id=" + Uri.EscapeDataString(cursor);
+        using var response = await SendAsync(HttpMethod.Get, path, token, null, ct);
+        var body = await JsonAsync(response, ct);
+        var ids = body.TryGetProperty("results", out var results) && results.ValueKind == JsonValueKind.Array
+            ? results.EnumerateArray().Where(r => r.ValueKind == JsonValueKind.String).Select(r => r.GetString()!).ToList()
+            : [];
+        return (ids, Text(body, "scroll_id"));
+    }
+
+    /// <summary>
+    /// O anúncio completo para a importação (RF11 CA2): <c>GET /items/{id}</c> e a descrição em
+    /// <c>GET /items/{id}/description</c> (texto simples; sem descrição, segue sem). Nulo se o anúncio não existe.
+    /// Fontes: https://developers.mercadolivre.com.br/itens-e-buscas e https://developers.mercadolivre.com.br/pt_br/publicacao-de-produtos.
+    /// </summary>
+    public async Task<ChannelItemSnapshot?> GetItemSnapshotAsync(string token, string itemId, CancellationToken ct)
+    {
+        if (await GetItemAsync(token, itemId, ct) is not { } item) return null;
+        string? description = null;
+        try
+        {
+            using var response = await SendAsync(HttpMethod.Get, $"/items/{Uri.EscapeDataString(itemId)}/description", token, null, ct, allowNotFound: true);
+            if (response.StatusCode != HttpStatusCode.NotFound) description = Text(await JsonAsync(response, ct), "plain_text");
+        }
+        catch (ChannelConnectorException)
+        {
+            // Sem descrição: a peça entra sem ela.
+        }
+        return Snapshot(item, description);
+    }
+
+    internal static ChannelItemSnapshot Snapshot(JsonElement item, string? description)
+    {
+        static IReadOnlyList<AttributeValue> Values(JsonElement e, string name) =>
+            e.TryGetProperty(name, out var list) && list.ValueKind == JsonValueKind.Array
+                ? list.EnumerateArray().Where(a => a.ValueKind == JsonValueKind.Object && Text(a, "id") is not null)
+                    .Select(a => new AttributeValue(Text(a, "id")!, Text(a, "value_id"), Text(a, "value_name"))).ToList()
+                : [];
+        var pictures = item.TryGetProperty("pictures", out var p) && p.ValueKind == JsonValueKind.Array
+            ? p.EnumerateArray().Select(x => Text(x, "secure_url") ?? Text(x, "url")).OfType<string>().ToList()
+            : [];
+        var title = Text(item, "title") ?? Text(item, "family_name") ?? string.Empty;
+        var price = item.TryGetProperty("price", out var pr) && pr.ValueKind == JsonValueKind.Number ? pr.GetDecimal() : 0m;
+        var quantity = item.TryGetProperty("available_quantity", out var q) && q.TryGetInt32(out var qi) ? qi : 0;
+        var variations = item.TryGetProperty("variations", out var v) && v.ValueKind == JsonValueKind.Array && v.GetArrayLength() > 0;
+        return new ChannelItemSnapshot(Text(item, "id") ?? string.Empty, title, price, quantity, Text(item, "status") ?? string.Empty, Text(item, "condition"),
+            Text(item, "seller_custom_field"), description, pictures, Text(item, "category_id"), Text(item, "listing_type_id"),
+            Values(item, "attributes"), Values(item, "sale_terms"), variations);
+    }
+
+    public const int MaxPictureBytes = 10 * 1024 * 1024;
+
+    /// <summary>
+    /// Baixa uma foto do anúncio para a peça. Só do servidor de imagens do ML (<c>https://*.mlstatic.com</c>): o endereço vem
+    /// da resposta do canal e não pode levar o servidor a outros destinos. Nulo se não der (a peça segue sem a foto).
+    /// </summary>
+    public async Task<byte[]?> DownloadPictureAsync(string url, CancellationToken ct)
+    {
+        if (!IsPictureUrl(url)) return null;
+        try
+        {
+            using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            if (!response.IsSuccessStatusCode || response.Content.Headers.ContentLength > MaxPictureBytes) return null;
+            await using var stream = await response.Content.ReadAsStreamAsync(ct);
+            using var buffer = new MemoryStream();
+            var chunk = new byte[81920];
+            int read;
+            while ((read = await stream.ReadAsync(chunk, ct)) > 0)
+            {
+                if (buffer.Length + read > MaxPictureBytes) return null;
+                buffer.Write(chunk, 0, read);
+            }
+            return buffer.ToArray();
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
+        {
+            return null;
+        }
+    }
+
+    public static bool IsPictureUrl(string? url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps && uri.IsDefaultPort
+        && (uri.Host.Equals("mlstatic.com", StringComparison.OrdinalIgnoreCase) || uri.Host.EndsWith(".mlstatic.com", StringComparison.OrdinalIgnoreCase));
+
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string token, HttpContent? content, CancellationToken ct, bool allowNotFound = false,
         (string Name, string Value)[]? headers = null)
     {

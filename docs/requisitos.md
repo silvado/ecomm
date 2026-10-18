@@ -83,6 +83,12 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 ### RF11 — Importação inicial · E1 (planilha) / E2 (ML)
 - CA1: importação por planilha (modelo XLSX/CSV fornecido) valida linha a linha e gera relatório de erros sem importar parcialmente sem aviso.
 - CA2: importação do ML lista os anúncios ativos/pausados do vendedor, cria peças vinculadas (`ChannelListing`) e não duplica em reimportação.
+  - Feito (18/10/2026 — [ADR-0014](adr/0014-importacao-de-anuncios-do-ml.md)): em **Canais de venda** (Dono), pela fila, com progresso e relatório.
+  - Código da peça: SKU do anúncio (SELLER_SKU ou `seller_custom_field`); sem SKU, o id do anúncio.
+  - **HIPÓTESE:** mesmo código de peça já cadastrada → o anúncio é ligado a ela, a peça não muda e vale o estoque da loja (o anúncio é corrigido).
+  - Peça nova entra ativa, com as fotos do anúncio. Sem foto acessível, entra como rascunho e sem vínculo (anúncio de peça inativa seria pausado).
+  - Pausado no ML entra como pausado pelo lojista (o sistema não reativa). Variações, encerrados e em revisão não entram. Até 5.000 anúncios.
+  - Compatibilidades com veículos e medidas da embalagem não são importadas nesta etapa.
 - CA3: importação roda em background com progresso visível.
 - Decisões (Q33): planilha XLSX ou CSV (modelo nos dois; CSV com ";", "," ou tab, UTF-8 ou Windows-1252), até 5.000 peças e 5 MB; colunas código, título, descrição, estado, preço, quantidade, medidas da embalagem e OEM — sem compatibilidade nesta etapa. Prévia valida linha a linha (mesmas regras do cadastro) e mostra os erros; só as linhas válidas são importadas, depois de o usuário confirmar. Código já cadastrado é pulado e listado no relatório (a peça existente não muda), então reenviar a planilha não duplica. Peças entram como rascunho (precisam de foto para ativar).
 

@@ -3,6 +3,7 @@ import { Component, computed, inject, Injectable, OnInit, signal } from '@angula
 import { FormsModule } from '@angular/forms';
 import { problemTitle } from '../../core/auth';
 import { ChannelConnection, ChannelsApi, ChannelsOverview, CONNECTION_STATUS_LABELS, MetaCatalogView } from './channels.api';
+import { MercadoLivreImportSection } from './ml-import';
 
 /** Sai do painel para outro site (página de autorização do canal). Separado para os testes. */
 @Injectable({ providedIn: 'root' })
@@ -18,11 +19,11 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
 
 /**
  * Canais de venda (RF21): o Dono conecta a conta do Mercado Livre (autoriza no site do ML e volta), vê a situação e
- * desconecta. Publicar anúncios e receber vendas chegam nas próximas versões.
+ * desconecta; com a conta ativa, importa os anúncios que a loja já tinha lá (RF11).
  */
 @Component({
   selector: 'app-channels',
-  imports: [FormsModule],
+  imports: [FormsModule, MercadoLivreImportSection],
   template: `
     <main class="card">
       <h1>Canais de venda</h1>
@@ -55,6 +56,13 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
                 }
                 <button type="button" class="link danger" (click)="disconnect(c)" [disabled]="busy()">Desconectar</button>
               </div>
+              @if (c.status === 'active') {
+                @defer (on viewport) {
+                  <app-ml-import />
+                } @placeholder {
+                  <p class="muted">Importar anúncios…</p>
+                }
+              }
             } @empty {
               <p>Nenhuma conta conectada.</p>
             }
