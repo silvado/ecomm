@@ -269,6 +269,21 @@ public sealed class ChannelListing : ITenantOwned
         Synced(quantity, price, now);
     }
 
+    /// <summary>
+    /// Anúncio que já existia no canal e foi trazido pela importação (RF11 CA2). Guarda o que está lá agora (quantidade e
+    /// preço): se o estoque da loja for diferente, a próxima sincronização corrige o canal (vale o estoque da loja). Pausado
+    /// lá fica pausado pelo lojista — o sistema não reativa.
+    /// </summary>
+    public void Imported(string externalId, bool paused, int channelQuantity, decimal channelPrice, DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(externalId) || externalId.Length > ExternalIdMaxLength)
+            throw new ArgumentException("Id do anúncio no canal inválido.", nameof(externalId));
+        if (Status != ListingStatus.Pending) throw new InvalidOperationException("Anúncio já publicado.");
+        ExternalId = externalId.Trim();
+        Status = paused ? ListingStatus.PausedByUser : ListingStatus.Active;
+        Synced(channelQuantity, channelPrice, now);
+    }
+
     /// <summary>Resultado de uma sincronização bem-sucedida.</summary>
     public void Applied(ListingAction action, int quantity, decimal price, DateTimeOffset now)
     {

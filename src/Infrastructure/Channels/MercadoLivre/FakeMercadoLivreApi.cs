@@ -188,15 +188,94 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
 
     public static void Remove(string itemId) => Items[itemId] = new JsonObject { ["id"] = itemId, ["removed"] = true };
 
+    /// <summary>Endereço de foto que o servidor de imagens simulado não encontra (para testar a peça sem foto).</summary>
+    public const string MissingPicture = "https://http2.mlstatic.com/D_SIM_SEM_FOTO.jpg";
+
+    /// <summary>
+    /// Anúncio que o vendedor já tinha no ML antes de usar a plataforma (RF11): aparece na busca dos anúncios dele, com
+    /// fotos servidas pelo servidor de imagens simulado (<c>mlstatic.com</c>).
+    /// </summary>
+    public static string Seed(string sellerId, string title, decimal price, int quantity, string status = "active", string? sku = null,
+        string condition = "used", bool variations = false, int pictures = 1, string? description = null, string? partNumber = null)
+    {
+        var id = "MLB" + Random.Shared.NextInt64(1_000_000_000, 9_999_999_999).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var attributes = new JsonArray(
+            new JsonObject { ["id"] = "BRAND", ["value_name"] = "Marca Simulada" },
+            new JsonObject { ["id"] = "ITEM_CONDITION", ["value_id"] = condition == "new" ? "2230284" : "2230581", ["value_name"] = condition == "new" ? "Novo" : "Usado" });
+        if (sku is not null) attributes.Add(new JsonObject { ["id"] = "SELLER_SKU", ["value_name"] = sku });
+        if (partNumber is not null) attributes.Add(new JsonObject { ["id"] = "PART_NUMBER", ["value_name"] = partNumber });
+        Items[id] = new JsonObject
+        {
+            ["id"] = id,
+            ["seller_id"] = long.Parse(sellerId, System.Globalization.CultureInfo.InvariantCulture),
+            ["title"] = title,
+            ["price"] = price,
+            ["available_quantity"] = quantity,
+            ["status"] = status,
+            ["condition"] = condition,
+            ["category_id"] = HeadlightCategory,
+            ["listing_type_id"] = "gold_special",
+            ["attributes"] = attributes,
+            ["sale_terms"] = new JsonArray(new JsonObject { ["id"] = "WARRANTY_TYPE", ["value_name"] = "Garantia do vendedor" },
+                new JsonObject { ["id"] = "WARRANTY_TIME", ["value_name"] = "90 dias" }),
+            ["pictures"] = new JsonArray(Enumerable.Range(1, pictures)
+                .Select(n => (JsonNode)new JsonObject { ["id"] = $"SIM-{id}-{n}", ["secure_url"] = pictures > 0 ? $"https://http2.mlstatic.com/D_SIM_{id}_{n}.jpg" : MissingPicture })
+                .ToArray()),
+            ["variations"] = variations ? new JsonArray(new JsonObject { ["id"] = 1 }, new JsonObject { ["id"] = 2 }) : new JsonArray(),
+        };
+        if (description is not null) Descriptions[id] = description;
+        return id;
+    }
+
+    /// <summary>Anúncio sem foto acessível: a foto aponta para um endereço que o servidor de imagens não tem.</summary>
+    public static void BreakPictures(string itemId)
+    {
+        if (Items.TryGetValue(itemId, out var item))
+            item["pictures"] = new JsonArray(new JsonObject { ["id"] = "SIM-QUEBRADA", ["secure_url"] = MissingPicture });
+    }
+
+    /// <summary>Busca dos anúncios do vendedor no modo scan: o cursor é o deslocamento; página vazia encerra.</summary>
+    private static JsonObject SellerItems(string sellerId, string? scrollId, int limit)
+    {
+        var offset = scrollId is { Length: > 4 } && scrollId.StartsWith("SIM-", StringComparison.Ordinal)
+            && int.TryParse(scrollId[4..], System.Globalization.CultureInfo.InvariantCulture, out var o) ? o : 0;
+        var ids = Items.Values.Where(i => i["seller_id"]?.ToString() == sellerId && !i.ContainsKey("removed")).Select(i => (string)i["id"]!)
+            .Order(StringComparer.Ordinal).Skip(offset).Take(Math.Clamp(limit, 1, 100)).ToList();
+        return new JsonObject
+        {
+            ["seller_id"] = sellerId,
+            ["results"] = new JsonArray(ids.Select(i => (JsonNode)JsonValue.Create(i)).ToArray()),
+            ["scroll_id"] = $"SIM-{(offset + ids.Count).ToString(System.Globalization.CultureInfo.InvariantCulture)}",
+        };
+    }
+
+    private static readonly Lazy<byte[]> PictureBytes = new(() =>
+    {
+        using var gradient = NetVips.Image.Xyz(200, 150)[0].Linear([255.0 / 200], [0.0]).Cast(NetVips.Enums.BandFormat.Uchar);
+        using var rgb = gradient.Bandjoin(gradient.Invert(), gradient);
+        return rgb.JpegsaveBuffer(q: 85);
+    });
+
+    private static HttpResponseMessage Picture(string path) =>
+        path.Contains("SEM_FOTO", StringComparison.Ordinal)
+            ? new HttpResponseMessage(HttpStatusCode.NotFound)
+            : new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(PictureBytes.Value) { Headers = { ContentType = new("image/jpeg") } } };
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var path = request.RequestUri!.AbsolutePath;
         var query = System.Web.HttpUtility.ParseQueryString(request.RequestUri.Query);
         var segments = path.Trim('/').Split('/');
         var method = request.Method.Method;
+        if (request.RequestUri.Host.EndsWith("mlstatic.com", StringComparison.OrdinalIgnoreCase)) return Picture(path);
 
         return (method, segments) switch
         {
+            ("GET", ["users", var seller, "items", "search"]) when query["search_type"] == "scan" =>
+                Json(SellerItems(seller, query["scroll_id"], int.TryParse(query["limit"], out var pageSize) ? pageSize : 50)),
+            ("GET", ["items", var id, "description"]) => Descriptions.TryGetValue(id, out var text)
+                ? Json(new JsonObject { ["text"] = string.Empty, ["plain_text"] = text })
+                : NotFound(),
             ("GET", ["users", "me"]) => Json(new JsonObject { ["id"] = 1, ["nickname"] = "VENDEDOR_TESTE", ["tags"] = new JsonArray("normal", "user_product_seller") }),
             ("GET", ["sites", "MLB", "domain_discovery", "search"]) => Json(Predict(query["q"] ?? string.Empty)),
             ("GET", ["categories", var id]) => Categories.TryGetValue(id, out var c) ? Json(Category(id, c.Name, c.Path)) : NotFound(),

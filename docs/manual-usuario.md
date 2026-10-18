@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 18/10/2026 (guardião da sincronização).
+> Última atualização: 18/10/2026 (importação dos anúncios do Mercado Livre).
 
 ## Sumário
 
@@ -75,6 +75,7 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Primeiros passos e publicar a loja | ✔ | — |
 | Dados da loja | ✔ | — |
 | Canais de venda (Mercado Livre, Instagram e Facebook) | ✔ | — |
+| Importar os anúncios que a loja já tem no Mercado Livre | ✔ | — |
 | Pagamentos (chaves dos gateways) | ✔ | — |
 | Cofre (certificado digital A1 e chaves guardadas) | ✔ | — |
 | Usuários | ✔ | — |
@@ -577,6 +578,24 @@ Se o Mercado Livre recusar a renovação (por exemplo, a senha da conta foi troc
 - os anúncios dessa conta **param de ser atualizados** pelo estoque da loja até a nova autorização;
 - clique em **Autorizar de novo** e repita os passos acima com a mesma conta.
 
+**Importar os anúncios que a loja já tem**
+Se a loja já vendia no Mercado Livre antes da plataforma, traga os anúncios de lá como peças, sem cadastrar uma a uma:
+1. Com a conta conectada, clique em **Importar anúncios** (logo abaixo da conta).
+2. A importação roda em segundo plano, e a tela mostra o progresso. Pode sair da tela: ao voltar, aparece o resultado da última importação.
+3. No fim, a tela mostra quantas peças novas entraram, quantas foram ligadas a peças que você já tinha e quantos anúncios não entraram, com o motivo de cada um.
+
+Como cada anúncio entra:
+- Entram os anúncios **ativos** e **pausados**. Encerrados e em revisão ficam de fora.
+- A peça nova recebe título, descrição, preço, quantidade, condição (nova, usada ou recondicionada), código do fabricante e as **fotos** do anúncio. Ela já entra **ativa** e ligada ao anúncio.
+- O **código** da peça é o SKU do anúncio. Sem SKU, o código é o número do anúncio (por exemplo, MLB1234567890).
+- Se você já tem uma peça com o mesmo código, o anúncio é **ligado a ela**. A peça não muda e **vale o estoque da loja**: o anúncio passa a mostrar a quantidade da loja.
+- Anúncio **pausado** lá continua pausado. O sistema não reativa sozinho; para voltar a vender, clique em **Retomar** na peça.
+- Anúncio com **variações** (lado, cor) não entra. Cadastre cada variação como uma peça.
+- Se as fotos não puderem ser trazidas, a peça entra como **rascunho**, sem ligar ao anúncio. Envie uma foto, ative a peça e importe de novo para ligar.
+- Medidas e peso da embalagem não vêm do anúncio: preencha na peça antes de vender com frete calculado na loja virtual.
+- **Importar de novo não duplica.** Anúncios já ligados são pulados; só entram os novos.
+- O limite é de **5.000 anúncios** por importação.
+
 **Desconectar**
 Clique em **Desconectar** e confirme. O sistema retira a autorização da plataforma na sua conta do Mercado Livre e apaga o acesso guardado. Os anúncios que já existem no Mercado Livre continuam lá, mas deixam de acompanhar o estoque da loja. Conectar a mesma conta de novo retoma tudo.
 
@@ -823,7 +842,7 @@ Itens previstos que **ainda não estão no sistema**:
 - NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
 - Frete real (Melhor Envio): hoje o frete é simulado.
 - Compatibilidade com veículos e fotos pela planilha de importação; atualização em massa de peças já cadastradas.
-- Importação dos anúncios existentes do Mercado Livre.
+- Importação de anúncios do Mercado Livre com variações, e das compatibilidades com veículos que já estão nos anúncios (hoje, cadastre na peça).
 - Envio automático da rastreabilidade ao banco de dados do Detran; rastreabilidade pela planilha de importação.
 - Alerta de falha de integração por WhatsApp (hoje, faixa no painel e e-mail aos Donos pelo guardião — 4.5.1).
 - Remetente da plataforma em produção (provedor ainda a escolher). Em teste, os e-mails ficam numa caixa interna e não chegam ao comprador.
@@ -863,6 +882,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 18/10/2026 | Resumo diário por e-mail aos Donos (RF34): seção Resumo diário em 4.6 Dados da loja (horário, desligar, prévia) e perfis. |
 | 18/10/2026 | Perguntas de compradores do Mercado Livre com sugestão da IA (RF31): nova seção 4.5.2 (responder, novo rascunho, resposta automática das simples), perfis e textos de 4.6.1. Perguntas entram na exportação completa (4.9). |
 | 18/10/2026 | Guardião da sincronização (RF33): diagnóstico com o que fazer e alerta por e-mail aos Donos em 4.5.1 Integrações; perfis. |
+| 18/10/2026 | Importação dos anúncios que a loja já tem no Mercado Livre (RF11): passo a passo em 4.6.1 Canais de venda; perfis; 
 | 18/10/2026 | Catálogo do Instagram e Facebook (RF22): conectar com id e token, endereço do feed e atualização na hora (4.6.1). Preço mudado na peça agora vai na hora para os canais. |
 | 17/10/2026 | Envio e entrega das vendas do Mercado Livre e avisos perdidos (RF21, parte 6), em 4.4. |
 | 17/10/2026 | Vendas do Mercado Livre em Pedidos (RF21, parte 5): origem Mercado Livre, baixa do estoque, conflito de estoque em análise e cancelamento vindo do ML (4.4). |

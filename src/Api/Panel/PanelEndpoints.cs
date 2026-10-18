@@ -44,6 +44,7 @@ public static class PanelEndpoints
         panel.MapQuestionEndpoints();
         panel.MapDailySummaryEndpoints();
         panel.MapSyncGuardianEndpoints();
+        panel.MapChannelImportEndpoints();
         panel.MapGroup("").RequirePermission(Permission.CatalogManage).MapVehicleCatalog();
 
         var users = panel.MapGroup("/usuarios").RequirePermission(Permission.UsersManage);
