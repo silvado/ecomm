@@ -244,7 +244,7 @@ export const epics = [
             title: 'Recebimento de perguntas',
             rf: 'RF31',
             ac: 'Perguntas do ML aparecem no painel vinculadas à peça e podem ser respondidas manualmente.',
-            t: [['Ingestão e resposta manual de perguntas', 6]],
+            t: [['Ingestão e resposta manual de perguntas', 6, 'done']],
           },
         ],
       },
@@ -383,7 +383,7 @@ export const epics = [
             title: 'Respostas a compradores',
             rf: 'RF31',
             ac: 'Usa só dados do cadastro; classifica em simples (automática se habilitada) ou complexa (rascunho); nunca afirma compatibilidade ausente, verificado por conjunto de avaliação.',
-            t: [['Respostas a perguntas do ML', 16], ['Classificação e modo automático', 10], ['Conjunto de avaliação', 10], ['Mensagens do Instagram (após App Review)', 16]],
+            t: [['Respostas a perguntas do ML', 16, 'done'], ['Classificação e modo automático', 10, 'done'], ['Conjunto de avaliação', 10, 'doing'], ['Mensagens do Instagram (após App Review)', 16]],
           },
           {
             title: 'Resumo diário e guardião da sincronização',

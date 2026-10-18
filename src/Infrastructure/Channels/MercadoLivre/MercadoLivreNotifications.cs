@@ -74,6 +74,9 @@ public static class MercadoLivreNotifications
     /// <summary>Id do pedido em <c>/orders/2000003508419013</c> (nulo em outros recursos).</summary>
     public static string? OrderId(string resource) => NumericId(resource, "/orders/");
 
+    /// <summary>Id da pergunta em <c>/questions/5036111111</c> (nulo em outros recursos).</summary>
+    public static string? QuestionId(string resource) => NumericId(resource, "/questions/");
+
     private static string? NumericId(string resource, string prefix)
     {
         if (!resource.StartsWith(prefix, StringComparison.Ordinal)) return null;
@@ -108,8 +111,9 @@ public static class MercadoLivreNotifications
 /// <item><c>orders_v2</c>: consulta o pedido no ML (o aviso nunca é confiado) e manda importá-lo (<see cref="ImportChannelOrder"/>).</item>
 /// <item><c>shipments</c>: manda conferir o envio e levar a situação ao pedido (<see cref="SyncChannelShipment"/>).</item>
 /// <item><c>items</c> de um anúncio da loja: pede a conferência dele com o canal (reconciliação — RF27).</item>
+/// <item><c>questions</c>: manda consultar e registrar a pergunta do comprador (<see cref="ImportBuyerQuestion"/>, RF31).</item>
 /// </list>
-/// Perguntas, mensagens e pagamentos (o status do pedido já cobre o pagamento) ficam registrados e são ignorados.
+/// Mensagens e pagamentos (o status do pedido já cobre o pagamento) ficam registrados e são ignorados.
 /// </summary>
 public sealed class MercadoLivreChannelProcessor(TenantDbContext db, IIntegrationLog log, IMessageBus bus, MercadoLivreApiClient api, MercadoLivreCredentials credentials)
     : IChannelEventProcessor
@@ -139,6 +143,14 @@ public sealed class MercadoLivreChannelProcessor(TenantDbContext db, IIntegratio
                 .FirstOrDefaultAsync(c => c.Channel == SalesChannel.MercadoLivre && c.Status == ChannelConnectionStatus.Active, ct);
             if (connection is null) return false;
             await bus.PublishAsync(new SyncChannelShipment(connection.Id, shipmentId), new DeliveryOptions { TenantId = db.RequireTenantId().ToString() });
+            return true;
+        }
+        if (topic == "questions" && MercadoLivreNotifications.QuestionId(resource) is { } questionId)
+        {
+            var connection = await db.ChannelConnections.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Channel == SalesChannel.MercadoLivre && c.Status == ChannelConnectionStatus.Active, ct);
+            if (connection is null) return false;
+            await bus.PublishAsync(new ImportBuyerQuestion(connection.Id, questionId), new DeliveryOptions { TenantId = db.RequireTenantId().ToString() });
             return true;
         }
 

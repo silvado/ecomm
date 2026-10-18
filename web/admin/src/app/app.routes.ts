@@ -46,6 +46,7 @@ export const routes: Routes = [
       { path: 'doadores/:id', loadComponent: () => import('./pages/donors/donor-form').then((m) => m.DonorFormPage), canActivate: [permissionGuard('catalogManage')], title: 'Veículo doador' },
       { path: 'pedidos', loadComponent: () => import('./pages/orders/orders').then((m) => m.OrdersPage), canActivate: [permissionGuard('ordersManage')], title: 'Pedidos' },
       { path: 'balcao', loadComponent: () => import('./pages/counter/counter').then((m) => m.CounterPage), canActivate: [permissionGuard('ordersManage')], title: 'Venda de balcão' },
+      { path: 'perguntas', loadComponent: () => import('./pages/questions/questions').then((m) => m.QuestionsPage), canActivate: [permissionGuard('supportManage')], title: 'Perguntas' },
       { path: 'integracoes', loadComponent: () => import('./pages/integrations/integrations').then((m) => m.IntegrationsPage), canActivate: [permissionGuard('ordersManage')], title: 'Integrações' },
       { path: 'pagamentos', loadComponent: () => import('./pages/payments/payments').then((m) => m.PaymentsPage), canActivate: [permissionGuard('vaultManage')], title: 'Pagamentos' },
       { path: 'cofre', loadComponent: () => import('./pages/vault/vault').then((m) => m.VaultPage), canActivate: [permissionGuard('vaultManage')], title: 'Cofre' },

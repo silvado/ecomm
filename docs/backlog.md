@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1011** |
 
-Progresso: 719 h de 1011 h em tarefas concluídas (71%).
+Progresso: 751 h de 1011 h em tarefas concluídas (74%).
 
 Referência: 6 h produtivas/dia ≈ 169 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -283,11 +283,11 @@ Mercado Livre e Instagram (catálogo Meta) sincronizados com o estoque único.
 
 - [ ] Importação de anúncios com vínculo — 12 h
 
-#### Recebimento de perguntas — 6 h  `RF31`
+#### Recebimento de perguntas — 6 h  `RF31` · **concluído**
 
 **Critérios de aceite:** Perguntas do ML aparecem no painel vinculadas à peça e podem ser respondidas manualmente.
 
-- [ ] Ingestão e resposta manual de perguntas — 6 h
+- [x] Ingestão e resposta manual de perguntas — 6 h
 
 ### Instagram / catálogo Meta — 24 h
 
@@ -411,13 +411,13 @@ IA de atendimento, resumo diário, guardião da sincronização e 3–5 clientes
 
 ### IA de atendimento e alertas — 76 h
 
-#### Respostas a compradores — 52 h  `RF31`
+#### Respostas a compradores — 52 h  `RF31` · **em andamento**
 
 **Critérios de aceite:** Usa só dados do cadastro; classifica em simples (automática se habilitada) ou complexa (rascunho); nunca afirma compatibilidade ausente, verificado por conjunto de avaliação.
 
-- [ ] Respostas a perguntas do ML — 16 h
-- [ ] Classificação e modo automático — 10 h
-- [ ] Conjunto de avaliação — 10 h
+- [x] Respostas a perguntas do ML — 16 h
+- [x] Classificação e modo automático — 10 h
+- [ ] Conjunto de avaliação — 10 h *(em andamento)*
 - [ ] Mensagens do Instagram (após App Review) — 16 h
 
 #### Resumo diário e guardião da sincronização — 24 h  `RF33, RF34`

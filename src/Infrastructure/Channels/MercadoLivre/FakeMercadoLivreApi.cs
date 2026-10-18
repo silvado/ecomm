@@ -108,6 +108,61 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
         return id;
     }
 
+    private static readonly ConcurrentDictionary<string, JsonObject> Questions = new();
+
+    /// <summary>
+    /// Simula um comprador perguntando no anúncio (formato de https://developers.mercadolivre.com.br/pt_br/perguntas-e-respostas);
+    /// devolve o id da pergunta (para mandar o aviso questions).
+    /// </summary>
+    public static string Ask(string itemId, string sellerId, string text)
+    {
+        var id = Random.Shared.NextInt64(10_000_000_000, 19_999_999_999).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        Questions[id] = new JsonObject
+        {
+            ["id"] = long.Parse(id, System.Globalization.CultureInfo.InvariantCulture),
+            ["answer"] = null,
+            ["date_created"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz", System.Globalization.CultureInfo.InvariantCulture),
+            ["deleted_from_listing"] = false,
+            ["hold"] = false,
+            ["item_id"] = itemId,
+            ["seller_id"] = long.Parse(sellerId, System.Globalization.CultureInfo.InvariantCulture),
+            ["status"] = "UNANSWERED",
+            ["text"] = text,
+            ["from"] = new JsonObject { ["id"] = 207119838, ["answered_questions"] = 0 },
+        };
+        return id;
+    }
+
+    /// <summary>A pergunta como está no ML simulado (para os testes conferirem a resposta enviada).</summary>
+    public static JsonObject? Question(string questionId) => Questions.TryGetValue(questionId, out var q) ? q : null;
+
+    /// <summary>Simula a loja respondendo direto no site do ML, ou o ML excluindo a pergunta (status DELETED, BANNED...).</summary>
+    public static void ChangeQuestion(string questionId, string status, string? answer = null)
+    {
+        if (!Questions.TryGetValue(questionId, out var q)) return;
+        q["status"] = status;
+        if (answer is not null) q["answer"] = Answer(answer);
+    }
+
+    private static JsonObject Answer(string text) => new()
+    {
+        ["date_created"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz", System.Globalization.CultureInfo.InvariantCulture),
+        ["status"] = "ACTIVE",
+        ["text"] = text,
+    };
+
+    private static HttpResponseMessage AnswerQuestion(JsonObject body)
+    {
+        var id = body["question_id"]?.ToJsonString().Trim('"') ?? string.Empty;
+        if (!Questions.TryGetValue(id, out var q)) return NotFound();
+        var text = (string?)body["text"] ?? string.Empty;
+        if (text.Trim().Length == 0) return Error("text is required.");
+        if ((string?)q["status"] != "UNANSWERED") return Error("The question is not unanswered.");
+        q["status"] = "ANSWERED";
+        q["answer"] = Answer(text);
+        return Json((JsonObject)q.DeepClone());
+    }
+
     /// <summary>Simula o cancelamento da venda no ML.</summary>
     public static void CancelOrder(string orderId)
     {
@@ -158,6 +213,10 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
             ("GET", ["shipments", var id]) => request.Headers.Contains("x-format-new") && Shipments.TryGetValue(id, out var shipment)
                 ? Json((JsonObject)shipment.DeepClone())
                 : NotFound(),
+            ("GET", ["questions", var id]) => Questions.TryGetValue(id, out var question) && query["api_version"] == "4"
+                ? Json((JsonObject)question.DeepClone())
+                : NotFound(),
+            ("POST", ["answers"]) => AnswerQuestion(await BodyAsync(request, cancellationToken)),
             ("GET", ["missed_feeds"]) => Json(MissedFeeds(query["topic"] ?? string.Empty, int.TryParse(query["offset"], out var o) ? o : 0,
                 int.TryParse(query["limit"], out var l) ? l : 10)),
             _ => NotFound(),

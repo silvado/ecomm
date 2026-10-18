@@ -34,6 +34,30 @@ internal sealed class ChannelAuthorizationConfiguration : IEntityTypeConfigurati
     }
 }
 
+/// <summary>Perguntas de compradores (RF31): uma por pergunta do canal; a lista do painel filtra por situação e data.</summary>
+internal sealed class BuyerQuestionConfiguration : IEntityTypeConfiguration<BuyerQuestion>
+{
+    public void Configure(EntityTypeBuilder<BuyerQuestion> builder)
+    {
+        builder.HasKey(q => q.Id);
+        builder.Property(q => q.Id).ValueGeneratedNever();
+        builder.Property(q => q.ExternalId).HasMaxLength(BuyerQuestion.ExternalIdMaxLength).IsRequired();
+        builder.Property(q => q.ExternalItemId).HasMaxLength(ChannelListing.ExternalIdMaxLength).IsRequired();
+        builder.Property(q => q.Text).HasMaxLength(BuyerQuestion.TextMaxLength).IsRequired();
+        builder.Property(q => q.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(q => q.DraftText).HasMaxLength(BuyerQuestion.AnswerMaxLength);
+        builder.Property(q => q.Kind).HasConversion<string>().HasMaxLength(20);
+        builder.Property(q => q.DraftNote).HasMaxLength(BuyerQuestion.NoteMaxLength);
+        builder.Property(q => q.AnswerText).HasMaxLength(BuyerQuestion.AnswerMaxLength);
+        builder.Property(q => q.AnsweredVia).HasConversion<string>().HasMaxLength(20);
+        builder.Property(q => q.LastError).HasMaxLength(ChannelListing.ErrorMaxLength);
+        builder.HasIndex(q => new { q.TenantId, q.ConnectionId, q.ExternalId }).IsUnique();
+        builder.HasIndex(q => new { q.TenantId, q.Status, q.AskedAt });
+        builder.HasOne<ChannelConnection>().WithMany().HasForeignKey(q => q.ConnectionId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Domain.Catalog.Part>().WithMany().HasForeignKey(q => q.PartId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 /// <summary>Anúncios das peças nos canais (E2): um por peça em cada conexão.</summary>
 internal sealed class ChannelListingConfiguration : IEntityTypeConfiguration<ChannelListing>
 {

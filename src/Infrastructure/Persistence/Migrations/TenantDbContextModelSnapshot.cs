@@ -576,6 +576,121 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Channels.BuyerQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AnswerText")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("answer_text");
+
+                    b.Property<DateTimeOffset?>("AnsweredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("answered_at");
+
+                    b.Property<Guid?>("AnsweredBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("answered_by");
+
+                    b.Property<string>("AnsweredVia")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("answered_via");
+
+                    b.Property<DateTimeOffset>("AskedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("asked_at");
+
+                    b.Property<Guid>("ConnectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("connection_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DraftNote")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("draft_note");
+
+                    b.Property<string>("DraftText")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("draft_text");
+
+                    b.Property<DateTimeOffset?>("DraftedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("drafted_at");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("external_id");
+
+                    b.Property<string>("ExternalItemId")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("external_item_id");
+
+                    b.Property<string>("Kind")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("last_error");
+
+                    b.Property<Guid?>("PartId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("part_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("text");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_buyer_questions");
+
+                    b.HasIndex("ConnectionId")
+                        .HasDatabaseName("ix_buyer_questions_connection_id");
+
+                    b.HasIndex("PartId")
+                        .HasDatabaseName("ix_buyer_questions_part_id");
+
+                    b.HasIndex("TenantId", "ConnectionId", "ExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_buyer_questions_tenant_id_connection_id_external_id");
+
+                    b.HasIndex("TenantId", "Status", "AskedAt")
+                        .HasDatabaseName("ix_buyer_questions_tenant_id_status_asked_at");
+
+                    b.ToTable("buyer_questions", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Channels.ChannelAuthorization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1352,6 +1467,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
+
+                    b.Property<bool>("AutoAnswerQuestions")
+                        .HasColumnType("boolean")
+                        .HasColumnName("auto_answer_questions");
 
                     b.Property<string>("ContactEmail")
                         .HasMaxLength(254)
@@ -2440,6 +2559,22 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_part_photos_parts_part_id");
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Channels.BuyerQuestion", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Channels.ChannelConnection", null)
+                        .WithMany()
+                        .HasForeignKey("ConnectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_buyer_questions_channel_connections_connection_id");
+
+                    b.HasOne("Ecommerce.Domain.Catalog.Part", null)
+                        .WithMany()
+                        .HasForeignKey("PartId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_buyer_questions_parts_part_id");
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Channels.ChannelListing", b =>

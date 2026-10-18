@@ -23,7 +23,7 @@ namespace Ecommerce.Infrastructure.Channels.MercadoLivre;
 public sealed partial class MercadoLivreMissedFeedsJob(IServiceScopeFactory scopes, IOptions<MercadoLivreOptions> options, TimeProvider clock,
     ILogger<MercadoLivreMissedFeedsJob> logger) : BackgroundService
 {
-    public static readonly IReadOnlyList<string> Topics = ["orders_v2", "shipments", "items"];
+    public static readonly IReadOnlyList<string> Topics = ["orders_v2", "shipments", "items", "questions"];
     private const int PageSize = 50;
     private const int MaxPages = 10;
     private static readonly TimeSpan Interval = TimeSpan.FromHours(1);

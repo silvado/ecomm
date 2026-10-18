@@ -31,6 +31,9 @@ const FAILURE_CHECK_MS = 2 * 60 * 1000;
           <a routerLink="/balcao" routerLinkActive="active">Balcão</a>
           <a routerLink="/integracoes" routerLinkActive="active">Integrações</a>
         }
+        @if (auth.can('supportManage')) {
+          <a routerLink="/perguntas" routerLinkActive="active">Perguntas</a>
+        }
         @if (auth.can('storeManage')) {
           <a routerLink="/primeiros-passos" routerLinkActive="active">Primeiros passos</a>
           <a routerLink="/loja" routerLinkActive="active">Dados da loja</a>

@@ -19,6 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Channels\buyer-answer-eval.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Application\Ecommerce.Application.csproj" />
   </ItemGroup>
 
