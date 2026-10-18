@@ -88,6 +88,22 @@ public sealed class StoreSettings : ITenantOwned
 
     public void SetAutoAnswerQuestions(bool enabled) => AutoAnswerQuestions = enabled;
 
+    public const int DefaultDailySummaryHour = 7;
+
+    /// <summary>RF34: resumo diário por e-mail aos Donos. HIPÓTESE: ligado por padrão (o requisito dá o horário padrão).</summary>
+    public bool DailySummaryEnabled { get; private set; } = true;
+
+    /// <summary>Hora cheia (America/Sao_Paulo) a partir da qual o resumo de ontem sai (RF34 CA1: padrão 07:00).</summary>
+    public int DailySummaryHour { get; private set; } = DefaultDailySummaryHour;
+
+    public void ConfigureDailySummary(bool enabled, int hour)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(hour, 0);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(hour, 23);
+        DailySummaryEnabled = enabled;
+        DailySummaryHour = hour;
+    }
+
     public void SetReservationMinutes(int minutes)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(minutes, 5);

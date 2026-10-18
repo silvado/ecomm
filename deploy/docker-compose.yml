@@ -124,6 +124,8 @@ services:
       Storage__SecretKey: ${S3_SECRET_KEY}
       # E-mails ao comprador saem pela fila (qualquer processo pode enviar): mesma configuração da API.
       Platform__Domain: ${PLATFORM_DOMAIN:-localhost}
+      # Botão "Abrir o painel" do resumo diário (RF34).
+      Platform__PanelUrl: ${PANEL_URL:-http://localhost:4200}
       Email__Platform__Host: mailpit
       Email__Platform__Port: "1025"
       Email__Platform__Security: None

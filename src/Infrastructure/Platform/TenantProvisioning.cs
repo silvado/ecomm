@@ -22,6 +22,9 @@ public sealed class PlatformOptions
     /// Vazio: o painel só orienta CNAME/ALIAS.
     /// </summary>
     public string[] PublicIps { get; set; } = [];
+
+    /// <summary>Endereço do painel das lojas, para o botão dos e-mails ao Dono (resumo diário — RF34). Vazio: sem botão.</summary>
+    public string PanelUrl { get; set; } = string.Empty;
 }
 
 /// <summary>

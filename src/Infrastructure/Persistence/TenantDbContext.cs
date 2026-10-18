@@ -46,6 +46,7 @@ public sealed class TenantDbContext(DbContextOptions<TenantDbContext> options, I
     public DbSet<Domain.Channels.ChannelListing> ChannelListings => Set<Domain.Channels.ChannelListing>();
     public DbSet<Domain.Channels.ChannelAuthorization> ChannelAuthorizations => Set<Domain.Channels.ChannelAuthorization>();
     public DbSet<Domain.Channels.BuyerQuestion> BuyerQuestions => Set<Domain.Channels.BuyerQuestion>();
+    public DbSet<Domain.Reports.DailySummary> DailySummaries => Set<Domain.Reports.DailySummary>();
     public DbSet<CustomerAccessLink> CustomerAccessLinks => Set<CustomerAccessLink>();
     public DbSet<CustomerSession> CustomerSessions => Set<CustomerSession>();
     public DbSet<IntegrationLogEntry> IntegrationLogs => Set<IntegrationLogEntry>();

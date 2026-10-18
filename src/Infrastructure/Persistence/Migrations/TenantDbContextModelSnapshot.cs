@@ -1477,6 +1477,14 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(254)")
                         .HasColumnName("contact_email");
 
+                    b.Property<bool>("DailySummaryEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("daily_summary_enabled");
+
+                    b.Property<int>("DailySummaryHour")
+                        .HasColumnType("integer")
+                        .HasColumnName("daily_summary_hour");
+
                     b.Property<bool>("DismantlerMode")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -2245,6 +2253,42 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_personal_data_access_log_tenant_id_order_id");
 
                     b.ToTable("personal_data_access_log", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Reports.DailySummary", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AiText")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ai_text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date")
+                        .HasColumnName("day");
+
+                    b.Property<int>("Recipients")
+                        .HasColumnType("integer")
+                        .HasColumnName("recipients");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_daily_summaries");
+
+                    b.HasIndex("TenantId", "Day")
+                        .IsUnique()
+                        .HasDatabaseName("ix_daily_summaries_tenant_id_day");
+
+                    b.ToTable("daily_summaries", (string)null);
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Store.StoreBranding", b =>

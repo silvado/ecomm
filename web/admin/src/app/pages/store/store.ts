@@ -2,6 +2,7 @@ import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthStore, problemTitle } from '../../core/auth';
+import { DailySummarySettingsSection } from './daily-summary-settings';
 import { DomainSettingsSection } from './domain-settings';
 import { EmailSettingsSection } from './email-settings';
 import { LegalTextsSection } from './legal-texts';
@@ -20,7 +21,7 @@ const APPEARANCE = ['tradeName', 'primaryColor', 'backgroundColor', 'textColor',
 
 @Component({
   selector: 'app-store',
-  imports: [ReactiveFormsModule, TraceabilitySettingsSection, FiscalSettingsSection, EmailSettingsSection, DomainSettingsSection, LegalTextsSection],
+  imports: [ReactiveFormsModule, TraceabilitySettingsSection, FiscalSettingsSection, EmailSettingsSection, DailySummarySettingsSection, DomainSettingsSection, LegalTextsSection],
   template: `
     <main class="card">
       <h1>Dados da loja @if (custom()) { <span class="badge ok" data-custom-badge>Loja personalizada</span> }</h1>
@@ -149,6 +150,11 @@ const APPEARANCE = ['tradeName', 'primaryColor', 'backgroundColor', 'textColor',
       }
       @if (auth.can('vaultManage')) {
         <app-email-settings />
+      }
+      @defer (on viewport) {
+        <app-daily-summary-settings />
+      } @placeholder {
+        <p class="muted">Resumo diário…</p>
       }
       @defer (on viewport) {
         <app-domain-settings />
