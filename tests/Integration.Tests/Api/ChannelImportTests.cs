@@ -93,8 +93,9 @@ public sealed class ChannelImportTests(ApiFactory api) : IClassFixture<ApiFactor
         var shop = await ShopAsync();
         var sku = "FAR-" + NewId()[..5];
         var active = FakeMercadoLivreApi.Seed(shop.Seller, "Farol dianteiro esquerdo Gol G5", 350m, 2, sku: sku, pictures: 2,
-            description: "Farol original, sem trincas.", partNumber: "5U0941015");
-        var paused = FakeMercadoLivreApi.Seed(shop.Seller, "Lanterna traseira Uno", 120m, 3, status: "paused", condition: "new");
+            description: "Farol original, sem trincas.", partNumber: "5U0941015",
+            packageAttributes: [("SELLER_PACKAGE_LENGTH", "45 cm"), ("SELLER_PACKAGE_WIDTH", "35 cm"), ("SELLER_PACKAGE_HEIGHT", "25 cm"), ("SELLER_PACKAGE_WEIGHT", "2300 g")]);
+        var paused = FakeMercadoLivreApi.Seed(shop.Seller, "Lanterna traseira Uno", 120m, 3, status: "paused", condition: "new", shippingDimensions: "10x20x30,500");
         var withVariations = FakeMercadoLivreApi.Seed(shop.Seller, "Calota aro 14", 40m, 8, variations: true);
         var closed = FakeMercadoLivreApi.Seed(shop.Seller, "Para-choque vendido", 200m, 0, status: "closed");
         var existingCode = "RET-" + NewId()[..5];
@@ -115,8 +116,11 @@ public sealed class ChannelImportTests(ApiFactory api) : IClassFixture<ApiFactor
         Assert.Equal((sku, PartStatus.Active, ListingStatus.Active, 2, 2), (farol.Part.InternalCode, farol.Part.Status, farol.Status, farol.OnHand, farol.Part.Photos.Count));
         Assert.Equal(("Farol original, sem trincas.", 350m, PartCondition.Used), (farol.Part.Description, farol.Part.Price, farol.Part.Condition));
         Assert.Equal("5U0941015", Assert.Single(farol.Part.OemCodes).Code);
+        Assert.Equal((45, 35, 25, 2300), (farol.Part.LengthCm, farol.Part.WidthCm, farol.Part.HeightCm, farol.Part.WeightG));
         var lanterna = parts.Single(p => p.ExternalId == paused);
         Assert.Equal((paused, ListingStatus.PausedByUser, PartCondition.New, 3), (lanterna.Part.InternalCode, lanterna.Status, lanterna.Part.Condition, lanterna.OnHand));
+        Assert.Equal((30, 20, 10, 500), (lanterna.Part.LengthCm, lanterna.Part.WidthCm, lanterna.Part.HeightCm, lanterna.Part.WeightG));
+        Assert.Null(parts.Single(p => p.ExternalId == sameCode).Part.LengthCm); // a peça existente não ganhou medidas
         var linked = parts.Single(p => p.ExternalId == sameCode);
         Assert.Equal((existingPart, 1), (linked.Part.Id, linked.OnHand)); // a peça existente não mudou
 

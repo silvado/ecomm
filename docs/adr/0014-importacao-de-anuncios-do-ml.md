@@ -62,11 +62,19 @@ Na peça nova, os veículos do anúncio viram compatibilidades com origem `MlImp
 - **Peça existente ligada ao anúncio:** não recebe veículos (a peça não muda).
 - **HIPÓTESES:** até 200 veículos por anúncio; a lista vem inteira, sem paginação (a página não cita paginação).
 
+## Medidas da embalagem (18/10/2026)
+
+Na peça nova, `ChannelImportRules.PackageDimensions` lê os atributos `SELLER_PACKAGE_LENGTH`, `WIDTH` e `HEIGHT` (cm) e `SELLER_PACKAGE_WEIGHT` (g). O valor pode vir com unidade ("20 cm", "300 mm", "1,5 kg"). Sem os quatro atributos, usa `shipping.dimensions` ("AxBxC,peso", em cm e g). Fonte: [atributos de envio e dimensões](https://developers.mercadolivre.com.br/pt_br/itens-atributos-de-envio-e-dimensoes).
+
+- **Tudo ou nada:** só grava com as quatro medidas dentro dos limites da peça (1–1.000 cm, 1 g–1.000 kg). Medida pela metade não calcula frete.
+- **Arredondamento para cima:** a caixa precisa caber.
+- **Peça existente ligada:** não muda.
+- **HIPÓTESE:** no `shipping.dimensions`, a ordem é altura x largura x comprimento (a página não diz). Os atributos têm prioridade.
+
 ## Consequências
 
 - O saldo inicial vem do ML, com movimento de ajuste "importação do Mercado Livre" em nome de quem pediu.
 - Se um lote cair depois de gravar fotos, os arquivos ficam sem registro. É um custo pequeno, preferível a baixar tudo de novo em cada tentativa.
 - **Pendente:**
   - anúncios com variações;
-  - medidas e peso da embalagem (`shipping.dimensions`);
   - confirmar a paginação com o app real.

@@ -7,13 +7,13 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | Etapa | Horas |
 |---|---:|
 | E1 — Núcleo e loja (meses 1–3) | 470 |
-| E2 — Canais (mês 4) | 148 |
+| E2 — Canais (mês 4) | 151 |
 | E3 — IA e OLX (mês 5) | 96 |
 | E4 — Produto vendável (mês 6) | 187 |
 | E5 — Primeiros clientes (meses 7–8) | 116 |
-| **Total** | **1017** |
+| **Total** | **1020** |
 
-Progresso: 793 h de 1017 h em tarefas concluídas (78%).
+Progresso: 796 h de 1020 h em tarefas concluídas (78%).
 
 Referência: 6 h produtivas/dia ≈ 170 dias úteis ≈ 8,1 meses de uma pessoa.
 
@@ -228,7 +228,7 @@ Multi-tenant, catálogo, estoque, loja, checkout, frete, NF-e. Marco: piloto ven
 - [ ] Backup diário do PostgreSQL e do storage — 8 h
 - [ ] Runbook de implantação e restauração — 4 h
 
-## E2 — Canais (mês 4) — 148 h
+## E2 — Canais (mês 4) — 151 h
 
 Mercado Livre e Instagram (catálogo Meta) sincronizados com o estoque único.
 
@@ -248,7 +248,7 @@ Mercado Livre e Instagram (catálogo Meta) sincronizados com o estoque único.
 
 - [x] Job de reconciliação por tenant e canal — 12 h
 
-### Mercado Livre — 90 h
+### Mercado Livre — 93 h
 
 #### Conexão OAuth do vendedor — 12 h  `RF21` · **concluído**
 
@@ -277,12 +277,13 @@ Mercado Livre e Instagram (catálogo Meta) sincronizados com o estoque único.
 
 - [x] Processamento de orders_v2 e pagamentos — 12 h
 
-#### Importação dos anúncios existentes — 18 h  `RF11` · **concluído**
+#### Importação dos anúncios existentes — 21 h  `RF11` · **concluído**
 
 **Critérios de aceite:** Lista anúncios do vendedor e cria peças vinculadas sem duplicar em reimportação.
 
 - [x] Importação de anúncios com vínculo — 12 h
 - [x] Compatibilidades dos anúncios importados — 6 h
+- [x] Medidas da embalagem dos anúncios importados — 3 h
 
 #### Recebimento de perguntas — 6 h  `RF31` · **concluído**
 

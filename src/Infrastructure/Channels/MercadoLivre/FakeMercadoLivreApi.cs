@@ -197,7 +197,8 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
     /// </summary>
     public static string Seed(string sellerId, string title, decimal price, int quantity, string status = "active", string? sku = null,
         string condition = "used", bool variations = false, int pictures = 1, string? description = null, string? partNumber = null,
-        IReadOnlyList<(string Brand, string Model, int Year, string? Engine)>? vehicles = null, int catalogVehicles = 0)
+        IReadOnlyList<(string Brand, string Model, int Year, string? Engine)>? vehicles = null, int catalogVehicles = 0, string? shippingDimensions = null,
+        IReadOnlyList<(string Id, string Value)>? packageAttributes = null)
     {
         var id = "MLB" + Random.Shared.NextInt64(1_000_000_000, 9_999_999_999).ToString(System.Globalization.CultureInfo.InvariantCulture);
         var attributes = new JsonArray(
@@ -205,6 +206,7 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
             new JsonObject { ["id"] = "ITEM_CONDITION", ["value_id"] = condition == "new" ? "2230284" : "2230581", ["value_name"] = condition == "new" ? "Novo" : "Usado" });
         if (sku is not null) attributes.Add(new JsonObject { ["id"] = "SELLER_SKU", ["value_name"] = sku });
         if (partNumber is not null) attributes.Add(new JsonObject { ["id"] = "PART_NUMBER", ["value_name"] = partNumber });
+        foreach (var (attribute, value) in packageAttributes ?? []) attributes.Add(new JsonObject { ["id"] = attribute, ["value_name"] = value });
         Items[id] = new JsonObject
         {
             ["id"] = id,
@@ -223,6 +225,7 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
                 .Select(n => (JsonNode)new JsonObject { ["id"] = $"SIM-{id}-{n}", ["secure_url"] = pictures > 0 ? $"https://http2.mlstatic.com/D_SIM_{id}_{n}.jpg" : MissingPicture })
                 .ToArray()),
             ["variations"] = variations ? new JsonArray(new JsonObject { ["id"] = 1 }, new JsonObject { ["id"] = 2 }) : new JsonArray(),
+            ["shipping"] = new JsonObject { ["mode"] = "me2", ["dimensions"] = shippingDimensions },
         };
         if (description is not null) Descriptions[id] = description;
         if (vehicles is { Count: > 0 } || catalogVehicles > 0)
