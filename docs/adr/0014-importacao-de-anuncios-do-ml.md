@@ -52,12 +52,21 @@ O CA3 pede que rode em segundo plano, com progresso visível.
 - **Por que a peça sem foto fica sem vínculo:** peça sem foto não pode ficar ativa, e anúncio de peça inativa recebe quantidade 0 na sincronização. Isso pausaria um anúncio que estava vendendo.
 - **Estoque da loja manda (RF27):** o vínculo guarda a quantidade e o preço que estão no ML. Se a loja tiver outro saldo, o `StockChanged` leva o saldo da loja ao anúncio. A baixa continua atômica (RNF02): a importação só cria saldo novo e nunca altera o de peça existente.
 
+## Compatibilidades dos anúncios (18/10/2026)
+
+Na peça nova, os veículos do anúncio viram compatibilidades com origem `MlImport` (selo "ML" no painel).
+
+- **Leitura:** `GET /items/{id}/compatibilities` dá os veículos informados pelo vendedor (`source: SELLER`, com `catalog_product_id`). Desde 15/07/2026, os do catálogo do ML (`source: CATALOGO`) vêm só com a marca e o `total`: entram só na contagem do relatório. Cada veículo é lido em `GET /products/{id}` (atributos `BRAND`, `MODEL`, `VEHICLE_YEAR` e `ENGINE`) e fica em cache por um dia, porque o catálogo é o mesmo para todas as lojas. Fontes: [compatibilidades](https://developers.mercadolivre.com.br/pt_br/compatibilidades-itens-e-produtos-de-autopecas) e [produtos](https://developers.mercadolivre.com.br/pt_br/buscador-de-produtos).
+- **Correspondência (`ChannelCompatibilityRules`, regras fixas):** nunca grava veículo a mais. Marca e modelo precisam bater pelo nome; o modelo do ML pode ser o começo do nosso ("Gol" → "Gol G5"). A versão precisa cobrir o ano. Com motor, vale a única versão com a mesma cilindrada e mais palavras em comum (mesma regra do envio, agora em `VehicleNames`). Sem motor, só vale se o modelo tiver uma versão naquele ano. Anos seguidos da mesma versão viram uma faixa. O que não casa vai para o relatório pelo nome (até 10, "e mais N").
+- **Falha do ML ao ler os veículos:** a peça entra sem eles, com aviso. Repetir o lote baixaria as fotos de novo.
+- **Peça existente ligada ao anúncio:** não recebe veículos (a peça não muda).
+- **HIPÓTESES:** até 200 veículos por anúncio; a lista vem inteira, sem paginação (a página não cita paginação).
+
 ## Consequências
 
 - O saldo inicial vem do ML, com movimento de ajuste "importação do Mercado Livre" em nome de quem pediu.
 - Se um lote cair depois de gravar fotos, os arquivos ficam sem registro. É um custo pequeno, preferível a baixar tudo de novo em cada tentativa.
 - **Pendente:**
   - anúncios com variações;
-  - compatibilidades que já estão nos anúncios;
   - medidas e peso da embalagem (`shipping.dimensions`);
   - confirmar a paginação com o app real.

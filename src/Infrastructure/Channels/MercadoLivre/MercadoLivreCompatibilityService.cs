@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
+using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Channels;
 using Ecommerce.Application.Integrations;
 using Ecommerce.Domain.Channels;
-using Ecommerce.Infrastructure.Catalog;
 using Ecommerce.Infrastructure.Integrations;
 using Ecommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -128,22 +128,14 @@ public sealed class MercadoLivreCompatibilityService(
         // Motor: o ML escreve do jeito dele ("1.6 8V", "1.6 Total Flex"...). Vale o de maior sobreposição de palavras com a
         // nossa motorização, desde que a cilindrada bata e não haja empate — na dúvida, fica de fora.
         var engines = await ValuesAsync(token, "ENGINE", [("BRAND", brand), ("MODEL", model)], ct);
-        var ours = PartSuggestionService.Tokens(family.Engine);
-        var displacement = ours.FirstOrDefault(t => t.Contains('.', StringComparison.Ordinal));
-        var scored = engines
-            .Select(e => (Value: e, Tokens: PartSuggestionService.Tokens(e.Name)))
-            .Where(e => displacement is not null && e.Tokens.Contains(displacement))
-            .Select(e => (e.Value, Score: e.Tokens.Count(ours.Contains)))
-            .OrderByDescending(e => e.Score).ToList();
-        if (scored.Count == 0 || (scored.Count > 1 && scored[0].Score == scored[1].Score)) return null;
-        attributes.Add(new JsonObject { ["id"] = "ENGINE", ["value_id"] = scored[0].Value.Id });
+        if (VehicleNames.BestEngine(family.Engine, engines, e => e.Name) is not { } engine) return null;
+        attributes.Add(new JsonObject { ["id"] = "ENGINE", ["value_id"] = engine.Id });
         return attributes;
     }
 
     private async Task<string?> MatchAsync(string token, string attribute, IReadOnlyList<(string, string)> known, string name, CancellationToken ct)
     {
-        var target = PartSuggestionService.Tokens(name);
-        return (await ValuesAsync(token, attribute, known, ct)).FirstOrDefault(v => PartSuggestionService.Tokens(v.Name).SequenceEqual(target))?.Id;
+        return (await ValuesAsync(token, attribute, known, ct)).FirstOrDefault(v => VehicleNames.SameName(v.Name, name))?.Id;
     }
 
     /// <summary>Valores do catálogo de veículos do ML (iguais para todas as lojas), em cache.</summary>

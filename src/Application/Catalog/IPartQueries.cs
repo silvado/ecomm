@@ -8,11 +8,11 @@ public sealed record PhotoView(Guid Id, int Position);
 
 /// <summary>
 /// Anos efetivos (os da compatibilidade ou, sem eles, os da versão). <see cref="Narrowed"/>: restringe a versão.
-/// <see cref="SuggestedByAi"/>: veio do cadastro por foto (RF30).
+/// <see cref="SuggestedByAi"/>: veio do cadastro por foto (RF30). <see cref="FromMercadoLivre"/>: veio do anúncio importado do ML (RF11).
 /// </summary>
 public sealed record CompatibilityView(
     Guid Id, Guid VehicleVersionId, string Brand, string Model, string Engine, int YearFrom, int? YearTo, bool Narrowed, bool Discontinued,
-    bool SuggestedByAi = false);
+    bool SuggestedByAi = false, bool FromMercadoLivre = false);
 
 /// <summary>Filtro por veículo (RF09 CA3): modelo obrigatório; versão e ano-modelo opcionais.</summary>
 public sealed record VehicleFilter(Guid ModelId, Guid? VersionId, int? Year);

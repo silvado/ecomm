@@ -241,16 +241,7 @@ public sealed class PartSuggestionService(IAiCompletion ai, TenantDbContext db, 
     }
 
     /// <summary>Minúsculas, sem acento, só letras, dígitos e ponto ("1.0 8V Flex (G5)" → 1.0, 8v, flex, g5).</summary>
-    internal static List<string> Tokens(string? text)
-    {
-        var plain = new StringBuilder();
-        foreach (var c in (text ?? string.Empty).Normalize(NormalizationForm.FormD))
-        {
-            if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark) continue;
-            plain.Append(char.IsLetterOrDigit(c) || c == '.' ? char.ToLowerInvariant(c) : ' ');
-        }
-        return plain.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim('.')).Where(t => t.Length > 0).ToList();
-    }
+    internal static List<string> Tokens(string? text) => VehicleNames.Tokens(text);
 
     private static string String(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()!.Trim() : string.Empty;

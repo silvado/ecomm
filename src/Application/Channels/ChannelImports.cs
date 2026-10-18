@@ -29,7 +29,8 @@ public sealed record ImportedItem(string InternalCode, PartDetails Details, int 
 
 public sealed record ChannelImportView(
     Guid Id, ChannelImportStatus Status, DateTimeOffset CreatedAt, DateTimeOffset? FinishedAt, int TotalItems, bool Truncated, int ProcessedItems,
-    int CreatedCount, int LinkedCount, int AlreadyLinkedCount, int RejectedCount, IReadOnlyList<ChannelImportIssue> Issues, string? FailureReason);
+    int CreatedCount, int LinkedCount, int AlreadyLinkedCount, int RejectedCount, int CompatibilitiesCount, IReadOnlyList<ChannelImportIssue> Issues,
+    string? FailureReason);
 
 public enum StartChannelImportOutcome
 {

@@ -1,3 +1,4 @@
+using Ecommerce.Application.Catalog;
 using Ecommerce.Application.Channels;
 using Ecommerce.Application.Inventory;
 using Ecommerce.Application.Storage;
@@ -9,6 +10,7 @@ using Ecommerce.Infrastructure.Catalog;
 using Ecommerce.Infrastructure.Persistence;
 using JasperFx.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Wolverine;
 using Wolverine.ErrorHandling;
 using Wolverine.Runtime.Handlers;
@@ -87,7 +89,7 @@ public static class ChannelImportHandler
     }
 
     public static async Task<OutgoingMessages> Handle(ProcessChannelImport command, TenantDbContext db, MercadoLivreApiClient api,
-        MercadoLivreCredentials credentials, IFileStorage storage, TimeProvider clock, CancellationToken ct)
+        MercadoLivreCredentials credentials, IFileStorage storage, IMemoryCache cache, TimeProvider clock, CancellationToken ct)
     {
         var outgoing = new OutgoingMessages();
         var import = await LockAsync(db, command.ImportId, ct);
@@ -108,6 +110,7 @@ public static class ChannelImportHandler
             .Select(l => l.ExternalId!).ToListAsync(ct)).ToHashSet(StringComparer.Ordinal);
         var codesInBatch = new HashSet<string>(StringComparer.Ordinal);
         var results = new List<(ChannelImportItemOutcome, ChannelImportIssue?)>();
+        var compatibilities = 0;
 
         foreach (var externalId in batch)
         {
@@ -152,6 +155,8 @@ public static class ChannelImportHandler
                 continue;
             }
             var photos = await AddPhotosAsync(api, storage, tenantId, part, snapshot.PictureUrls, now, ct);
+            var (added, vehiclesNote) = await AddCompatibilitiesAsync(db, part, await VehiclesAsync(api, cache, token, externalId, ct), now, ct);
+            compatibilities += added;
             db.Parts.Add(part);
             db.Stocks.Add(new Stock(tenantId, part.Id, item.Quantity));
             if (item.Quantity > 0)
@@ -160,17 +165,18 @@ public static class ChannelImportHandler
             {
                 // Peça sem foto não fica ativa, e anúncio de peça inativa seria pausado: o anúncio fica sem vínculo.
                 outgoing.Add(new StockChanged(part.Id, item.Quantity));
-                results.Add((ChannelImportItemOutcome.Created, new ChannelImportIssue(externalId,
-                    $"As fotos não puderam ser trazidas: a peça {item.InternalCode} entrou como rascunho e o anúncio não foi vinculado. Envie uma foto, ative a peça e importe de novo.")));
+                results.Add((ChannelImportItemOutcome.Created, new ChannelImportIssue(externalId, Join(
+                    $"As fotos não puderam ser trazidas: a peça {item.InternalCode} entrou como rascunho e o anúncio não foi vinculado. Envie uma foto, ative a peça e importe de novo.",
+                    vehiclesNote))));
                 continue;
             }
             part.Activate(now);
             db.ChannelListings.Add(NewListing(tenantId, part.Id, import.ConnectionId, externalId, snapshot, item, now));
             outgoing.Add(new StockChanged(part.Id, item.Quantity));
-            results.Add((ChannelImportItemOutcome.Created, null));
+            results.Add((ChannelImportItemOutcome.Created, vehiclesNote is null ? null : new ChannelImportIssue(externalId, vehiclesNote)));
         }
 
-        import.RecordBatch(results, now);
+        import.RecordBatch(results, now, compatibilities);
         if (import.Status == ChannelImportStatus.Processing) outgoing.Add(new ProcessChannelImport(import.Id));
         return outgoing;
     }
@@ -189,6 +195,102 @@ public static class ChannelImportHandler
         return (ChannelImportItemOutcome.Linked, new ChannelImportIssue(externalId,
             $"Ligado à peça {item.InternalCode}, que já existia. A peça não mudou e vale o estoque da loja."));
     }
+
+    /// <summary>Veículos do anúncio no ML. <see cref="Unread"/>: além do limite ou sem marca, modelo e ano no catálogo.</summary>
+    private sealed record ListingVehicles(IReadOnlyList<ChannelVehicle> Vehicles, int CatalogOnly, int Unread, bool Failed);
+
+    /// <summary>HIPÓTESE: até 200 veículos por anúncio (cada um custa uma chamada ao ML na primeira vez; o ML aceita 200 por envio).</summary>
+    public const int MaxVehiclesPerListing = 200;
+
+    /// <summary>Quantos veículos que não entraram aparecem pelo nome no relatório.</summary>
+    private const int ListedVehicles = 10;
+
+    private static readonly TimeSpan VehicleCacheFor = TimeSpan.FromDays(1);
+
+    /// <summary>
+    /// Lê os veículos do anúncio. O catálogo de veículos do ML é o mesmo para todas as lojas: cada produto fica em cache por
+    /// um dia. Se o ML falhar aqui, a peça entra sem os veículos (com aviso) em vez de repetir o lote e baixar as fotos de novo.
+    /// </summary>
+    private static async Task<ListingVehicles> VehiclesAsync(MercadoLivreApiClient api, IMemoryCache cache, string token, string externalId, CancellationToken ct)
+    {
+        try
+        {
+            var (ids, catalogOnly) = await api.ItemCompatibilitiesAsync(token, externalId, ct);
+            var vehicles = new List<ChannelVehicle>();
+            var unread = Math.Max(0, ids.Count - MaxVehiclesPerListing);
+            foreach (var id in ids.Take(MaxVehiclesPerListing))
+            {
+                var key = $"ml:product:{id}";
+                if (!cache.TryGetValue(key, out ChannelVehicle? vehicle))
+                {
+                    vehicle = await api.VehicleProductAsync(token, id, ct);
+                    cache.Set(key, vehicle, VehicleCacheFor);
+                }
+                if (vehicle is null) unread++;
+                else vehicles.Add(vehicle);
+            }
+            return new ListingVehicles(vehicles, catalogOnly, unread, Failed: false);
+        }
+        catch (Exception e) when (e is ChannelConnectorException or ChannelValidationException)
+        {
+            return new ListingVehicles([], 0, 0, Failed: true);
+        }
+    }
+
+    /// <summary>
+    /// Grava na peça nova os veículos do anúncio que casam com a tabela de veículos (<see cref="ChannelCompatibilityRules"/>),
+    /// com a origem "importado do ML". Devolve quantas entraram e o aviso do que ficou de fora (nulo se entrou tudo).
+    /// </summary>
+    private static async Task<(int Added, string? Note)> AddCompatibilitiesAsync(TenantDbContext db, Part part, ListingVehicles read, DateTimeOffset now,
+        CancellationToken ct)
+    {
+        var notes = new List<string>();
+        if (read.Failed) notes.Add($"Os veículos do anúncio não puderam ser lidos agora: confira as compatibilidades da peça {part.InternalCode}.");
+        var added = 0;
+        if (read.Vehicles.Count > 0)
+        {
+            var names = read.Vehicles.Select(v => v.Brand).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var brandIds = (await db.VehicleBrands.AsNoTracking().Select(b => new { b.Id, b.Name }).ToListAsync(ct))
+                .Where(b => names.Any(n => VehicleNames.SameName(n, b.Name))).Select(b => b.Id).ToList();
+            var table = brandIds.Count == 0 ? [] : await (from v in db.VehicleVersions.AsNoTracking()
+                                                         join m in db.VehicleModels.AsNoTracking() on v.ModelId equals m.Id
+                                                         join b in db.VehicleBrands.AsNoTracking() on m.BrandId equals b.Id
+                                                         where brandIds.Contains(b.Id) && !v.Discontinued
+                                                         select new VehicleCandidate(v.Id, m.Id, b.Name, m.Name, v.Engine, v.YearFrom, v.YearTo)).ToListAsync(ct);
+            var result = ChannelCompatibilityRules.Match(read.Vehicles, table);
+            var versions = table.ToDictionary(c => c.VersionId);
+            var full = false;
+            foreach (var match in result.Matches)
+            {
+                if (part.Compatibilities.Count >= Part.MaxCompatibilities)
+                {
+                    full = true;
+                    break;
+                }
+                var version = versions[match.VersionId];
+                part.AddCompatibility(new VehicleVersionRange(version.VersionId, version.YearFrom, version.YearTo, Discontinued: false),
+                    match.YearFrom, match.YearTo, CompatibilitySource.MlImport, now);
+                added++;
+            }
+            if (full) notes.Add($"A peça {part.InternalCode} chegou ao limite de {Part.MaxCompatibilities} compatibilidades: parte dos veículos do anúncio ficou de fora.");
+            if (result.Unmatched.Count > 0)
+            {
+                var listed = string.Join(", ", result.Unmatched.Take(ListedVehicles));
+                var more = result.Unmatched.Count > ListedVehicles ? $" e mais {result.Unmatched.Count - ListedVehicles}" : string.Empty;
+                notes.Add($"Veículos do anúncio que não estão na tabela de veículos (ou não deu para saber a versão) e não entraram na peça {part.InternalCode}: {listed}{more}. Inclua à mão, se servirem.");
+            }
+        }
+        if (read.Unread > 0)
+            notes.Add(read.Unread == 1
+                ? $"1 veículo do anúncio não pôde ser lido e não entrou na peça {part.InternalCode}."
+                : $"{read.Unread} veículos do anúncio não puderam ser lidos e não entraram na peça {part.InternalCode}.");
+        if (read.CatalogOnly > 0)
+            notes.Add((read.CatalogOnly == 1 ? "1 veículo do anúncio vem" : $"{read.CatalogOnly} veículos do anúncio vêm")
+                + $" do catálogo do Mercado Livre, que não informa quais são: confira as compatibilidades da peça {part.InternalCode}.");
+        return (added, notes.Count == 0 ? null : string.Join(' ', notes));
+    }
+
+    private static string Join(string first, string? second) => second is null ? first : first + " " + second;
 
     private static ChannelListing NewListing(Guid tenantId, Guid partId, Guid connectionId, string externalId, ChannelItemSnapshot snapshot, ImportedItem item,
         DateTimeOffset now)

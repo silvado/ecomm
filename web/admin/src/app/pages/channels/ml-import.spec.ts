@@ -15,7 +15,7 @@ const base = '/api/painel/canais/mercado-livre/importacoes';
 function importOf(over: Partial<ChannelImport>): ChannelImport {
   return {
     id: 'i1', status: 'processing', createdAt: '2026-10-18T12:00:00Z', finishedAt: null, totalItems: 12, truncated: false, processedItems: 4,
-    createdCount: 3, linkedCount: 1, alreadyLinkedCount: 0, rejectedCount: 0, issues: [], failureReason: null, ...over,
+    createdCount: 3, linkedCount: 1, alreadyLinkedCount: 0, rejectedCount: 0, compatibilitiesCount: 0, issues: [], failureReason: null, ...over,
   };
 }
 
@@ -43,11 +43,12 @@ describe('MercadoLivreImportSection (RF11)', () => {
 
     await vi.advanceTimersByTimeAsync(2100);
     backend.expectOne(`${base}/i1`).flush(importOf({
-      status: 'completed', processedItems: 12, createdCount: 9, linkedCount: 1, rejectedCount: 2,
+      status: 'completed', processedItems: 12, createdCount: 9, linkedCount: 1, rejectedCount: 2, compatibilitiesCount: 14,
       issues: [{ externalId: 'MLB9', message: 'Anúncio com variações: cadastre cada variação como uma peça.' }],
     }));
     await settle(fixture);
     expect(el.querySelector('[data-result]')!.textContent).toContain('9 peças novas, 1 ligadas a peças existentes');
+    expect(el.querySelector('[data-result]')!.textContent).toContain('14 compatibilidades com veículos');
     expect(el.querySelector('[data-issues]')!.textContent).toContain('MLB9');
     expect(el.querySelector('[data-start-import]')!.textContent).toContain('Importar de novo');
     backend.verify();

@@ -22,6 +22,9 @@ import { CompatibilityView, VehicleOption, VehiclesApi, VehicleVersionOption, ye
                 @if (c.suggestedByAi) {
                   <span class="badge ai" title="Sugerida pela IA no cadastro por foto e mantida por você">IA</span>
                 }
+                @if (c.fromMercadoLivre) {
+                  <span class="badge" title="Veio do anúncio importado do Mercado Livre">ML</span>
+                }
                 @if (c.narrowed) {
                   <span class="badge">anos restritos</span>
                 }

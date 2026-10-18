@@ -15,6 +15,7 @@ export interface ChannelImport {
   linkedCount: number;
   alreadyLinkedCount: number;
   rejectedCount: number;
+  compatibilitiesCount: number;
   issues: { externalId: string; message: string }[];
   failureReason: string | null;
 }
@@ -51,7 +52,8 @@ const POLL_MS = 2000;
       <h3>Importar anúncios do Mercado Livre</h3>
       <p class="muted">
         Traz os anúncios ativos e pausados desta conta como peças da loja, com fotos, já vinculadas ao anúncio. Anúncio com o mesmo
-        código (SKU) de uma peça que você já tem é ligado a ela, e vale o estoque da loja. Importar de novo não duplica.
+        código (SKU) de uma peça que você já tem é ligado a ela, e vale o estoque da loja. Os veículos compatíveis do anúncio entram nas peças
+        novas quando existem na tabela de veículos. Importar de novo não duplica.
       </p>
       @if (current(); as i) {
         @if (running()) {
@@ -68,6 +70,9 @@ const POLL_MS = 2000;
           <p class="ok" role="status" data-result>
             Importação concluída: {{ i.createdCount }} peças novas, {{ i.linkedCount }} ligadas a peças existentes,
             {{ i.alreadyLinkedCount }} já vinculadas e {{ i.rejectedCount }} não importadas.
+            @if (i.compatibilitiesCount) {
+              {{ i.compatibilitiesCount }} compatibilidades com veículos trazidas dos anúncios.
+            }
           </p>
         }
         @if (i.truncated) {

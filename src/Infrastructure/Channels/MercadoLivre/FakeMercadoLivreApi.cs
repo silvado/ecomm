@@ -196,7 +196,8 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
     /// fotos servidas pelo servidor de imagens simulado (<c>mlstatic.com</c>).
     /// </summary>
     public static string Seed(string sellerId, string title, decimal price, int quantity, string status = "active", string? sku = null,
-        string condition = "used", bool variations = false, int pictures = 1, string? description = null, string? partNumber = null)
+        string condition = "used", bool variations = false, int pictures = 1, string? description = null, string? partNumber = null,
+        IReadOnlyList<(string Brand, string Model, int Year, string? Engine)>? vehicles = null, int catalogVehicles = 0)
     {
         var id = "MLB" + Random.Shared.NextInt64(1_000_000_000, 9_999_999_999).ToString(System.Globalization.CultureInfo.InvariantCulture);
         var attributes = new JsonArray(
@@ -224,7 +225,53 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
             ["variations"] = variations ? new JsonArray(new JsonObject { ["id"] = 1 }, new JsonObject { ["id"] = 2 }) : new JsonArray(),
         };
         if (description is not null) Descriptions[id] = description;
+        if (vehicles is { Count: > 0 } || catalogVehicles > 0)
+            ItemVehicles[id] = ((vehicles ?? []).Select(VehicleProduct).ToList(), catalogVehicles);
         return id;
+    }
+
+    /// <summary>Veículos informados pelo vendedor em cada anúncio semeado (ids de produto) e quantos vêm só do catálogo do ML.</summary>
+    private static readonly ConcurrentDictionary<string, (List<string> ProductIds, int CatalogOnly)> ItemVehicles = new();
+
+    private static readonly ConcurrentDictionary<string, JsonObject> Products = new();
+
+    /// <summary>Produto do domínio de veículos (como em <c>GET /products/{id}</c>); marca vazia = produto sem atributos.</summary>
+    private static string VehicleProduct((string Brand, string Model, int Year, string? Engine) v)
+    {
+        var id = "MLB-SIM-CAR-" + Interlocked.Increment(ref _products).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var attributes = new JsonArray();
+        if (v.Brand.Length > 0)
+        {
+            attributes.Add(new JsonObject { ["id"] = "BRAND", ["name"] = "Marca", ["value_id"] = "SIM-B", ["value_name"] = v.Brand });
+            attributes.Add(new JsonObject { ["id"] = "MODEL", ["name"] = "Modelo", ["value_id"] = "SIM-M", ["value_name"] = v.Model });
+            attributes.Add(new JsonObject { ["id"] = "VEHICLE_YEAR", ["name"] = "Ano", ["value_id"] = "SIM-Y", ["value_name"] = v.Year.ToString(System.Globalization.CultureInfo.InvariantCulture) });
+            if (v.Engine is not null) attributes.Add(new JsonObject { ["id"] = "ENGINE", ["name"] = "Motor", ["value_id"] = "SIM-E", ["value_name"] = v.Engine });
+        }
+        Products[id] = new JsonObject
+        {
+            ["id"] = id, ["status"] = "active", ["domain_id"] = MercadoLivreApiClient.VehicleDomain,
+            ["name"] = $"{v.Brand} {v.Model} {v.Year} {v.Engine}".Trim(), ["attributes"] = attributes,
+        };
+        return id;
+    }
+
+    private static int _products;
+
+    private static JsonObject ItemCompatibilities(string itemId)
+    {
+        var (ids, catalogOnly) = ItemVehicles.TryGetValue(itemId, out var known) ? known : ([], 0);
+        var products = new JsonArray(ids.Select(p => (JsonNode)new JsonObject
+        {
+            ["id"] = "SIM-COMPAT-" + p, ["domain_id"] = MercadoLivreApiClient.VehicleDomain, ["catalog_product_id"] = p,
+            ["catalog_product_name"] = (string?)Products[p]["name"], ["source"] = "SELLER",
+        }).ToArray());
+        if (catalogOnly > 0)
+            products.Add(new JsonObject
+            {
+                ["id"] = null, ["domain_id"] = null, ["catalog_product_id"] = null, ["catalog_product_name"] = "Chevrolet", ["source"] = "CATALOGO",
+                ["reputation"] = null, ["total"] = catalogOnly,
+            });
+        return new JsonObject { ["products"] = products };
     }
 
     /// <summary>Anúncio sem foto acessível: a foto aponta para um endereço que o servidor de imagens não tem.</summary>
@@ -288,6 +335,8 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
             ("POST", ["catalog_domains", MercadoLivreApiClient.VehicleDomain, "attributes", var attribute, "top_values"]) =>
                 Json(TopValues(attribute, await BodyAsync(request, cancellationToken))),
             ("POST", ["items", var id, "compatibilities"]) => Compatibilities(id, await BodyAsync(request, cancellationToken)),
+            ("GET", ["items", var id, "compatibilities"]) => Items.ContainsKey(id) ? Json(ItemCompatibilities(id)) : NotFound(),
+            ("GET", ["products", var id]) => Products.TryGetValue(id, out var product) ? Json((JsonObject)product.DeepClone()) : NotFound(),
             ("GET", ["orders", var id]) => Orders.TryGetValue(id, out var order) ? Json((JsonObject)order.DeepClone()) : NotFound(),
             ("GET", ["shipments", var id]) => request.Headers.Contains("x-format-new") && Shipments.TryGetValue(id, out var shipment)
                 ? Json((JsonObject)shipment.DeepClone())

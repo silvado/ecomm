@@ -238,7 +238,7 @@ export const epics = [
             title: 'Importação dos anúncios existentes',
             rf: 'RF11',
             ac: 'Lista anúncios do vendedor e cria peças vinculadas sem duplicar em reimportação.',
-            t: [['Importação de anúncios com vínculo', 12, 'done']],
+            t: [['Importação de anúncios com vínculo', 12, 'done'], ['Compatibilidades dos anúncios importados', 6, 'done']],
           },
           {
             title: 'Recebimento de perguntas',

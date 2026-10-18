@@ -161,6 +161,51 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
     }
 
     /// <summary>
+    /// Veículos ligados ao anúncio (RF11 CA2): <c>GET /items/{id}/compatibilities</c>. Os que o vendedor informou
+    /// (<c>source: SELLER</c>) vêm com <c>catalog_product_id</c>; os do catálogo do ML (<c>source: CATALOGO</c>, desde
+    /// 15/07/2026) vêm só com a marca e o <c>total</c>, sem dizer quais são — esses só entram na conta. Fonte:
+    /// https://developers.mercadolivre.com.br/pt_br/compatibilidades-itens-e-produtos-de-autopecas. HIPÓTESE: a lista vem
+    /// inteira, sem paginação (a página não cita paginação). Anúncio sem compatibilidades (404) = lista vazia.
+    /// </summary>
+    public async Task<(IReadOnlyList<string> ProductIds, int CatalogOnly)> ItemCompatibilitiesAsync(string token, string itemId, CancellationToken ct)
+    {
+        using var response = await SendAsync(HttpMethod.Get, $"/items/{Uri.EscapeDataString(itemId)}/compatibilities", token, null, ct, allowNotFound: true);
+        if (response.StatusCode == HttpStatusCode.NotFound) return ([], 0);
+        var body = await JsonAsync(response, ct);
+        var ids = new List<string>();
+        var catalogOnly = body.TryGetProperty("catalog_compatibilities_count", out var hidden) && hidden.TryGetInt32(out var h) ? Math.Max(0, h) : 0;
+        if (body.TryGetProperty("products", out var products) && products.ValueKind == JsonValueKind.Array)
+            foreach (var product in products.EnumerateArray().Where(p => p.ValueKind == JsonValueKind.Object))
+            {
+                if (Text(product, "catalog_product_id") is { } id) ids.Add(id);
+                else if (product.TryGetProperty("total", out var total) && total.TryGetInt32(out var t)) catalogOnly += Math.Max(0, t);
+            }
+        return (ids.Distinct(StringComparer.Ordinal).ToList(), catalogOnly);
+    }
+
+    /// <summary>
+    /// Veículo do catálogo do ML (<c>GET /products/{id}</c>, atributos BRAND, MODEL, VEHICLE_YEAR e ENGINE do domínio de
+    /// veículos). Fontes: https://developers.mercadolivre.com.br/pt_br/buscador-de-produtos e
+    /// https://developers.mercadolivre.com.br/pt_br/referencias-de-dominios-produtos-e-atributos-para-autopecas.
+    /// Nulo se o produto não existe ou não tem marca, modelo e ano.
+    /// </summary>
+    public async Task<ChannelVehicle?> VehicleProductAsync(string token, string productId, CancellationToken ct)
+    {
+        using var response = await SendAsync(HttpMethod.Get, $"/products/{Uri.EscapeDataString(productId)}", token, null, ct, allowNotFound: true);
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
+        var body = await JsonAsync(response, ct);
+        var attributes = body.TryGetProperty("attributes", out var list) && list.ValueKind == JsonValueKind.Array
+            ? list.EnumerateArray().Where(a => a.ValueKind == JsonValueKind.Object && Text(a, "id") is not null)
+                .GroupBy(a => Text(a, "id")!).ToDictionary(g => g.Key, g => Text(g.First(), "value_name"), StringComparer.Ordinal)
+            : [];
+        var brand = attributes.GetValueOrDefault("BRAND");
+        var model = attributes.GetValueOrDefault("MODEL");
+        if (brand is null || model is null || !int.TryParse(attributes.GetValueOrDefault("VEHICLE_YEAR"), NumberStyles.None, CultureInfo.InvariantCulture, out var year))
+            return null;
+        return new ChannelVehicle(brand.Trim(), model.Trim(), year, attributes.GetValueOrDefault("ENGINE")?.Trim() is { Length: > 0 } engine ? engine : null);
+    }
+
+    /// <summary>
     /// Pedido do vendedor (<c>GET /orders/{id}</c>): status, itens (anúncio, quantidade, preço), pagamentos e comprador.
     /// Fonte: https://developers.mercadolivre.com.br/pt_br/gerenciamento-de-vendas. Nulo se não existe.
     /// </summary>
