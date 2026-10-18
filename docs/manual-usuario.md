@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 18/10/2026 (perguntas de compradores).
+> Última atualização: 18/10/2026 (resumo diário).
 
 ## Sumário
 
@@ -65,6 +65,7 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Pedidos | ✔ | ✔ |
 | Emitir, cancelar e registrar NF-e no pedido; dados fiscais da peça | ✔ | ✔ |
 | Configurar a nota fiscal da loja (Dados da loja) | ✔ | — |
+| Receber e configurar o resumo diário por e-mail | ✔ | — |
 | Venda de balcão | ✔ | ✔ |
 | Integrações (log e reprocessar falhas) | ✔ | ✔ |
 | Perguntas de compradores (ver, responder, novo rascunho da IA) | ✔ | ✔ |
@@ -496,6 +497,20 @@ Venda de balcão não gera e-mail.
 - **Enviar e-mail de teste**: envia na hora e mostra o erro do servidor, se houver.
 - Se o servidor de e-mail falhar, o sistema tenta de novo sozinho. As tentativas aparecem em **Integrações**.
 
+**Resumo diário** (só o Dono)
+
+Todo dia, os Donos da loja recebem um e-mail com:
+- as **vendas de ontem** por canal (loja virtual, balcão, Mercado Livre), com quantidade de pedidos e valor;
+- as **perguntas de compradores** que esperam resposta (4.5.2);
+- as **peças paradas**: com estoque e sem venda há mais de 90 dias (as 5 mais antigas aparecem na lista).
+
+No começo do e-mail, a IA escreve uma abertura curta. Os números nunca são da IA: saem sempre das consultas do sistema. Se a abertura citar algum número que não confere, ela é descartada e o e-mail sai só com as tabelas.
+
+- Vem **ligado, às 7h** (horário de Brasília). Escolha outra hora ou desmarque **Enviar o resumo diário** e clique em **Salvar**.
+- **Ver os números de ontem** mostra, na hora, o que iria no e-mail.
+- Sai uma vez por dia. Se o sistema estiver parado no horário, o e-mail sai assim que ele voltar.
+- Loja suspensa ou ainda não publicada não recebe resumo.
+
 **Domínio próprio** (fim da página; planos Profissional e Completo)
 
 A loja sempre funciona no endereço da plataforma (mostrado na tela). Com domínio próprio, ela abre também em, por exemplo, `www.sualoja.com.br`.
@@ -802,7 +817,7 @@ Itens previstos que **ainda não estão no sistema**:
 - Alerta de falha de integração por e-mail (hoje o alerta é a faixa no painel).
 - Remetente da plataforma em produção (provedor ainda a escolher). Em teste, os e-mails ficam numa caixa interna e não chegam ao comprador.
 - NF-e de devolução e estorno automático do reembolso.
-- Automações de IA: atendimento pelas mensagens do Instagram, preço sugerido, alertas e resumo diário (as perguntas do Mercado Livre já têm sugestão da IA — 4.5.2). Em teste, a IA de perguntas é simulada: sugere sempre a mesma resposta de disponibilidade e, de propósito, responde errado às perguntas com "serve", para mostrar a trava de compatibilidade. No cadastro por foto, a categoria e os atributos do Mercado Livre virão com a integração do Mercado Livre. Em teste, a IA é simulada e sempre sugere o mesmo farol de exemplo.
+- Automações de IA: atendimento pelas mensagens do Instagram, preço sugerido e alertas de falha de sincronização (as perguntas do Mercado Livre já têm sugestão da IA — 4.5.2 — e o resumo diário já sai por e-mail — 4.6). Resumo diário por WhatsApp. Em teste, a IA de perguntas é simulada: sugere sempre a mesma resposta de disponibilidade e, de propósito, responde errado às perguntas com "serve", para mostrar a trava de compatibilidade. No cadastro por foto, a categoria e os atributos do Mercado Livre virão com a integração do Mercado Livre. Em teste, a IA é simulada e sempre sugere o mesmo farol de exemplo.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
 - Assinatura: pagamento real pelo painel (o gateway da plataforma ainda será escolhido; em teste, a página de pagamento é simulada) e aviso da fatura por e-mail (hoje o aviso é a faixa no painel).
 - Primeiros passos: ver a loja virtual antes de publicar e "despublicar" a loja pelo painel.
@@ -834,6 +849,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
 | 16/10/2026 | Base da IA (RF35/RF36): limite de cadastros com IA no mês explicado em 4.2 (Limites do plano); o cartão Seu plano passa a mostrar o uso real. |
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
+| 18/10/2026 | Resumo diário por e-mail aos Donos (RF34): seção Resumo diário em 4.6 Dados da loja (horário, desligar, prévia) e perfis. |
 | 18/10/2026 | Perguntas de compradores do Mercado Livre com sugestão da IA (RF31): nova seção 4.5.2 (responder, novo rascunho, resposta automática das simples), perfis e textos de 4.6.1. Perguntas entram na exportação completa (4.9). |
 | 18/10/2026 | Catálogo do Instagram e Facebook (RF22): conectar com id e token, endereço do feed e atualização na hora (4.6.1). Preço mudado na peça agora vai na hora para os canais. |
 | 17/10/2026 | Envio e entrega das vendas do Mercado Livre e avisos perdidos (RF21, parte 6), em 4.4. |

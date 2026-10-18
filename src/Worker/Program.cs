@@ -27,6 +27,8 @@ builder.Services.AddHostedService<Ecommerce.Infrastructure.Channels.MercadoLivre
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Platform.DomainVerificationJob>();
 // RF38: mensalidades da assinatura (a cada hora, idempotente).
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Billing.SubscriptionBillingJob>();
+// RF34: resumo diário por e-mail aos Donos (confere a cada 15 min; cada loja no seu horário, uma vez por dia).
+builder.Services.AddHostedService<Ecommerce.Infrastructure.Reports.DailySummaryScheduler>();
 
 var host = builder.Build();
 host.Run();

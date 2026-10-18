@@ -42,6 +42,7 @@ public static class PanelEndpoints
         Billing.SubscriptionEndpoints.MapSubscriptionEndpoints(panel);
         panel.MapChannelEndpoints(app.ServiceProvider.GetRequiredService<IConfiguration>());
         panel.MapQuestionEndpoints();
+        panel.MapDailySummaryEndpoints();
         panel.MapGroup("").RequirePermission(Permission.CatalogManage).MapVehicleCatalog();
 
         var users = panel.MapGroup("/usuarios").RequirePermission(Permission.UsersManage);

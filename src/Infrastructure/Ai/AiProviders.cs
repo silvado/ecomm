@@ -112,10 +112,11 @@ public sealed class FakeAiCompletion : IAiCompletion
         var tokens = (request.Instructions.Length + request.Prompt.Length) / 4 + request.Images.Count * 1_000;
         if (request.Prompt.Contains(InvalidMarker, StringComparison.Ordinal))
             throw new AiInvalidOutputException("A resposta da IA não veio no formato esperado.", Model, tokens, 10, "não é JSON");
-        // Cadastro por foto e respostas a compradores ganham respostas de exemplo, para os fluxos serem demonstráveis em dev.
+        // Cadastro por foto, respostas a compradores e resumo diário ganham respostas de exemplo, para os fluxos serem demonstráveis em dev.
         var output = JsonSerializer.SerializeToElement(
             ReferenceEquals(request.OutputSchema, Catalog.PartSuggestionService.OutputSchema) ? Catalog.PartSuggestionService.DevSample
             : ReferenceEquals(request.OutputSchema, Channels.Questions.BuyerAnswerAdvisor.OutputSchema) ? Channels.Questions.BuyerAnswerAdvisor.DevSampleFor(request.Prompt)
+            : ReferenceEquals(request.OutputSchema, Reports.DailySummaryWriter.OutputSchema) ? Reports.DailySummaryWriter.DevSample
             : Sample(request.OutputSchema));
         return Task.FromResult(new AiResult(output, Model, tokens, output.GetRawText().Length / 4));
     }

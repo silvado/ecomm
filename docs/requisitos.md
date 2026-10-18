@@ -289,7 +289,15 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 
 ### RF34 — Resumo diário · E5
 - CA1: enviado em horário configurável (padrão 07:00 America/Sao_Paulo) com vendas por canal (ontem), peças sem venda há > 90 dias e perguntas pendentes.
+  - Feito (18/10/2026 — [ADR-0012](adr/0012-resumo-diario.md)): e-mail aos Donos da loja, configurado em **Dados da loja → Resumo diário** (liga/desliga, hora cheia, prévia dos números de ontem).
+  - **HIPÓTESE:** ligado por padrão, inclusive nas lojas existentes; só lojas publicadas e não suspensas.
+  - **Vendas:** pedidos pagos ontem que não estão cancelados nem em análise, por origem (loja virtual, balcão, Mercado Livre).
+  - **Peças paradas:** ativas, com saldo, cadastradas há mais de 90 dias e sem baixa por venda nos últimos 90 (lista as 5 mais antigas).
+  - **Perguntas:** as sem resposta (RF31), com a data da mais antiga.
+  - Sai uma vez por dia. Se o Worker estiver parado no horário, sai assim que voltar, no mesmo dia.
 - CA2: os números do resumo vêm de consultas determinísticas; a IA só redige o texto.
+  - A IA recebe os números prontos e escreve só a abertura. O texto é descartado se citar qualquer número que não esteja nos fatos (conta, porcentagem, comparação).
+  - Os números do e-mail saem sempre das consultas, em tabela. Se a IA estiver fora do ar, o resumo sai sem a abertura.
 
 ### RF35 — Auditoria e limites da IA · E3
 - CA1: toda chamada registra tenant, usuário, funcionalidade, modelo, tokens, custo estimado, entrada (resumida) e saída.

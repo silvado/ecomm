@@ -13,7 +13,7 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E5 — Primeiros clientes (meses 7–8) | 116 |
 | **Total** | **1011** |
 
-Progresso: 751 h de 1011 h em tarefas concluídas (74%).
+Progresso: 763 h de 1011 h em tarefas concluídas (75%).
 
 Referência: 6 h produtivas/dia ≈ 169 dias úteis ≈ 8,0 meses de uma pessoa.
 
@@ -420,11 +420,11 @@ IA de atendimento, resumo diário, guardião da sincronização e 3–5 clientes
 - [ ] Conjunto de avaliação — 10 h *(em andamento)*
 - [ ] Mensagens do Instagram (após App Review) — 16 h
 
-#### Resumo diário e guardião da sincronização — 24 h  `RF33, RF34`
+#### Resumo diário e guardião da sincronização — 24 h  `RF33, RF34` · **em andamento**
 
 **Critérios de aceite:** Resumo diário no horário do tenant com números de consultas determinísticas; diagnóstico de falhas com ação sugerida enviado por e-mail.
 
-- [ ] Resumo diário — 12 h
+- [x] Resumo diário — 12 h
 - [ ] Guardião da sincronização — 12 h
 
 ### Programa beta — 40 h
