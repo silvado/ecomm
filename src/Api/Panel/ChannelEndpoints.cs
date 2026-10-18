@@ -17,6 +17,9 @@ public sealed record OAuthReturnRequest(string? Code, string? State, string? Err
 
 public sealed record AuthorizationStart(string AuthorizationUrl);
 
+/// <summary>Catálogo da Meta: id do catálogo e token de acesso do usuário do sistema (RF22).</summary>
+public sealed record MetaConnectRequest(string? CatalogId, string? AccessToken);
+
 /// <summary>Anúncios da peça depois de publicar no ML e o resultado do envio das compatibilidades.</summary>
 public sealed record PublishedView(IReadOnlyList<ListingView> Listings, CompatibilityReport? Compatibilities);
 
@@ -74,6 +77,20 @@ public static class ChannelEndpoints
             var result = await service.CompleteMercadoLivreAsync(request.Code, request.State, request.Error, ct);
             return result.Connection is { } connection ? TypedResults.Ok(connection) : ConnectProblem(result);
         });
+
+        // Instagram/Facebook (RF22): catálogo e feed.
+        channels.MapGet("/meta", async Task<Results<Ok<MetaCatalogView>, NoContent>> (IMetaCatalogConnections service, CancellationToken ct) =>
+            await service.GetAsync(ct) is { } view ? TypedResults.Ok(view) : TypedResults.NoContent());
+        channels.MapPost("/meta/conectar", async Task<Results<Ok<MetaCatalogView>, ProblemHttpResult>> (
+            MetaConnectRequest request, IMetaCatalogConnections service, CancellationToken ct) =>
+        {
+            var result = await service.ConnectAsync(request.CatalogId ?? string.Empty, request.AccessToken ?? string.Empty, ct);
+            return result.Outcome == ConnectOutcome.Done ? TypedResults.Ok((await service.GetAsync(ct))!) : ConnectProblem(result);
+        });
+        channels.MapDelete("/meta", async Task<Results<NoContent, ProblemHttpResult>> (IMetaCatalogConnections service, CancellationToken ct) =>
+            await service.DisconnectAsync(ct)
+                ? TypedResults.NoContent()
+                : AuthEndpoints.Problem(StatusCodes.Status404NotFound, "Nenhum catálogo conectado."));
 
         channels.MapDelete("/{id:guid}", async Task<Results<NoContent, ProblemHttpResult>> (Guid id, IChannelConnections service, CancellationToken ct) =>
             await service.DisconnectAsync(id, ct)

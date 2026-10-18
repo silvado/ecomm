@@ -206,6 +206,12 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 - CA1: feed de catálogo por tenant em URL pública não adivinhável (token), no formato aceito pelo Commerce Manager.
 - CA2: preço e disponibilidade atualizados no feed imediatamente; para zerar estoque em segundos (RF24) usa-se a Catalog Batch API (`items_batch`), pois o feed agendado é no máximo horário.
 - CA3: o link do produto leva à página da peça na loja do tenant.
+- Feito (18/10/2026 — [ADR-0010](adr/0010-catalogo-meta.md)): CA1–CA3.
+  - **Conexão:** em **Canais de venda**, com id do catálogo e token de usuário do sistema, conferidos na Graph API; o token vai para o cofre.
+  - **Feed:** CSV público num endereço com segredo, com as peças ativas com foto; imagem em JPEG, preço "350.00 BRL", disponibilidade e quantidade pelo saldo, link para a peça.
+  - **Atualização na hora:** cada mudança de estoque ou preço vai pela Catalog Batch API (`items_batch` UPDATE). Token recusado deixa a conexão em "autorizar de novo".
+  - **HIPÓTESE:** marca = marca do primeiro veículo compatível ou nome da loja.
+  - **Pendente:** login da Meta (OAuth); vendas pelo checkout do Instagram/Facebook.
 
 ### RF23 — OLX via hub · E3
 - CA1: adapter isolado `OlxHubConnector` implementando `IChannelConnector`, com contrato definido após escolha do hub.

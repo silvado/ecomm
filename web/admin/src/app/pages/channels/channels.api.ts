@@ -24,6 +24,14 @@ export interface ChannelsOverview {
   connections: ChannelConnection[];
 }
 
+/** Catálogo do Instagram/Facebook ligado (RF22): o endereço do feed vai no Commerce Manager. */
+export interface MetaCatalogView {
+  connectionId: string;
+  catalogId: string;
+  catalogName: string | null;
+  feedUrl: string;
+}
+
 export const CONNECTION_STATUS_LABELS: Record<ChannelConnectionStatus, string> = {
   active: 'Conectada',
   reauthRequired: 'Autorizar de novo',
@@ -52,5 +60,18 @@ export class ChannelsApi {
 
   disconnect(id: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`${this.base}/${id}`));
+  }
+
+  /** Nulo quando não há catálogo ligado (204). */
+  async meta(): Promise<MetaCatalogView | null> {
+    return (await firstValueFrom(this.http.get<MetaCatalogView | null>(`${this.base}/meta`))) ?? null;
+  }
+
+  connectMeta(catalogId: string, accessToken: string): Promise<MetaCatalogView> {
+    return firstValueFrom(this.http.post<MetaCatalogView>(`${this.base}/meta/conectar`, { catalogId, accessToken }));
+  }
+
+  disconnectMeta(): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.base}/meta`));
   }
 }

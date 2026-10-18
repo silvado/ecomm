@@ -62,6 +62,7 @@ public sealed class PostgresEnvironment : IAsyncDisposable
         ["Dns:UseFake"] = "true",
         ["Billing:UseFakeGateway"] = "true",
         ["MercadoLivre:UseFake"] = "true",
+        ["Meta:UseFake"] = "true",
         ["MercadoLivre:RedirectUri"] = "https://painel.plataforma.test/canais/mercado-livre/retorno",
         ["Ai:Provider"] = "simulado",
         ["Ai:DefaultModel"] = "modelo-de-teste",

@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 17/10/2026 (envio e entrega das vendas do Mercado Livre).
+> Última atualização: 18/10/2026 (catálogo do Instagram e Facebook).
 
 ## Sumário
 
@@ -68,7 +68,7 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Integrações (log e reprocessar falhas) | ✔ | ✔ |
 | Primeiros passos e publicar a loja | ✔ | — |
 | Dados da loja | ✔ | — |
-| Canais de venda (conectar o Mercado Livre) | ✔ | — |
+| Canais de venda (Mercado Livre, Instagram e Facebook) | ✔ | — |
 | Pagamentos (chaves dos gateways) | ✔ | — |
 | Cofre (certificado digital A1 e chaves guardadas) | ✔ | — |
 | Usuários | ✔ | — |
@@ -522,6 +522,20 @@ Clique em **Desconectar** e confirme. O sistema retira a autorização da plataf
 
 > O acesso ao Mercado Livre fica guardado no **Cofre** da loja, cifrado, e nunca é mostrado.
 
+**Instagram e Facebook (catálogo)** (planos Profissional e Completo)
+
+O catálogo da Meta mostra as peças da loja no Instagram e no Facebook, com link para a página da peça na loja virtual.
+1. No **Gerenciador de Negócios** da Meta, crie (ou use) um catálogo no **Gerenciador de Comércio** e anote o **id do catálogo**.
+2. Crie um **usuário do sistema** com acesso ao catálogo e gere um **token de acesso** para ele.
+3. Em **Canais de venda → Instagram e Facebook**, informe o id e o token e clique em **Conectar catálogo**. O sistema confere os dois com a Meta.
+4. Copie o **endereço do feed** que aparece e cadastre-o no Gerenciador de Comércio (Catálogo → Fontes de dados → Feed agendado).
+
+- No feed vão as peças **ativas com foto**, com título, descrição, estado, preço, quantidade, fotos e link. Peça sem estoque aparece como **fora de estoque**.
+- Além do feed, **toda mudança de estoque ou preço é enviada na hora** ao catálogo. As chamadas aparecem em **Integrações** (serviço Instagram/Facebook).
+- Guarde o endereço do feed como uma senha: quem tiver o link vê o catálogo.
+- Se a Meta recusar o token (vencido ou sem permissão), a conexão fica como **Autorizar de novo**: desconecte e conecte com um token novo.
+- **Desconectar** apaga o token e o endereço do feed deixa de funcionar.
+
 ### 4.7 Pagamentos
 
 **Acesso:** menu **Pagamentos** (só Dono).
@@ -744,7 +758,7 @@ Continuam disponíveis no migrador, para a equipe técnica: `criar-superadmin`, 
 Itens previstos que **ainda não estão no sistema**:
 
 - Mercado Livre: emitir a NF-e da venda pelo Mercado Livre; cancelar a venda no Mercado Livre pelo painel; receber perguntas e mensagens; editar categoria e características de um anúncio já publicado; tirar do anúncio um veículo removido da peça e informar posição (dianteira, lado) por veículo. Conectar a conta (4.6.1) e anunciar (4.3) já funcionam; em teste, o Mercado Livre é simulado (página "Mercado Livre simulado" e categorias de exemplo, sem conta real).
-- Instagram (catálogo Meta) e OLX: conectar a conta e publicar. A seção **Anúncios** e a atualização automática pelo estoque já estão prontas para recebê-los.
+- Instagram e Facebook: entrar com a conta da Meta (hoje, o token é informado à mão) e receber vendas pelo checkout de lá. OLX: conectar a conta e publicar. A seção **Anúncios** e a atualização automática pelo estoque já estão prontas para recebê-los.
 - Emissão real de NF-e pela Focus NFe: hoje "pela plataforma" é simulado. "Fora da plataforma" já funciona.
 - NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
 - Frete real (Melhor Envio): hoje o frete é simulado.
@@ -786,6 +800,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
 | 16/10/2026 | Base da IA (RF35/RF36): limite de cadastros com IA no mês explicado em 4.2 (Limites do plano); o cartão Seu plano passa a mostrar o uso real. |
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
+| 18/10/2026 | Catálogo do Instagram e Facebook (RF22): conectar com id e token, endereço do feed e atualização na hora (4.6.1). Preço mudado na peça agora vai na hora para os canais. |
 | 17/10/2026 | Envio e entrega das vendas do Mercado Livre e avisos perdidos (RF21, parte 6), em 4.4. |
 | 17/10/2026 | Vendas do Mercado Livre em Pedidos (RF21, parte 5): origem Mercado Livre, baixa do estoque, conflito de estoque em análise e cancelamento vindo do ML (4.4). |
 | 17/10/2026 | Compatibilidade no anúncio do Mercado Livre (RF21, parte 4): envio ao publicar, botão Enviar compatibilidades e veículos não achados (4.3). |

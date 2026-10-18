@@ -77,6 +77,8 @@ services:
       # Mercado Livre simulado (RF21; página /api/dev/mercado-livre/autorizar) até o app da plataforma no DevCenter. Nunca em produção.
       MercadoLivre__UseFake: "true"
       MercadoLivre__RedirectUri: http://localhost:4200/canais/mercado-livre/retorno
+      # Catálogo do Instagram/Facebook simulado (Graph API em memória). Nunca em produção.
+      Meta__UseFake: "true"
       # IA simulada (ADR-0003). Com chave: Ai__Provider=anthropic e Ai__Anthropic__ApiKey no .env. Nunca simulada em produção.
       Ai__Provider: ${AI_PROVIDER:-simulado}
       Ai__Anthropic__ApiKey: ${ANTHROPIC_API_KEY:-}
@@ -105,6 +107,8 @@ services:
       Billing__UseFakeGateway: "true"
       # Renovação dos acessos ao Mercado Livre roda aqui: o mesmo ML simulado da API.
       MercadoLivre__UseFake: "true"
+      # Atualização do catálogo da Meta roda aqui: a mesma Graph API simulada.
+      Meta__UseFake: "true"
       # Rotinas com IA (resumo diário, diagnóstico) rodam aqui: mesmo provedor da API.
       Ai__Provider: ${AI_PROVIDER:-simulado}
       Ai__Anthropic__ApiKey: ${ANTHROPIC_API_KEY:-}

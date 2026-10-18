@@ -66,6 +66,17 @@ public sealed class StoreCatalog(TenantDbContext db, IFileStorage storage) : ISt
         return photo is null ? null : await storage.GetAsync(StorageArea.Public, PartPhoto.PublicKey(photo.TenantId, photo.PartId, photoId, size), ct);
     }
 
+    public async Task<byte[]?> GetChannelImageAsync(Guid photoId, CancellationToken ct = default)
+    {
+        // Peça ativa, mesmo sem saldo: o catálogo mostra o item como "fora de estoque".
+        var photo = await db.PartPhotos.AsNoTracking().Where(f => f.Id == photoId && db.Parts.Any(p => p.Id == f.PartId && p.Status == PartStatus.Active))
+            .Select(f => new { f.TenantId, f.PartId }).SingleOrDefaultAsync(ct);
+        if (photo is null || await storage.GetAsync(StorageArea.Private, PartPhoto.OriginalKey(photo.TenantId, photo.PartId, photoId), ct) is not { } file) return null;
+        using var buffer = new MemoryStream();
+        await using (file.Content) await file.Content.CopyToAsync(buffer, ct);
+        return (await PhotoProcessor.ForChannelAsync(buffer.ToArray(), ct)).Jpeg;
+    }
+
     /// <summary>Peças que a loja mostra: ativas e, se a loja oculta as sem estoque, com saldo disponível.</summary>
     private async Task<IQueryable<Part>> VisibleAsync(CancellationToken ct)
     {

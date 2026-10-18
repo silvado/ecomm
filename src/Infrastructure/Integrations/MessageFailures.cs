@@ -37,6 +37,7 @@ public static partial class MessageFailures
         [typeof(Application.Channels.RenewChannelCredentials)] = "Renovar o acesso aos canais de venda",
         [typeof(Application.Channels.ImportChannelOrder)] = "Importar venda do Mercado Livre",
         [typeof(Application.Channels.SyncChannelShipment)] = "Atualizar envio de venda do Mercado Livre",
+        [typeof(Application.Channels.SyncMetaCatalogItem)] = "Atualizar item no catálogo do Instagram/Facebook",
         [typeof(Application.Channels.ReconcileListing)] = "Conferir anúncio no canal",
         [typeof(Application.Inventory.StockChanged)] = "Avisar os canais da mudança de estoque",
         [typeof(Application.Fiscal.SendInvoice)] = "Enviar NF-e ao provedor fiscal",

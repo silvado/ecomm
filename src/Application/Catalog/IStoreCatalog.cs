@@ -30,4 +30,7 @@ public interface IStoreCatalog
 
     /// <summary>Uma versão publicada (WebP) de foto de peça ativa da loja; nulo caso contrário.</summary>
     Task<StoredFile?> GetPhotoAsync(Guid photoId, int size, CancellationToken ct = default);
+
+    /// <summary>Foto de peça ativa em JPEG (até 1920 px), para catálogos que não aceitam WebP (Meta — RF22). Nulo se não existe.</summary>
+    Task<byte[]?> GetChannelImageAsync(Guid photoId, CancellationToken ct = default);
 }
