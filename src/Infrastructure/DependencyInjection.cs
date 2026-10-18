@@ -192,6 +192,7 @@ public static class DependencyInjection
         // E2: anúncios nos canais e propagação de estoque (RF24/RF25).
         services.AddScoped<Application.Channels.IChannelConnectorResolver, Channels.ChannelConnectorResolver>();
         services.AddScoped<Application.Channels.IChannelQueries, Channels.ChannelService>();
+        services.AddScoped<Application.Channels.IBuyerQuestions, Channels.Questions.BuyerQuestionService>();
         services.AddScoped<Channels.ChannelService>();
         services.AddSingleton<Channels.ChannelSyncMetrics>();
         services.Configure<Channels.ReconciliationOptions>(configuration.GetSection(Channels.ReconciliationOptions.Section));

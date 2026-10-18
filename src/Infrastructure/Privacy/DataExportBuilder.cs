@@ -128,6 +128,16 @@ public sealed class DataExportBuilder(TenantDbContext db, IFileStorage storage)
             ("situacao", l => l.Status.ToString()), ("sincronizado_em", l => l.LastSyncedAt));
         entries++;
 
+        var questions = await (from q in db.BuyerQuestions.AsNoTracking()
+                               join c in db.ChannelConnections.AsNoTracking() on q.ConnectionId equals c.Id
+                               orderby q.AskedAt
+                               select new { c.Channel, q.ExternalItemId, q.PartId, q.AskedAt, q.Text, q.Status, q.AnswerText, q.AnsweredVia, q.AnsweredAt }).ToListAsync(ct);
+        await CsvAsync(zip, "perguntas.csv", questions, ct,
+            ("canal", q => q.Channel), ("anuncio", q => q.ExternalItemId), ("peca", q => q.PartId is { } id ? codes.GetValueOrDefault(id) : null),
+            ("perguntada_em", q => q.AskedAt), ("pergunta", q => q.Text), ("situacao", q => q.Status.ToString()), ("resposta", q => q.AnswerText),
+            ("respondida_por", q => q.AnsweredVia?.ToString()), ("respondida_em", q => q.AnsweredAt));
+        entries++;
+
         var branding = await db.StoreBrandings.AsNoTracking().SingleOrDefaultAsync(ct);
         var settings = await db.StoreSettings.AsNoTracking().SingleOrDefaultAsync(ct);
         await CsvAsync(zip, "loja.csv", SingleRow, ct,
@@ -153,7 +163,7 @@ public sealed class DataExportBuilder(TenantDbContext db, IFileStorage storage)
             - pecas.csv, pecas_codigos_oem.csv, pecas_compatibilidade.csv, veiculos_doadores.csv, movimentos_estoque.csv
             - pedidos.csv, pedidos_itens.csv, pedidos_historico.csv, devolucoes.csv, clientes.csv
             - notas_fiscais.csv (arquivos XML e DANFE na pasta notas)
-            - anuncios.csv, loja.csv
+            - anuncios.csv, perguntas.csv (perguntas de compradores nos canais), loja.csv
             Fotos originais das peças: pasta fotos, uma subpasta por código interno.
 
             Contém dados pessoais de compradores: guarde em local seguro e apague quando não precisar mais (LGPD).

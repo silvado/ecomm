@@ -266,9 +266,17 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 
 ### RF31 — Respostas a compradores · E5
 - CA1: responde usando apenas dados do cadastro (título, descrição, atributos, compatibilidade, estoque, políticas da loja).
+  - Feito (18/10/2026 — [ADR-0011](adr/0011-respostas-a-compradores.md)) para as perguntas do Mercado Livre: título, estado, disponibilidade, código da loja, códigos OEM, medidas, descrição, veículos compatíveis, retirada no balcão e política de troca e devolução. O preço não vai para a IA.
+  - Perguntas de anúncio que não foi publicado pela plataforma ficam sem rascunho, e a loja responde à mão.
 - CA2: classifica a pergunta em simples (resposta automática, se o tenant habilitar) ou complexa (rascunho para revisão).
+  - A IA classifica, mas a resposta só sai sozinha se passar por regras fixas: nada de compatibilidade, contato (telefone, e-mail, site, WhatsApp), preço, desconto ou pagamento, e no máximo 2.000 caracteres.
+  - Rascunho pedido de novo no painel nunca sai sozinho.
+  - IA fora do ar não trava a pergunta: fica a nota, e a loja responde à mão.
 - CA3: nunca afirma compatibilidade ausente do cadastro; nesse caso, gera rascunho. Verificado por conjunto de testes de avaliação.
-- CA4: **HIPÓTESE:** resposta automática desligada por padrão.
+  - **HIPÓTESE (conservadora):** toda pergunta sobre veículo vira rascunho, mesmo com o veículo no cadastro. A nota avisa se a peça não tem veículos cadastrados.
+  - Conjunto de avaliação: `tests/Application.Tests/Channels/buyer-answer-eval.json`, com 18 casos, incluindo respostas erradas de propósito da IA. Roda na CI.
+  - **Pendente:** rodar o mesmo conjunto contra o modelo real, quando houver a chave da Anthropic.
+- CA4: **HIPÓTESE:** resposta automática desligada por padrão. Só o Dono liga (Perguntas → opção no topo).
 
 ### RF32 — Preço sugerido · E3/E5
 - CA1: sugere faixa de preço com base em anúncios semelhantes e mostra a amostra usada.

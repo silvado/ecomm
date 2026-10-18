@@ -80,6 +80,14 @@ public sealed class StoreSettings : ITenantOwned
 
     public void ConfigureFiscal(Domain.Fiscal.FiscalSettings settings) => Fiscal = Domain.Fiscal.FiscalRules.Normalize(settings);
 
+    /// <summary>
+    /// RF31 CA2/CA4: perguntas simples de compradores respondidas pela IA sem revisão. HIPÓTESE: desligada por padrão; as
+    /// complexas e as de compatibilidade sempre viram rascunho.
+    /// </summary>
+    public bool AutoAnswerQuestions { get; private set; }
+
+    public void SetAutoAnswerQuestions(bool enabled) => AutoAnswerQuestions = enabled;
+
     public void SetReservationMinutes(int minutes)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(minutes, 5);

@@ -239,6 +239,12 @@ public static class ChannelEndpoints
             <p><label>Rastreio (opcional)<br><input name="rastreio" style="width:100%"></label></p>
             <p><button style="width:100%;min-height:48px">Atualizar envio</button></p>
             </form>
+            <form method="post" action="{path}/pergunta">
+            <p><label>Perguntar no anúncio (ex.: MLB1234567890)<br><input name="anuncio" required style="width:100%"></label></p>
+            <p><label>Id do vendedor<br><input name="vendedor" required style="width:100%"></label></p>
+            <p><label>Pergunta<br><textarea name="texto" required rows="3" style="width:100%">Ainda tem disponível?</textarea></label></p>
+            <p><button style="width:100%;min-height:48px">Enviar pergunta</button></p>
+            </form>
             </body></html>
             """, "text/html; charset=utf-8")).ExcludeFromDescription();
 
@@ -254,6 +260,7 @@ public static class ChannelEndpoints
         }).DisableAntiforgery().ExcludeFromDescription();
 
         MapFakeShipmentChange(app, path);
+        MapFakeQuestion(app, path);
 
         app.MapPost(path + "/cancelar", async (HttpRequest request, IMessageBus bus, CancellationToken ct) =>
         {
@@ -280,6 +287,20 @@ public static class ChannelEndpoints
             await bus.InvokeAsync<ReceiveChannelEventOutcome>(new ReceiveChannelEvent(Domain.Channels.SalesChannel.MercadoLivre,
                 $"shipments|/shipments/{shipmentId}|{status}", seller, "shipments", $"/shipments/{shipmentId}", null), ct);
             return Results.Content($"<p style=\"font-family:system-ui\">Envio da venda {orderId}: {status}. <a href=\"{path}\">Voltar</a></p>", "text/html; charset=utf-8");
+        }).DisableAntiforgery().ExcludeFromDescription();
+
+    private static void MapFakeQuestion(IEndpointRouteBuilder app, string path) =>
+        app.MapPost(path + "/pergunta", async (HttpRequest request, IMessageBus bus, CancellationToken ct) =>
+        {
+            var form = await request.ReadFormAsync(ct);
+            var seller = form["vendedor"].ToString().Trim();
+            var text = form["texto"].ToString().Trim();
+            if (seller.Length == 0 || !seller.All(char.IsAsciiDigit) || text.Length == 0) return Results.BadRequest("Informe o vendedor e a pergunta.");
+            var questionId = Ecommerce.Infrastructure.Channels.MercadoLivre.FakeMercadoLivreApi.Ask(form["anuncio"].ToString().Trim(), seller, text);
+            await bus.InvokeAsync<ReceiveChannelEventOutcome>(new ReceiveChannelEvent(Domain.Channels.SalesChannel.MercadoLivre,
+                $"questions|/questions/{questionId}", seller, "questions", $"/questions/{questionId}", null), ct);
+            return Results.Content($"<p style=\"font-family:system-ui\">Pergunta {questionId} enviada. Veja em Perguntas no painel. <a href=\"{path}\">Voltar</a></p>",
+                "text/html; charset=utf-8");
         }).DisableAntiforgery().ExcludeFromDescription();
 
     private static Task<ReceiveChannelEventOutcome> NotifyOrderAsync(IMessageBus bus, string seller, string orderId, string change, CancellationToken ct) =>

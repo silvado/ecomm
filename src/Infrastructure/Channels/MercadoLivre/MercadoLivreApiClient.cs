@@ -22,6 +22,7 @@ namespace Ecommerce.Infrastructure.Channels.MercadoLivre;
 /// <item>Imagens (<c>POST /pictures/items/upload</c>, multipart, JPG/PNG): https://developers.mercadolivre.com.br/pt_br/trabalhar-com-imagens</item>
 /// <item>Sincronizar (<c>PUT /items/{id}</c> com preço, quantidade e status):
 /// https://developers.mercadolivre.com.br/pt_br/produto-sincronizacao-de-publicacoes</item>
+/// <item>Perguntas (<c>GET /questions/{id}</c>, <c>POST /answers</c>): https://developers.mercadolivre.com.br/pt_br/perguntas-e-respostas</item>
 /// </list>
 /// Erros de validação (400) viram <see cref="ChannelValidationException"/> com os motivos do ML; fora do ar, limite de taxa
 /// ou acesso recusado viram <see cref="ChannelConnectorException"/> (a fila tenta de novo).
@@ -219,6 +220,41 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
                 .OfType<string>().ToList()
             : [];
     }
+
+    /// <summary>
+    /// Pergunta (<c>GET /questions/{id}?api_version=4</c>): anúncio, situação, texto e resposta. Os dados do comprador não
+    /// são lidos (LGPD). Fonte: https://developers.mercadolivre.com.br/pt_br/perguntas-e-respostas (atualizada em
+    /// 05/06/2025, consultada em 18/10/2026). Nulo se não existe.
+    /// </summary>
+    public async Task<ChannelQuestionSnapshot?> GetQuestionAsync(string token, string questionId, CancellationToken ct)
+    {
+        using var response = await SendAsync(HttpMethod.Get, $"/questions/{Uri.EscapeDataString(questionId)}?api_version=4", token, null, ct, allowNotFound: true);
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
+        return Question(await JsonAsync(response, ct), questionId);
+    }
+
+    /// <summary>Responde a pergunta (<c>POST /answers</c> com <c>question_id</c> e <c>text</c>); devolve a pergunta respondida.</summary>
+    public async Task<ChannelQuestionSnapshot> AnswerQuestionAsync(string token, string questionId, string text, CancellationToken ct)
+    {
+        var body = new JsonObject
+        {
+            ["question_id"] = long.TryParse(questionId, NumberStyles.None, CultureInfo.InvariantCulture, out var id) ? id : questionId,
+            ["text"] = text,
+        };
+        using var response = await SendAsync(HttpMethod.Post, "/answers", token, JsonContent.Create(body), ct);
+        return Question(await JsonAsync(response, ct), questionId);
+    }
+
+    private static ChannelQuestionSnapshot Question(JsonElement q, string questionId)
+    {
+        var answer = q.TryGetProperty("answer", out var a) && a.ValueKind == JsonValueKind.Object ? a : default;
+        return new ChannelQuestionSnapshot(Text(q, "id") ?? questionId, Text(q, "item_id") ?? string.Empty, Text(q, "status") ?? string.Empty,
+            Text(q, "text") ?? string.Empty, Date(q, "date_created"),
+            Text(answer, "status") == "ACTIVE" ? Text(answer, "text") : null, Date(answer, "date_created"));
+    }
+
+    private static DateTimeOffset? Date(JsonElement e, string name) =>
+        Text(e, name) is { } text && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var at) ? at.ToUniversalTime() : null;
 
     /// <summary>Nulo se o anúncio não existe (404).</summary>
     public async Task<JsonElement?> GetItemAsync(string token, string itemId, CancellationToken ct)

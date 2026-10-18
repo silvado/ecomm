@@ -123,7 +123,7 @@ Decisões:
 - **Roteamento:** o RF26 já existente acha a loja pelo `user_id` no mapa da plataforma (CA5). Conta sem loja fica "sem dono" no inbox, com log crítico.
 - **Processamento, uma vez por loja** (`MercadoLivreChannelProcessor`):
   - `items` de um anúncio da loja pede a conferência dele (`ReconcileListing`, RF27). Ela consulta o canal e corrige pelo estoque local, então o conteúdo do aviso nunca é confiado.
-  - Os demais tópicos ficam em `external_events` como ignorados até as próximas etapas: pedidos (`orders_v2`, `payments`), perguntas e mensagens (RF31, E5). Não vão para o log de integração, que encheria com milhares de avisos.
+  - Os demais tópicos ficam em `external_events` como ignorados até as próximas etapas: pedidos (`orders_v2`, `payments`), perguntas e mensagens (RF31, E5). Pedidos e envios entraram no RF21 (partes 5 e 6); perguntas, no [ADR-0011](0011-respostas-a-compradores.md). Não vão para o log de integração, que encheria com milhares de avisos.
   - **Pendente:** recuperar o `missed_feeds` (por exemplo, depois de a API ficar fora do ar) quando os pedidos entrarem.
 - **Limite próprio:** `webhook-canal`, com 600 por minuto por IP (**HIPÓTESE**). O ML manda de dezenas de IPs e não pode receber 429.
 

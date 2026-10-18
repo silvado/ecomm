@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 18/10/2026 (catálogo do Instagram e Facebook).
+> Última atualização: 18/10/2026 (perguntas de compradores).
 
 ## Sumário
 
@@ -17,6 +17,7 @@
    - 4.4 [Pedidos](#44-pedidos)
    - 4.5 [Venda de balcão](#45-venda-de-balcão)
    - 4.5.1 [Integrações](#451-integrações)
+   - 4.5.2 [Perguntas de compradores](#452-perguntas-de-compradores)
    - 4.6 [Dados da loja](#46-dados-da-loja)
    - 4.6.1 [Canais de venda](#461-canais-de-venda)
    - 4.7 [Pagamentos](#47-pagamentos)
@@ -66,6 +67,8 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Configurar a nota fiscal da loja (Dados da loja) | ✔ | — |
 | Venda de balcão | ✔ | ✔ |
 | Integrações (log e reprocessar falhas) | ✔ | ✔ |
+| Perguntas de compradores (ver, responder, novo rascunho da IA) | ✔ | ✔ |
+| Ligar a resposta automática das perguntas simples | ✔ | — |
 | Primeiros passos e publicar a loja | ✔ | — |
 | Dados da loja | ✔ | — |
 | Canais de venda (Mercado Livre, Instagram e Facebook) | ✔ | — |
@@ -408,6 +411,37 @@ A loja conversa com serviços externos: gateway de pagamento (Mercado Pago ou Ci
 - Filtre por serviço, situação (deram certo / falharam) e período. O log guarda **90 dias**.
 - Senhas, tokens, CPF e e-mails **nunca** aparecem no log.
 
+### 4.5.2 Perguntas de compradores
+
+**Acesso:** menu **Perguntas** (Dono e Operador).
+
+Quando um comprador pergunta num anúncio da loja no Mercado Livre, a pergunta aparece aqui em poucos segundos, com a peça do anúncio. A IA já deixa uma **sugestão de resposta**, escrita só com o que está no cadastro da peça: título, estado, se tem estoque, códigos, medidas, descrição, veículos compatíveis, retirada no balcão e a política de troca e devolução. A IA não vê o preço e nunca fala de preço, desconto ou frete.
+
+**Responder**
+1. Leia a pergunta e a sugestão. Cada pergunta vem marcada como **Simples** ou **Revisar**.
+   - Em **Revisar**, uma nota explica o que conferir. Por exemplo: "Pergunta sobre compatibilidade: confira os veículos da peça antes de enviar".
+   - Trechos entre colchetes, como [confirmar o ano do veículo], são para você completar.
+2. Edite o texto à vontade e clique em **Enviar resposta**. A resposta vai para o Mercado Livre e a pergunta sai da lista.
+3. Não gostou da sugestão? Clique em **Novo rascunho da IA**. Ou apague tudo e escreva a sua.
+
+- Não escreva telefone, e-mail, site ou WhatsApp: o Mercado Livre não permite contato fora dele.
+- Perguntas sobre **em qual veículo a peça serve** sempre esperam a sua revisão, mesmo quando o veículo está no cadastro.
+- Pergunta em anúncio que **não foi publicado pela plataforma** aparece sem sugestão: responda com os dados do anúncio.
+- Se a IA estiver fora do ar, a pergunta aparece sem sugestão, com um aviso. Responda à mão ou peça um novo rascunho mais tarde.
+- Respondeu direto no site do Mercado Livre? A pergunta sai da lista sozinha, como "Respondida no Mercado Livre". Pergunta excluída lá aparece como **Encerrada**.
+- Se o Mercado Livre recusar a resposta, o motivo aparece em vermelho na pergunta. O envio fica registrado em **Integrações**.
+- Em **Todas**, você vê também as perguntas já respondidas, com a resposta e como foi enviada (pelo painel, automaticamente ou no Mercado Livre).
+
+**Resposta automática** (só o Dono liga; vem **desligada**)
+Marque **Responder sozinho as perguntas simples** e confirme. A partir daí, as perguntas simples (disponibilidade, estado, lado, códigos, retirada) são respondidas pela IA na hora, sem passar por você.
+
+O sistema confere cada resposta antes de enviar. Continuam esperando a sua revisão as perguntas:
+- sobre compatibilidade;
+- que a IA marcou como "revisar";
+- cuja sugestão cita preço, desconto, pagamento ou contato.
+
+As respostas enviadas sozinhas aparecem em **Todas** como "Respondida automaticamente". Desmarque a opção para voltar a revisar tudo.
+
 ### 4.6 Dados da loja
 
 **Acesso:** menu **Dados da loja** (só Dono).
@@ -491,7 +525,7 @@ A loja virtual sempre tem as páginas **Política de privacidade** e **Termos de
 
 **Acesso:** menu **Canais de venda** (só o Dono).
 
-Aqui a loja liga as contas onde vende. Nesta versão dá para **conectar a conta do Mercado Livre** e, depois, **anunciar** as peças pela seção Anúncios de cada peça (4.3); receber as vendas e as perguntas de lá chegam nas próximas versões. Instagram e OLX também.
+Aqui a loja liga as contas onde vende. Nesta versão dá para **conectar a conta do Mercado Livre** e, depois, **anunciar** as peças pela seção Anúncios de cada peça (4.3). As vendas de lá chegam em **Pedidos** (4.4) e as perguntas dos compradores em **Perguntas** (4.5.2). Também dá para ligar o catálogo do Instagram e do Facebook; a OLX chega numa próxima versão.
 
 **Conectar o Mercado Livre**
 1. Clique em **Conectar Mercado Livre**. O painel abre o site do Mercado Livre.
@@ -506,7 +540,7 @@ Aqui a loja liga as contas onde vende. Nesta versão dá para **conectar a conta
 - O plano da loja precisa incluir o Mercado Livre.
 
 **Avisos do Mercado Livre**
-Depois de conectada, a conta passa a avisar a plataforma do que muda lá. Nesta versão, se alguém mexer num anúncio da loja direto no Mercado Livre (pausar, mudar preço ou quantidade), o sistema confere o anúncio na hora e o corrige pelo estoque e preço da loja (aparece em **Integrações** como "aviso: anúncio alterado"). Os avisos de vendas e perguntas serão usados nas próximas versões.
+Depois de conectada, a conta passa a avisar a plataforma do que muda lá. Nesta versão, se alguém mexer num anúncio da loja direto no Mercado Livre (pausar, mudar preço ou quantidade), o sistema confere o anúncio na hora e o corrige pelo estoque e preço da loja (aparece em **Integrações** como "aviso: anúncio alterado"). Os avisos de vendas e envios atualizam **Pedidos** (4.4), e os de perguntas trazem a pergunta para **Perguntas** (4.5.2).
 
 **Acesso renovado sozinho**
 O Mercado Livre libera o acesso por algumas horas de cada vez. O sistema renova sozinho, antes de vencer, sem você fazer nada. As renovações aparecem em **Integrações** (serviço Mercado Livre).
@@ -615,7 +649,7 @@ O que acontece:
 **Exportar dados da loja**
 1. Clique em **Gerar exportação**. O pacote é montado em segundo plano; a lista atualiza sozinha.
 2. Quando a situação for **Pronta**, clique em **Baixar**. O arquivo (ZIP) pode ser baixado por **7 dias**; depois, gere outro.
-- O pacote tem planilhas (abrem no Excel) de peças, códigos OEM, compatibilidade, veículos doadores, movimentos de estoque, pedidos e itens, histórico, devoluções, clientes, notas fiscais, anúncios e dados da loja, além das fotos originais e dos arquivos XML/DANFE das notas.
+- O pacote tem planilhas (abrem no Excel) de peças, códigos OEM, compatibilidade, veículos doadores, movimentos de estoque, pedidos e itens, histórico, devoluções, clientes, notas fiscais, anúncios, perguntas de compradores e dados da loja, além das fotos originais e dos arquivos XML/DANFE das notas.
 - Senhas, chaves de pagamento e o certificado digital **não** vão no pacote.
 - O pacote tem dados pessoais de compradores: guarde em local seguro.
 - Uma exportação por vez.
@@ -757,7 +791,7 @@ Continuam disponíveis no migrador, para a equipe técnica: `criar-superadmin`, 
 
 Itens previstos que **ainda não estão no sistema**:
 
-- Mercado Livre: emitir a NF-e da venda pelo Mercado Livre; cancelar a venda no Mercado Livre pelo painel; receber perguntas e mensagens; editar categoria e características de um anúncio já publicado; tirar do anúncio um veículo removido da peça e informar posição (dianteira, lado) por veículo. Conectar a conta (4.6.1) e anunciar (4.3) já funcionam; em teste, o Mercado Livre é simulado (página "Mercado Livre simulado" e categorias de exemplo, sem conta real).
+- Mercado Livre: emitir a NF-e da venda pelo Mercado Livre; cancelar a venda no Mercado Livre pelo painel; mensagens pós-venda com o comprador; editar categoria e características de um anúncio já publicado; tirar do anúncio um veículo removido da peça e informar posição (dianteira, lado) por veículo. Conectar a conta (4.6.1) e anunciar (4.3) já funcionam; em teste, o Mercado Livre é simulado (página "Mercado Livre simulado" e categorias de exemplo, sem conta real).
 - Instagram e Facebook: entrar com a conta da Meta (hoje, o token é informado à mão) e receber vendas pelo checkout de lá. OLX: conectar a conta e publicar. A seção **Anúncios** e a atualização automática pelo estoque já estão prontas para recebê-los.
 - Emissão real de NF-e pela Focus NFe: hoje "pela plataforma" é simulado. "Fora da plataforma" já funciona.
 - NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
@@ -768,7 +802,7 @@ Itens previstos que **ainda não estão no sistema**:
 - Alerta de falha de integração por e-mail (hoje o alerta é a faixa no painel).
 - Remetente da plataforma em produção (provedor ainda a escolher). Em teste, os e-mails ficam numa caixa interna e não chegam ao comprador.
 - NF-e de devolução e estorno automático do reembolso.
-- Automações de IA: atendimento, preço sugerido, alertas e resumo diário. No cadastro por foto, a categoria e os atributos do Mercado Livre virão com a integração do Mercado Livre. Em teste, a IA é simulada e sempre sugere o mesmo farol de exemplo.
+- Automações de IA: atendimento pelas mensagens do Instagram, preço sugerido, alertas e resumo diário (as perguntas do Mercado Livre já têm sugestão da IA — 4.5.2). Em teste, a IA de perguntas é simulada: sugere sempre a mesma resposta de disponibilidade e, de propósito, responde errado às perguntas com "serve", para mostrar a trava de compatibilidade. No cadastro por foto, a categoria e os atributos do Mercado Livre virão com a integração do Mercado Livre. Em teste, a IA é simulada e sempre sugere o mesmo farol de exemplo.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
 - Assinatura: pagamento real pelo painel (o gateway da plataforma ainda será escolhido; em teste, a página de pagamento é simulada) e aviso da fatura por e-mail (hoje o aviso é a faixa no painel).
 - Primeiros passos: ver a loja virtual antes de publicar e "despublicar" a loja pelo painel.
@@ -800,6 +834,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Assinatura (RF38): nova seção 4.10 (mensalidade, faturas e pagamento); Cobrança da loja em 6.3, mensalidade dos planos em 6.4, auditoria em 6.5; perfis. |
 | 16/10/2026 | Base da IA (RF35/RF36): limite de cadastros com IA no mês explicado em 4.2 (Limites do plano); o cartão Seu plano passa a mostrar o uso real. |
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
+| 18/10/2026 | Perguntas de compradores do Mercado Livre com sugestão da IA (RF31): nova seção 4.5.2 (responder, novo rascunho, resposta automática das simples), perfis e textos de 4.6.1. Perguntas entram na exportação completa (4.9). |
 | 18/10/2026 | Catálogo do Instagram e Facebook (RF22): conectar com id e token, endereço do feed e atualização na hora (4.6.1). Preço mudado na peça agora vai na hora para os canais. |
 | 17/10/2026 | Envio e entrega das vendas do Mercado Livre e avisos perdidos (RF21, parte 6), em 4.4. |
 | 17/10/2026 | Vendas do Mercado Livre em Pedidos (RF21, parte 5): origem Mercado Livre, baixa do estoque, conflito de estoque em análise e cancelamento vindo do ML (4.4). |
