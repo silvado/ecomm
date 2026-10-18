@@ -41,6 +41,8 @@ internal sealed class CustomerOrderConfiguration : IEntityTypeConfiguration<Cust
         builder.Property(o => o.ReviewReason).HasMaxLength(300);
         builder.Property(o => o.TrackingCode).HasMaxLength(CustomerOrder.TrackingCodeMaxLength);
         builder.Property(o => o.ExternalId).HasMaxLength(CustomerOrder.ExternalIdMaxLength);
+        builder.Property(o => o.ExternalShipmentId).HasMaxLength(CustomerOrder.ExternalShipmentIdMaxLength);
+        builder.HasIndex(o => new { o.TenantId, o.ExternalShipmentId }).HasFilter("external_shipment_id IS NOT NULL");
         builder.Property(o => o.HasReturns).HasDefaultValue(false);
         builder.Ignore(o => o.AcceptsReturn);
         builder.Ignore(o => o.Address);

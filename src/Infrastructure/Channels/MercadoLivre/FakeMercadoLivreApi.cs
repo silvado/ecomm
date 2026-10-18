@@ -51,6 +51,28 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
 
     private static readonly ConcurrentDictionary<string, List<JsonObject>> Compatible = new();
     private static readonly ConcurrentDictionary<string, JsonObject> Orders = new();
+    private static readonly ConcurrentDictionary<string, JsonObject> Shipments = new();
+    private static readonly ConcurrentQueue<(string Topic, string Data)> Missed = new();
+
+    /// <summary>Envio da venda simulada: muda a situação (shipped, delivered, not_delivered...) e o rastreio.</summary>
+    public static string? ShipmentOf(string orderId) => Orders.TryGetValue(orderId, out var o) ? (string?)o["shipping"]?["id"]?.ToString() : null;
+
+    public static void SetShipment(string shipmentId, string status, string? tracking = null, string? substatus = null)
+    {
+        var shipment = Shipments.GetOrAdd(shipmentId, id => new JsonObject { ["id"] = long.Parse(id, System.Globalization.CultureInfo.InvariantCulture) });
+        shipment["status"] = status;
+        shipment["substatus"] = substatus;
+        if (tracking is not null) shipment["tracking_number"] = tracking;
+    }
+
+    /// <summary>Aviso que "não chegou" à plataforma: fica no missed_feeds do app (corpo original do aviso).</summary>
+    public static void Miss(string topic, string data) => Missed.Enqueue((topic, data));
+
+    private static JsonObject MissedFeeds(string topic, int offset, int limit) => new()
+    {
+        ["messages"] = new JsonArray(Missed.Where(m => m.Topic == topic).Skip(offset).Take(limit)
+            .Select(m => (JsonNode)new JsonObject { ["topic"] = topic, ["request"] = new JsonObject { ["data"] = m.Data } }).ToArray()),
+    };
 
     /// <summary>
     /// Simula uma venda paga no ML (formato de https://developers.mercadolivre.com.br/pt_br/gerenciamento-de-vendas): baixa
@@ -62,6 +84,8 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
         var price = unitPrice ?? (item["price"] is { } p && decimal.TryParse(p.ToJsonString(), System.Globalization.CultureInfo.InvariantCulture, out var stored) && stored > 0 ? stored : 100m);
         if (item["available_quantity"] is { } q && int.TryParse(q.ToJsonString(), out var left)) item["available_quantity"] = Math.Max(0, left - quantity);
         var id = Random.Shared.NextInt64(2_000_000_000_000_000, 2_999_999_999_999_999).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var shipmentId = Random.Shared.NextInt64(40_000_000_000, 49_999_999_999);
+        SetShipment(shipmentId.ToString(System.Globalization.CultureInfo.InvariantCulture), "ready_to_ship");
         Orders[id] = new JsonObject
         {
             ["id"] = long.Parse(id, System.Globalization.CultureInfo.InvariantCulture),
@@ -77,6 +101,7 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
             }),
             ["payments"] = new JsonArray(new JsonObject { ["status"] = "approved", ["shipping_cost"] = 25.9m, ["total_paid_amount"] = price * quantity + 25.9m }),
             ["buyer"] = new JsonObject { ["id"] = 266272126, ["nickname"] = "COMPRADOR_TESTE" },
+            ["shipping"] = new JsonObject { ["id"] = shipmentId },
             ["seller"] = new JsonObject { ["id"] = long.Parse(sellerId, System.Globalization.CultureInfo.InvariantCulture) },
             ["tags"] = new JsonArray("paid", "test_order"),
         };
@@ -130,6 +155,11 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
                 Json(TopValues(attribute, await BodyAsync(request, cancellationToken))),
             ("POST", ["items", var id, "compatibilities"]) => Compatibilities(id, await BodyAsync(request, cancellationToken)),
             ("GET", ["orders", var id]) => Orders.TryGetValue(id, out var order) ? Json((JsonObject)order.DeepClone()) : NotFound(),
+            ("GET", ["shipments", var id]) => request.Headers.Contains("x-format-new") && Shipments.TryGetValue(id, out var shipment)
+                ? Json((JsonObject)shipment.DeepClone())
+                : NotFound(),
+            ("GET", ["missed_feeds"]) => Json(MissedFeeds(query["topic"] ?? string.Empty, int.TryParse(query["offset"], out var o) ? o : 0,
+                int.TryParse(query["limit"], out var l) ? l : 10)),
             _ => NotFound(),
         };
     }

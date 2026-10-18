@@ -1541,6 +1541,11 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("external_id");
 
+                    b.Property<string>("ExternalShipmentId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("external_shipment_id");
+
                     b.Property<bool>("HasReturns")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1647,6 +1652,10 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "AccessTokenHash")
                         .IsUnique()
                         .HasDatabaseName("ix_customer_orders_tenant_id_access_token_hash");
+
+                    b.HasIndex("TenantId", "ExternalShipmentId")
+                        .HasDatabaseName("ix_customer_orders_tenant_id_external_shipment_id")
+                        .HasFilter("external_shipment_id IS NOT NULL");
 
                     b.HasIndex("TenantId", "Number")
                         .IsUnique()

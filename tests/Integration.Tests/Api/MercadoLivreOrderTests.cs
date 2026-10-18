@@ -76,16 +76,21 @@ public sealed class MercadoLivreOrderTests(ApiFactory api) : IClassFixture<ApiFa
         return (partId, itemId, code);
     }
 
-    private Task<HttpResponseMessage> NotifyAsync(string seller, string orderId, string received) =>
-        api.ClientFor("api.plataforma.test", $"198.51.109.{Random.Shared.Next(1, 250)}").PostAsync(Webhook, new StringContent($$"""
-            {"resource":"/orders/{{orderId}}","user_id":{{seller}},"topic":"orders_v2","application_id":5503910054141466,"attempts":1,
-             "sent":"{{received}}","received":"{{received}}"}
-            """, Encoding.UTF8, "application/json"));
+    private Task<HttpResponseMessage> NotifyAsync(string seller, string orderId, string received) => NotifyTopicAsync(seller, "orders_v2", $"/orders/{orderId}", received);
 
-    private async Task<T> InTenantAsync<T>(Guid tenantId, Func<TenantDbContext, Task<T>> query)
+    private static string Notification(string seller, string topic, string resource, string received) => $$"""
+        {"resource":"{{resource}}","user_id":{{seller}},"topic":"{{topic}}","application_id":5503910054141466,"attempts":1,
+         "sent":"{{received}}","received":"{{received}}"}
+        """;
+
+    private Task<HttpResponseMessage> NotifyTopicAsync(string seller, string topic, string resource, string received) =>
+        api.ClientFor("api.plataforma.test", $"198.51.109.{Random.Shared.Next(1, 250)}")
+            .PostAsync(Webhook, new StringContent(Notification(seller, topic, resource, received), Encoding.UTF8, "application/json"));
+
+    private async Task<T> InTenantAsync<T>(Guid? tenantId, Func<TenantDbContext, Task<T>> query)
     {
         await using var scope = api.Services.CreateAsyncScope();
-        scope.ServiceProvider.GetRequiredService<TenantScope>().Set(tenantId);
+        if (tenantId is { } id) scope.ServiceProvider.GetRequiredService<TenantScope>().Set(id);
         return await query(scope.ServiceProvider.GetRequiredService<TenantDbContext>());
     }
 
@@ -163,6 +168,90 @@ public sealed class MercadoLivreOrderTests(ApiFactory api) : IClassFixture<ApiFa
         var canceled = await OrderAsync(shop.TenantId, orderId, o => o.Status == OrderStatus.Canceled);
         Assert.Equal("Cancelado no Mercado Livre.", canceled.CancelReason);
         Assert.Equal(2, await OnHandAsync(shop.TenantId, partId));
+    }
+
+    [Fact]
+    public async Task Envio_e_entrega_no_ML_aparecem_no_pedido_com_o_rastreio()
+    {
+        var shop = await ShopAsync();
+        var (_, itemId, _) = await ListedPartAsync(shop);
+        var orderId = FakeMercadoLivreApi.Sell(itemId, 1, shop.Seller);
+        await NotifyAsync(shop.Seller, orderId, "2026-10-17T16:00:00Z");
+        var order = await OrderAsync(shop.TenantId, orderId);
+        var shipmentId = FakeMercadoLivreApi.ShipmentOf(orderId)!;
+        Assert.Equal(shipmentId, order.ExternalShipmentId);
+
+        FakeMercadoLivreApi.SetShipment(shipmentId, "shipped", "BR123456789");
+        await NotifyTopicAsync(shop.Seller, "shipments", $"/shipments/{shipmentId}", "2026-10-17T16:10:00Z");
+        var shipped = await OrderAsync(shop.TenantId, orderId, o => o.Status == OrderStatus.Shipped);
+        Assert.Equal("BR123456789", shipped.TrackingCode);
+
+        FakeMercadoLivreApi.SetShipment(shipmentId, "delivered");
+        await NotifyTopicAsync(shop.Seller, "shipments", $"/shipments/{shipmentId}", "2026-10-17T18:00:00Z");
+        await OrderAsync(shop.TenantId, orderId, o => o.Status == OrderStatus.Delivered);
+    }
+
+    [Fact]
+    public async Task Envio_que_andou_antes_da_venda_chegar_e_conferido_ao_importar()
+    {
+        var shop = await ShopAsync();
+        var (_, itemId, _) = await ListedPartAsync(shop);
+        var orderId = FakeMercadoLivreApi.Sell(itemId, 1, shop.Seller);
+        // O aviso de envio chegou antes do de venda (ou se perdeu): o pedido ainda não existia.
+        FakeMercadoLivreApi.SetShipment(FakeMercadoLivreApi.ShipmentOf(orderId)!, "delivered", "BR999");
+
+        await NotifyAsync(shop.Seller, orderId, "2026-10-17T17:00:00Z");
+
+        var delivered = await OrderAsync(shop.TenantId, orderId, o => o.Status == OrderStatus.Delivered);
+        Assert.Equal("BR999", delivered.TrackingCode);
+    }
+
+    [Fact]
+    public async Task Nao_entregue_vai_para_o_historico_sem_mudar_a_situacao()
+    {
+        var shop = await ShopAsync();
+        var (_, itemId, _) = await ListedPartAsync(shop);
+        var orderId = FakeMercadoLivreApi.Sell(itemId, 1, shop.Seller);
+        await NotifyAsync(shop.Seller, orderId, "2026-10-17T19:00:00Z");
+        var order = await OrderAsync(shop.TenantId, orderId);
+        var shipmentId = FakeMercadoLivreApi.ShipmentOf(orderId)!;
+
+        FakeMercadoLivreApi.SetShipment(shipmentId, "not_delivered", substatus: "returning_to_sender");
+        await NotifyTopicAsync(shop.Seller, "shipments", $"/shipments/{shipmentId}", "2026-10-17T19:30:00Z");
+        await NotifyTopicAsync(shop.Seller, "shipments", $"/shipments/{shipmentId}", "2026-10-17T19:31:00Z");
+
+        var watch = Stopwatch.StartNew();
+        List<string?> notes;
+        while ((notes = await InTenantAsync(shop.TenantId, db => db.OrderHistory.Where(h => h.OrderId == order.Id && h.Note!.StartsWith("Não entregue"))
+            .Select(h => h.Note).ToListAsync())).Count == 0)
+        {
+            if (watch.Elapsed > TimeSpan.FromSeconds(20)) Assert.Fail("Sem anotação de não entregue.");
+            await Task.Delay(100);
+        }
+        await Task.Delay(1000);
+        Assert.Equal("Não entregue, segundo o Mercado Livre (returning_to_sender). Confira a venda em Minhas vendas.",
+            Assert.Single(await InTenantAsync(shop.TenantId, db => db.OrderHistory.Where(h => h.OrderId == order.Id && h.Note!.StartsWith("Não entregue"))
+                .Select(h => h.Note).ToListAsync())));
+        Assert.Equal(OrderStatus.Paid, (await OrderAsync(shop.TenantId, orderId)).Status);
+    }
+
+    [Fact]
+    public async Task Aviso_perdido_e_recuperado_pelo_missed_feeds_sem_repetir()
+    {
+        var shop = await ShopAsync();
+        var (_, itemId, _) = await ListedPartAsync(shop);
+        var orderId = FakeMercadoLivreApi.Sell(itemId, 1, shop.Seller);
+        // O ML tentou avisar por 1 hora e não conseguiu (API fora do ar): o aviso só está no missed_feeds.
+        FakeMercadoLivreApi.Miss("orders_v2", Notification(shop.Seller, "orders_v2", $"/orders/{orderId}", "2026-10-17T20:00:00Z"));
+        var job = api.Services.GetRequiredService<MercadoLivreMissedFeedsJob>();
+
+        Assert.True(await job.RunAsync(CancellationToken.None) >= 1);
+        await OrderAsync(shop.TenantId, orderId);
+
+        // Na rodada seguinte o mesmo aviso continua no missed_feeds, mas não entra de novo.
+        await job.RunAsync(CancellationToken.None);
+        Assert.Equal(1, await InTenantAsync(shop.TenantId, db => db.CustomerOrders.CountAsync(o => o.ExternalId == orderId)));
+        Assert.Equal(1, await InTenantAsync(null, db => db.InboxEvents.CountAsync(e => e.Resource == $"/orders/{orderId}")));
     }
 
     [Fact]
