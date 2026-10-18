@@ -7,12 +7,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Wolverine;
 
 namespace Ecommerce.Infrastructure.Vault;
 
 /// <summary>
-/// Vencimento do certificado A1 (RF06 CA5): uma vez por dia, loja a loja, registra no log 30, 15 e 5 dias antes e no dia
-/// em que vence (o painel mostra a faixa de aviso a partir de 30 dias). Roda só no Worker.
+/// Vencimento do certificado A1 (RF06 CA5): uma vez por dia, loja a loja, registra no log 30, 15 e 5 dias antes, no dia
+/// em que vence e no dia seguinte, e pede o e-mail aos Donos das lojas publicadas e não suspensas (que sai uma vez por dia
+/// de aviso — <see cref="CertificateReminderHandler"/>). O painel mostra a faixa de aviso a partir de 30 dias. Só no Worker.
 /// </summary>
 public sealed partial class CertificateExpiryMonitor(IServiceScopeFactory scopes, TimeProvider clock, ILogger<CertificateExpiryMonitor> logger) : BackgroundService
 {
@@ -40,9 +42,13 @@ public sealed partial class CertificateExpiryMonitor(IServiceScopeFactory scopes
     public async Task<IReadOnlyList<(Guid TenantId, int DaysLeft)>> CheckAsync(CancellationToken ct)
     {
         List<(Guid Id, string Slug)> tenants;
+        IReadOnlyDictionary<Guid, IReadOnlyList<Application.Reports.DailySummaryRecipient>> owners;
         await using (var scope = scopes.CreateAsyncScope())
-            tenants = (await scope.ServiceProvider.GetRequiredService<PlatformDbContext>().Tenants.AsNoTracking()
-                .Select(t => new { t.Id, t.Slug }).ToListAsync(ct)).Select(t => (t.Id, t.Slug)).ToList();
+        {
+            var platform = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
+            tenants = (await platform.Tenants.AsNoTracking().Select(t => new { t.Id, t.Slug }).ToListAsync(ct)).Select(t => (t.Id, t.Slug)).ToList();
+            owners = await Reports.StoreOwners.LoadAsync(platform, ct);
+        }
 
         var now = clock.GetUtcNow();
         var reminders = new List<(Guid TenantId, int DaysLeft)>();
@@ -62,6 +68,9 @@ public sealed partial class CertificateExpiryMonitor(IServiceScopeFactory scopes
                 if (at <= now) LogExpired(logger, slug, tenantId, at);
                 else LogExpiring(logger, slug, tenantId, days, at);
                 reminders.Add((tenantId, days));
+                if (owners.TryGetValue(tenantId, out var recipients))
+                    await scope.ServiceProvider.GetRequiredService<IMessageBus>().PublishAsync(new SendCertificateReminder(at, days, recipients),
+                        new DeliveryOptions { TenantId = tenantId.ToString() });
             }
             catch (Exception e) when (e is DbUpdateException or Npgsql.NpgsqlException or InvalidOperationException)
             {

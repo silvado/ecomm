@@ -75,5 +75,5 @@ Texto recusado, ou IA fora do ar, dá lugar a uma explicação fixa. A IA nunca 
 - **Lembrete diário:** um canal sem autorização gera um lembrete por dia enquanto não for reconectado.
 - **Pendente:**
   - WhatsApp (Q12);
-  - aviso do certificado A1 por e-mail (RF06), que pode entrar como novo tipo de problema;
+  - ~~aviso do certificado A1 por e-mail (RF06)~~: feito à parte, no monitor do certificado, porque precisa sair nos dias fixos (30, 15, 5, 0, −1) e mesmo com o guardião desligado;
   - alertas da plataforma para a equipe (hoje, log crítico).
