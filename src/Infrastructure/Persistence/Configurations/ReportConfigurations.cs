@@ -15,6 +15,17 @@ internal sealed class DailySummaryConfiguration : IEntityTypeConfiguration<Daily
     }
 }
 
+/// <summary>Avisos do certificado A1 enviados (RF06 CA5): um por certificado (validade) e dia de aviso.</summary>
+internal sealed class CertificateReminderConfiguration : IEntityTypeConfiguration<Domain.Vault.CertificateReminder>
+{
+    public void Configure(EntityTypeBuilder<Domain.Vault.CertificateReminder> builder)
+    {
+        builder.HasKey(r => r.Id);
+        builder.Property(r => r.Id).ValueGeneratedNever();
+        builder.HasIndex(r => new { r.TenantId, r.CertificateExpiresAt, r.DaysLeft }).IsUnique();
+    }
+}
+
 /// <summary>Alertas do guardião enviados (RF33): consultados pelos das últimas 24 horas, para não avisar o mesmo problema em dobro.</summary>
 internal sealed class SyncAlertConfiguration : IEntityTypeConfiguration<SyncAlert>
 {

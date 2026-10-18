@@ -2502,6 +2502,42 @@ namespace Ecommerce.Infrastructure.Persistence.Migrations
                     b.ToTable("store_brandings", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Vault.CertificateReminder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CertificateExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("certificate_expires_at");
+
+                    b.Property<int>("DaysLeft")
+                        .HasColumnType("integer")
+                        .HasColumnName("days_left");
+
+                    b.Property<int>("Recipients")
+                        .HasColumnType("integer")
+                        .HasColumnName("recipients");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_certificate_reminders");
+
+                    b.HasIndex("TenantId", "CertificateExpiresAt", "DaysLeft")
+                        .IsUnique()
+                        .HasDatabaseName("ix_certificate_reminders_tenant_id_certificate_expires_at_days");
+
+                    b.ToTable("certificate_reminders", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Vault.TenantDataKey", b =>
                 {
                     b.Property<Guid>("TenantId")

@@ -41,7 +41,7 @@ O CA3 pede que rode em segundo plano, com progresso visível.
 | Ativo | peça **ativa** + vínculo `Active` |
 | Pausado | peça ativa + vínculo `PausedByUser` (o sistema não reativa) |
 | Encerrado, em revisão, sem preço, com variações | não entra; o motivo vai para o relatório |
-| Código igual ao de peça ativa da loja | **HIPÓTESE:** ligado a ela; a peça não muda e vale o estoque da loja |
+| Código igual ao de peça ativa da loja | ligado a ela; a peça não muda e vale o estoque da loja (confirmado pelo usuário em 18/10/2026) |
 | Código igual ao de peça inativa ou já anunciada nesta conta | não entra, com o motivo |
 | Sem foto acessível | peça em **rascunho**, sem vínculo |
 

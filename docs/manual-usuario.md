@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 18/10/2026 (importação dos anúncios do Mercado Livre).
+> Última atualização: 18/10/2026 (aviso do certificado digital por e-mail).
 
 ## Sumário
 
@@ -656,6 +656,7 @@ Chaves e certificados ficam guardados **cifrados**. Depois de salvos, nunca apar
 **Aviso de vencimento**
 - A partir de **30 dias** antes do vencimento, o Dono vê uma faixa no topo do painel, em qualquer página, com a data e o atalho para o Cofre.
 - O aviso fica mais forte aos **15** e aos **5 dias** e depois de vencido.
+- Os Donos também recebem um **e-mail** 30, 15 e 5 dias antes, no dia em que vence e no dia seguinte, com a data e o que fazer. Cada aviso sai uma vez. Este e-mail não pode ser desligado: sem certificado válido, a NF-e pela plataforma para.
 - A equipe da plataforma também é avisada nesses dias.
 
 **O que está guardado:** lista de tudo o que a loja guardou no cofre, com o tipo, o item, os últimos 4 caracteres (quando é uma chave de texto), a validade e a data da última atualização. As chaves dos gateways e a senha do e-mail continuam sendo cadastradas em **Pagamentos** e em **Dados da loja**.
@@ -882,7 +883,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 18/10/2026 | Resumo diário por e-mail aos Donos (RF34): seção Resumo diário em 4.6 Dados da loja (horário, desligar, prévia) e perfis. |
 | 18/10/2026 | Perguntas de compradores do Mercado Livre com sugestão da IA (RF31): nova seção 4.5.2 (responder, novo rascunho, resposta automática das simples), perfis e textos de 4.6.1. Perguntas entram na exportação completa (4.9). |
 | 18/10/2026 | Guardião da sincronização (RF33): diagnóstico com o que fazer e alerta por e-mail aos Donos em 4.5.1 Integrações; perfis. |
-| 18/10/2026 | Importação dos anúncios que a loja já tem no Mercado Livre (RF11): passo a passo em 4.6.1 Canais de venda; perfis; 
+Ainda
 | 18/10/2026 | Catálogo do Instagram e Facebook (RF22): conectar com id e token, endereço do feed e atualização na hora (4.6.1). Preço mudado na peça agora vai na hora para os canais. |
 | 17/10/2026 | Envio e entrega das vendas do Mercado Livre e avisos perdidos (RF21, parte 6), em 4.4. |
 | 17/10/2026 | Vendas do Mercado Livre em Pedidos (RF21, parte 5): origem Mercado Livre, baixa do estoque, conflito de estoque em análise e cancelamento vindo do ML (4.4). |
