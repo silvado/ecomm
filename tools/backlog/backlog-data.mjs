@@ -389,7 +389,7 @@ export const epics = [
             title: 'Resumo diário e guardião da sincronização',
             rf: 'RF33, RF34',
             ac: 'Resumo diário no horário do tenant com números de consultas determinísticas; diagnóstico de falhas com ação sugerida enviado por e-mail.',
-            t: [['Resumo diário', 12, 'done'], ['Guardião da sincronização', 12]],
+            t: [['Resumo diário', 12, 'done'], ['Guardião da sincronização', 12, 'done']],
           },
         ],
       },

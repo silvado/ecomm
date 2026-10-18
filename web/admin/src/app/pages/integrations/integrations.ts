@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { problemTitle } from '../../core/auth';
 import { CHANNEL_LABELS, IntegrationLogFilter, IntegrationLogPage, IntegrationsApi, MessageFailure } from './integrations.api';
+import { SyncGuardianSection } from './sync-guardian';
 
 const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'medium' });
 
@@ -12,7 +13,7 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
  */
 @Component({
   selector: 'app-integrations',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, SyncGuardianSection],
   template: `
     <main class="card wide">
       <h1>Integrações</h1>
@@ -20,6 +21,8 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
         Chamadas da loja a serviços externos (gateway de pagamento, frete). Quando um serviço fica fora do ar, o sistema tenta de novo
         sozinho por cerca de 40 minutos; se não der certo, a falha aparece aqui para você mandar reprocessar depois que o serviço voltar.
       </p>
+
+      <app-sync-guardian />
 
       <h2>Falhas pendentes</h2>
       @if (failuresError()) {

@@ -104,6 +104,11 @@ public sealed class StoreSettings : ITenantOwned
         DailySummaryHour = hour;
     }
 
+    /// <summary>RF33: alerta por e-mail aos Donos quando a sincronização falha. HIPÓTESE: ligado por padrão.</summary>
+    public bool SyncAlertsEnabled { get; private set; } = true;
+
+    public void SetSyncAlerts(bool enabled) => SyncAlertsEnabled = enabled;
+
     public void SetReservationMinutes(int minutes)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(minutes, 5);

@@ -194,6 +194,7 @@ public static class DependencyInjection
         services.AddScoped<Application.Channels.IChannelQueries, Channels.ChannelService>();
         services.AddScoped<Application.Channels.IBuyerQuestions, Channels.Questions.BuyerQuestionService>();
         services.AddScoped<Application.Reports.IDailySummaries, Reports.DailySummaryService>();
+        services.AddScoped<Application.Reports.ISyncGuardian, Reports.SyncGuardianService>();
         services.AddScoped<Channels.ChannelService>();
         services.AddSingleton<Channels.ChannelSyncMetrics>();
         services.Configure<Channels.ReconciliationOptions>(configuration.GetSection(Channels.ReconciliationOptions.Section));

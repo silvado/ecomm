@@ -57,4 +57,4 @@ O e-mail tem um botão "Abrir o painel" quando `Platform:PanelUrl` está configu
   - WhatsApp (Q12);
   - escolher quem recebe (hoje, todos os Donos);
   - comparar com dias anteriores (sempre por consulta, nunca pela IA);
-  - guardião da sincronização (RF33), que usará o mesmo agendador e e-mail.
+  - ~~guardião da sincronização (RF33)~~: feito no [ADR-0013](0013-guardiao-da-sincronizacao.md), com o mesmo agendamento e envio.

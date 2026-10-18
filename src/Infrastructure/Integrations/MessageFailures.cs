@@ -42,6 +42,10 @@ public static partial class MessageFailures
         [typeof(Application.Inventory.StockChanged)] = "Avisar os canais da mudança de estoque",
         [typeof(Application.Fiscal.SendInvoice)] = "Enviar NF-e ao provedor fiscal",
         [typeof(Application.Fiscal.CheckInvoice)] = "Consultar a NF-e no provedor fiscal",
+        [typeof(Application.Reports.PrepareDailySummary)] = "Montar o resumo diário",
+        [typeof(Application.Reports.SendDailySummaryEmail)] = "Enviar o resumo diário ao Dono",
+        [typeof(Application.Reports.CheckSyncHealth)] = "Conferir a sincronização da loja",
+        [typeof(Application.Reports.SendSyncAlertEmail)] = Reports.SyncGuardianQuery.OwnEmailDescription,
     };
 
     public static string Describe(object? message) =>
