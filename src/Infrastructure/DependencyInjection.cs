@@ -145,6 +145,14 @@ public static class DependencyInjection
         services.AddScoped<Application.Channels.IMercadoLivrePublishing, Channels.MercadoLivre.MercadoLivrePublishingService>();
         services.AddScoped<Application.Channels.IMercadoLivreCompatibilities, Channels.MercadoLivre.MercadoLivreCompatibilityService>();
         services.AddSingleton<Channels.MercadoLivre.MercadoLivreMissedFeedsJob>();
+        // Catálogo da Meta (RF22): Graph API real ou simulada.
+        services.Configure<Channels.Meta.MetaOptions>(configuration.GetSection(Channels.Meta.MetaOptions.Section));
+        var meta = services.AddHttpClient<Channels.Meta.MetaCatalogClient>(http => http.Timeout = TimeSpan.FromSeconds(30));
+        if (configuration.GetValue<bool>($"{Channels.Meta.MetaOptions.Section}:UseFake"))
+            meta.ConfigurePrimaryHttpMessageHandler(() => new Channels.Meta.FakeMetaGraphApi());
+        services.AddScoped<Channels.Meta.MetaCatalogService>();
+        services.AddScoped<Application.Channels.IMetaCatalogConnections>(sp => sp.GetRequiredService<Channels.Meta.MetaCatalogService>());
+        services.AddScoped<Application.Channels.IMetaCatalogFeed>(sp => sp.GetRequiredService<Channels.Meta.MetaCatalogService>());
         services.AddScoped<Application.Channels.IChannelConnections, Channels.MercadoLivre.ChannelConnectionService>();
         // RNF04: registro de acesso a dados pessoais e anonimização do comprador.
         services.AddScoped<Application.Privacy.PanelActor>();

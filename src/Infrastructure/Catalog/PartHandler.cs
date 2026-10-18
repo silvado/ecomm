@@ -56,6 +56,7 @@ public static class PartHandler
         if (part is null) return (PartCommandResult.Fail(PartCommandOutcome.NotFound), outgoing);
 
         var now = clock.GetUtcNow();
+        var oldPrice = part.Price;
         try { part.Update(command.Details, now); }
         catch (ArgumentException e) { return (Invalid(Message(e)), outgoing); }
 
@@ -82,8 +83,9 @@ public static class PartHandler
         {
             db.StockMovements.Add(new StockMovement(part.TenantId, part.Id, delta, StockMovementReason.Adjustment,
                 "edicao", reservationId: null, now, command.UserId));
-            outgoing.Add(new StockChanged(part.Id, rows[0].Available));
         }
+        // Os canais leem saldo e preço atuais a cada StockChanged: preço mudado também precisa avisar (RF24; Meta RF22 CA2).
+        if (delta != 0 || part.Price != oldPrice) outgoing.Add(new StockChanged(part.Id, rows[0].Available));
         return (PartCommandResult.Ok(part.Id), outgoing);
     }
 

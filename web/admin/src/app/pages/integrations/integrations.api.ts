@@ -59,6 +59,7 @@ export const CHANNEL_LABELS: Record<string, string> = {
   cielo: 'Cielo',
   'melhor-envio': 'Melhor Envio',
   'mercado-livre': 'Mercado Livre',
+  meta: 'Instagram/Facebook',
   fake: 'Simulado (desenvolvimento)',
 };
 

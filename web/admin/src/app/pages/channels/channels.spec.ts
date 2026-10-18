@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { ChannelReturnPage } from './channel-return';
-import { ChannelConnection, ChannelsOverview } from './channels.api';
+import { ChannelConnection, ChannelsOverview, MetaCatalogView } from './channels.api';
 import { ChannelsPage, ExternalNavigation } from './channels';
 
 describe('ChannelsPage (RF21)', () => {
@@ -18,7 +18,7 @@ describe('ChannelsPage (RF21)', () => {
     updatedAt: null,
   };
 
-  function setup(overview: ChannelsOverview) {
+  function setup(overview: ChannelsOverview, meta: MetaCatalogView | null = null) {
     const go = vi.fn();
     TestBed.configureTestingModule({
       imports: [ChannelsPage],
@@ -28,12 +28,21 @@ describe('ChannelsPage (RF21)', () => {
     fixture.detectChanges();
     const backend = TestBed.inject(HttpTestingController);
     backend.expectOne('/api/painel/canais').flush(overview);
+    flushMeta(backend, meta);
     return { fixture, el: fixture.nativeElement as HTMLElement, backend, go };
   }
 
+  function flushMeta(backend: HttpTestingController, meta: MetaCatalogView | null) {
+    const request = backend.expectOne('/api/painel/canais/meta');
+    if (meta) request.flush(meta);
+    else request.flush(null, { status: 204, statusText: 'No Content' });
+  }
+
   async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
-    await fixture.whenStable();
-    fixture.detectChanges();
+    for (let i = 0; i < 3; i++) {
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
   }
 
   it('sem conta, conectar leva à página de autorização do Mercado Livre', async () => {
@@ -73,8 +82,32 @@ describe('ChannelsPage (RF21)', () => {
     Array.from(el.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent!.includes('Desconectar'))!.click();
     backend.expectOne({ method: 'DELETE', url: '/api/painel/canais/c1' }).flush(null);
     await vi.waitFor(() => backend.expectOne('/api/painel/canais').flush({ mercadoLivreAvailable: true, mercadoLivreInPlan: true, connections: [] }));
+    flushMeta(backend, null);
     await settle(fixture);
     expect(el.textContent).toContain('Nenhuma conta conectada.');
+  });
+
+  it('catálogo da Meta: conectar com id e token e mostrar o endereço do feed (RF22)', async () => {
+    const { fixture, el, backend } = setup({ mercadoLivreAvailable: true, mercadoLivreInPlan: true, connections: [] });
+    await settle(fixture);
+    const [catalog, token] = Array.from(el.querySelectorAll<HTMLInputElement>('[data-channel=meta] input'));
+    catalog.value = '123456789012';
+    catalog.dispatchEvent(new Event('input'));
+    token.value = 'EAAG-token';
+    token.dispatchEvent(new Event('input'));
+    await settle(fixture);
+    el.querySelector<HTMLButtonElement>('[data-connect-meta]')!.click();
+
+    const request = backend.expectOne({ method: 'POST', url: '/api/painel/canais/meta/conectar' });
+    expect(request.request.body).toEqual({ catalogId: '123456789012', accessToken: 'EAAG-token' });
+    const view: MetaCatalogView = { connectionId: 'm1', catalogId: '123456789012', catalogName: 'Catálogo da loja', feedUrl: 'https://api.x/api/catalogo/t/abc.csv' };
+    request.flush(view);
+    await vi.waitFor(() => backend.expectOne('/api/painel/canais').flush({ mercadoLivreAvailable: true, mercadoLivreInPlan: true, connections: [] }));
+    flushMeta(backend, view);
+    await settle(fixture);
+
+    expect(el.querySelector('[data-channel=meta]')!.textContent).toContain('Catálogo da loja');
+    expect(el.querySelector<HTMLInputElement>('[data-feed-url]')!.value).toBe('https://api.x/api/catalogo/t/abc.csv');
   });
 
   it('instalação sem o app ou plano sem o canal explica o motivo', async () => {

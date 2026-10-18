@@ -161,6 +161,14 @@ store.MapGet("/fotos/{photoId:guid}/{size:int}", async Task<Results<FileStreamHt
     response.Headers.CacheControl = "public, max-age=31536000, immutable";
     return PanelEndpoints.UploadedImage(response, photo);
 });
+// Foto em JPEG para o catálogo da Meta (RF22: não aceita WebP). Mesma foto, mesmo id: cache longo.
+store.MapGet("/fotos/{photoId:guid}/catalogo.jpg", async Task<Results<FileContentHttpResult, NotFound>> (
+    Guid photoId, IStoreCatalog catalog, HttpResponse response, CancellationToken ct) =>
+{
+    if (await catalog.GetChannelImageAsync(photoId, ct) is not { } jpeg) return TypedResults.NotFound();
+    response.Headers.CacheControl = "public, max-age=31536000, immutable";
+    return TypedResults.File(jpeg, "image/jpeg");
+});
 // Carrinho (RF14): o navegador manda só peça e quantidade; preço, estoque e frete vêm sempre daqui.
 store.MapPost("/carrinho", async (CartRequest request, IStorefrontCart cart, CancellationToken ct) =>
     TypedResults.Ok(await cart.CheckAsync(request.Items ?? [], ct)));
@@ -209,6 +217,16 @@ if (app.Configuration.GetValue<bool>("Payments:UseFakeGateway"))
 
 app.MapSubscriptionWebhook();
 app.MapMercadoLivreWebhook();
+// Feed do catálogo da Meta (RF22 CA1): público, num endereço com o segredo da loja (cadastrado no Commerce Manager).
+app.MapGet("/api/catalogo/{tenantId:guid}/{token}.csv", async Task<Results<ContentHttpResult, NotFound>> (
+    Guid tenantId, string token, Ecommerce.Infrastructure.Tenancy.TenantScope scope, Ecommerce.Application.Channels.IMetaCatalogFeed feed,
+    HttpResponse response, CancellationToken ct) =>
+{
+    scope.Set(tenantId);
+    if (await feed.CsvAsync(tenantId, token, ct) is not { } csv) return TypedResults.NotFound();
+    response.Headers.CacheControl = "no-store";
+    return TypedResults.Content(csv, "text/csv; charset=utf-8");
+}).RequireRateLimiting("webhook").ExcludeFromDescription();
 if (app.Configuration.GetValue<bool>("Billing:UseFakeGateway"))
 {
     // Cobrança simulada da assinatura (RF38): quita faturas sem dinheiro algum. Jamais em produção.
@@ -229,6 +247,9 @@ if (app.Configuration.GetValue<bool>("MercadoLivre:UseFake"))
     if (app.Environment.IsProduction()) throw new InvalidOperationException("MercadoLivre:UseFake não pode ser usado em produção.");
     app.MapFakeMercadoLivreAuthorization();
 }
+
+if (app.Environment.IsProduction() && app.Configuration.GetValue<bool>("Meta:UseFake"))
+    throw new InvalidOperationException("Meta:UseFake não pode ser usado em produção.");
 
 if (app.Configuration.GetValue<bool>("Dns:UseFake"))
 {

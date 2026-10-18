@@ -6,6 +6,9 @@ namespace Ecommerce.Domain.Channels;
 public static class SalesChannel
 {
     public const string MercadoLivre = "mercado-livre";
+
+    /// <summary>Catálogo da Meta (Instagram e Facebook — RF22).</summary>
+    public const string Meta = "meta";
 }
 
 public enum ChannelConnectionStatus
@@ -67,7 +70,8 @@ public sealed class ChannelConnection : ITenantOwned
         Status = Enum.IsDefined(status) ? status : throw new ArgumentOutOfRangeException(nameof(status));
 
     /// <summary>A loja autorizou (ou autorizou de novo) a conta: volta a sincronizar.</summary>
-    public void Authorized(string? accountName, DateTimeOffset tokenExpiresAt, DateTimeOffset now)
+    /// <param name="tokenExpiresAt">Nulo para canal cujo acesso não vence (token de usuário do sistema da Meta).</param>
+    public void Authorized(string? accountName, DateTimeOffset? tokenExpiresAt, DateTimeOffset now)
     {
         AccountName = Cut(accountName?.Trim(), AccountNameMaxLength);
         TokenExpiresAt = tokenExpiresAt;

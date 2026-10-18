@@ -255,7 +255,7 @@ export const epics = [
             title: 'Catálogo Meta por tenant',
             rf: 'RF22, RF24',
             ac: 'Feed por tenant em URL com token; disponibilidade e preço atualizados em segundos pela Catalog Batch API; produto leva à página da peça na loja.',
-            t: [['Feed de catálogo', 8], ['Atualizações pela Catalog Batch API', 10], ['Conexão e configuração do catálogo', 6]],
+            t: [['Feed de catálogo', 8, 'done'], ['Atualizações pela Catalog Batch API', 10, 'done'], ['Conexão e configuração do catálogo', 6, 'done']],
           },
         ],
       },

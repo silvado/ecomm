@@ -27,6 +27,9 @@ public static partial class ChannelSyncHandler
                                     && (l.Status == ListingStatus.Active || l.Status == ListingStatus.PausedBySystem || l.Status == ListingStatus.Error)
                               select l.Id).ToListAsync(ct);
         foreach (var id in listings) outgoing.Add(new SyncListing(id, envelope.SentAt));
+        // Catálogo da Meta (RF22 CA2): o item segue o estoque sem anúncio por peça (o feed já tem todas).
+        if (await db.ChannelConnections.AnyAsync(c => c.Channel == SalesChannel.Meta && c.Status == ChannelConnectionStatus.Active, ct))
+            outgoing.Add(new SyncMetaCatalogItem(@event.PartId));
         return outgoing;
     }
 

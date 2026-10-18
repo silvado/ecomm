@@ -28,7 +28,7 @@ export const STEP_INFO: Record<OnboardingStep, { title: string; hint: string; li
   fiscal: { title: 'Nota fiscal', hint: 'Em Dados da loja → Nota fiscal: escolha como a loja emite (pode ser "não emite pela plataforma").', link: '/loja' },
   shipping: { title: 'Frete', hint: 'Em Dados da loja → Entrega e retirada: CEP de origem ou retirada no balcão.', link: '/loja' },
   mercadoLivre: { title: 'Mercado Livre', hint: 'Em Canais de venda: conecte a conta principal da loja no Mercado Livre.', link: '/canais' },
-  instagram: { title: 'Instagram', hint: 'A conexão com o catálogo chega numa próxima versão.', link: null },
+  instagram: { title: 'Instagram', hint: 'Em Canais de venda: conecte o catálogo da Meta e cadastre o endereço do feed.', link: '/canais' },
   olx: { title: 'OLX', hint: 'A conexão chega numa próxima versão.', link: null },
 };
 
