@@ -46,6 +46,7 @@ describe('Integrações (RF28/RF29)', () => {
     const backend = TestBed.inject(HttpTestingController);
     backend.expectOne((r) => r.url === '/api/painel/integracoes/falhas' && r.params.get('pendentes') === 'true').flush([failure]);
     backend.expectOne((r) => r.url === '/api/painel/integracoes/log').flush(page);
+    backend.expectOne('/api/painel/integracoes/diagnostico').flush([]);
     await settle(fixture);
     const element = fixture.nativeElement as HTMLElement;
 
@@ -70,6 +71,7 @@ describe('Integrações (RF28/RF29)', () => {
     const backend = TestBed.inject(HttpTestingController);
     backend.expectOne((r) => r.url === '/api/painel/integracoes/falhas').flush([]);
     backend.expectOne((r) => r.url === '/api/painel/integracoes/log').flush(page);
+    backend.expectOne('/api/painel/integracoes/diagnostico').flush([]);
     await settle(fixture);
 
     const status = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>('select[aria-label="Situação"]')!;

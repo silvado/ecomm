@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 18/10/2026 (resumo diário).
+> Última atualização: 18/10/2026 (guardião da sincronização).
 
 ## Sumário
 
@@ -68,6 +68,8 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Receber e configurar o resumo diário por e-mail | ✔ | — |
 | Venda de balcão | ✔ | ✔ |
 | Integrações (log e reprocessar falhas) | ✔ | ✔ |
+| Ver o diagnóstico do guardião da sincronização | ✔ | ✔ |
+| Receber e desligar o alerta do guardião por e-mail | ✔ | — |
 | Perguntas de compradores (ver, responder, novo rascunho da IA) | ✔ | ✔ |
 | Ligar a resposta automática das perguntas simples | ✔ | — |
 | Primeiros passos e publicar a loja | ✔ | — |
@@ -400,6 +402,15 @@ Use para registrar a peça vendida no balcão da loja. A venda baixa o estoque n
 **Acesso:** menu **Integrações** (Dono e Operador). O detalhe de cada **pedido** e de cada **peça** também mostra as chamadas ligadas a ele, na seção "Integrações".
 
 A loja conversa com serviços externos: gateway de pagamento (Mercado Pago ou Cielo), frete e, depois, canais de venda. Esta tela mostra cada uma dessas conversas e o que deu errado.
+
+**Guardião da sincronização**
+- No alto da tela, o guardião mostra o que está falhando **agora**, em linguagem simples, com **O que fazer**. Ele confere três coisas:
+  - canal de venda que perdeu a autorização (por exemplo, o Mercado Livre pedindo para conectar a conta de novo);
+  - falha pendente das últimas 24 horas;
+  - chamada a um serviço que falhou 3 vezes ou mais nas últimas 2 horas e ainda não voltou a dar certo (uma falha isolada não conta: o sistema tenta de novo sozinho).
+- A sugestão de **O que fazer** segue regras fixas: conectar a conta de novo em **Canais de venda**, corrigir um dado da peça, clicar em **Reprocessar** quando o serviço voltar, esperar o serviço fora do ar ou falar com o suporte.
+- **Alerta por e-mail** (só o Dono liga ou desliga): a cada 15 minutos o guardião confere a loja e, se aparecer problema novo, os Donos recebem um e-mail com cada problema, o erro e o que fazer. O mesmo problema só é avisado de novo **depois de 24 horas**, se continuar. Vem **desligado**; para ligar, marque **Avisar os Donos por e-mail quando a sincronização falhar**. Desligado, o diagnóstico continua aparecendo nesta tela.
+- No e-mail, a IA explica o erro em palavras simples. Se a explicação citar um número que não está no erro, trouxer link ou e-mail, ou se a IA estiver fora do ar, vale um texto padrão. A IA nunca decide o que fazer nem mexe na loja.
 
 **Falhas pendentes**
 - Quando um serviço fica fora do ar, o sistema **tenta de novo sozinho**: depois de 10 s, 30 s, 2 min, 10 min e 30 min.
@@ -814,10 +825,10 @@ Itens previstos que **ainda não estão no sistema**:
 - Compatibilidade com veículos e fotos pela planilha de importação; atualização em massa de peças já cadastradas.
 - Importação dos anúncios existentes do Mercado Livre.
 - Envio automático da rastreabilidade ao banco de dados do Detran; rastreabilidade pela planilha de importação.
-- Alerta de falha de integração por e-mail (hoje o alerta é a faixa no painel).
+- Alerta de falha de integração por WhatsApp (hoje, faixa no painel e e-mail aos Donos pelo guardião — 4.5.1).
 - Remetente da plataforma em produção (provedor ainda a escolher). Em teste, os e-mails ficam numa caixa interna e não chegam ao comprador.
 - NF-e de devolução e estorno automático do reembolso.
-- Automações de IA: atendimento pelas mensagens do Instagram, preço sugerido e alertas de falha de sincronização (as perguntas do Mercado Livre já têm sugestão da IA — 4.5.2 — e o resumo diário já sai por e-mail — 4.6). Resumo diário por WhatsApp. Em teste, a IA de perguntas é simulada: sugere sempre a mesma resposta de disponibilidade e, de propósito, responde errado às perguntas com "serve", para mostrar a trava de compatibilidade. No cadastro por foto, a categoria e os atributos do Mercado Livre virão com a integração do Mercado Livre. Em teste, a IA é simulada e sempre sugere o mesmo farol de exemplo.
+- Automações de IA: atendimento pelas mensagens do Instagram, preço sugerido (as perguntas do Mercado Livre já têm sugestão da IA — 4.5.2 —, o resumo diário já sai por e-mail — 4.6 — e o guardião da sincronização já avisa por e-mail — 4.5.1). Resumo diário por WhatsApp. Em teste, a IA de perguntas é simulada: sugere sempre a mesma resposta de disponibilidade e, de propósito, responde errado às perguntas com "serve", para mostrar a trava de compatibilidade. No cadastro por foto, a categoria e os atributos do Mercado Livre virão com a integração do Mercado Livre. Em teste, a IA é simulada e sempre sugere o mesmo farol de exemplo.
 - Configuração do prazo de pagamento pelo painel (hoje, 30 minutos).
 - Assinatura: pagamento real pelo painel (o gateway da plataforma ainda será escolhido; em teste, a página de pagamento é simulada) e aviso da fatura por e-mail (hoje o aviso é a faixa no painel).
 - Primeiros passos: ver a loja virtual antes de publicar e "despublicar" a loja pelo painel.
@@ -851,6 +862,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
 | 18/10/2026 | Resumo diário por e-mail aos Donos (RF34): seção Resumo diário em 4.6 Dados da loja (horário, desligar, prévia) e perfis. |
 | 18/10/2026 | Perguntas de compradores do Mercado Livre com sugestão da IA (RF31): nova seção 4.5.2 (responder, novo rascunho, resposta automática das simples), perfis e textos de 4.6.1. Perguntas entram na exportação completa (4.9). |
+| 18/10/2026 | Guardião da sincronização (RF33): diagnóstico com o que fazer e alerta por e-mail aos Donos em 4.5.1 Integrações; perfis. |
 | 18/10/2026 | Catálogo do Instagram e Facebook (RF22): conectar com id e token, endereço do feed e atualização na hora (4.6.1). Preço mudado na peça agora vai na hora para os canais. |
 | 17/10/2026 | Envio e entrega das vendas do Mercado Livre e avisos perdidos (RF21, parte 6), em 4.4. |
 | 17/10/2026 | Vendas do Mercado Livre em Pedidos (RF21, parte 5): origem Mercado Livre, baixa do estoque, conflito de estoque em análise e cancelamento vindo do ML (4.4). |

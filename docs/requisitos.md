@@ -285,7 +285,17 @@ Todos os conectores implementam `IChannelConnector`: `Publish`, `UpdatePriceAndQ
 
 ### RF33 — Guardião da sincronização · E5
 - CA1: analisa falhas recentes do log de integração e gera diagnóstico em linguagem simples com ação sugerida.
+  - Feito (18/10/2026 — [ADR-0013](adr/0013-guardiao-da-sincronizacao.md)): os problemas saem de consultas, em três tipos:
+    - canal que perdeu a autorização;
+    - falha em segundo plano pendente das últimas 24 horas (RF28);
+    - a mesma chamada externa com 3 ou mais falhas nas últimas 2 horas, sem acerto depois (RF29).
+  - A ação sugerida vem de regras fixas: reconectar, corrigir a peça, reprocessar, aguardar o serviço ou falar com o suporte.
+  - A IA só explica o erro em linguagem simples. O texto é recusado se passar de 300 caracteres, trouxer link ou e-mail, ou citar número que não esteja no problema; nesse caso vale um texto fixo.
+  - O diagnóstico aparece em **Integrações** (Dono e Operador), sem IA.
 - CA2: envia alerta por e-mail; WhatsApp quando houver provedor definido (Q12).
+  - Feito (18/10/2026): e-mail aos Donos da loja, conferido a cada 15 minutos. O mesmo problema só é avisado de novo depois de 24 horas, se continuar.
+  - Desligado por padrão, inclusive nas lojas existentes (decisão do usuário, 18/10/2026); o Dono liga em Integrações. Só lojas publicadas e não suspensas.
+  - WhatsApp segue pendente (Q12).
 
 ### RF34 — Resumo diário · E5
 - CA1: enviado em horário configurável (padrão 07:00 America/Sao_Paulo) com vendas por canal (ontem), peças sem venda há > 90 dias e perguntas pendentes.

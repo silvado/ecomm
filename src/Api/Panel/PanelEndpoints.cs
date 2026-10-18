@@ -43,6 +43,7 @@ public static class PanelEndpoints
         panel.MapChannelEndpoints(app.ServiceProvider.GetRequiredService<IConfiguration>());
         panel.MapQuestionEndpoints();
         panel.MapDailySummaryEndpoints();
+        panel.MapSyncGuardianEndpoints();
         panel.MapGroup("").RequirePermission(Permission.CatalogManage).MapVehicleCatalog();
 
         var users = panel.MapGroup("/usuarios").RequirePermission(Permission.UsersManage);

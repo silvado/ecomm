@@ -29,6 +29,7 @@ builder.Services.AddHostedService<Ecommerce.Infrastructure.Platform.DomainVerifi
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Billing.SubscriptionBillingJob>();
 // RF34: resumo diário por e-mail aos Donos (confere a cada 15 min; cada loja no seu horário, uma vez por dia).
 builder.Services.AddHostedService<Ecommerce.Infrastructure.Reports.DailySummaryScheduler>();
+builder.Services.AddHostedService<Ecommerce.Infrastructure.Reports.SyncGuardianScheduler>();
 
 var host = builder.Build();
 host.Run();
