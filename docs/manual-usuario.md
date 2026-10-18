@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 18/10/2026 (aviso do certificado digital por e-mail).
+> Última atualização: 18/10/2026 (veículos compatíveis na importação de anúncios do Mercado Livre).
 
 ## Sumário
 
@@ -184,6 +184,7 @@ Ao cadastrar, a peça nasce como **rascunho**, as fotos escolhidas viram as **fo
 - Com os anos em branco, vale a versão inteira.
 - Peça sem veículo informado **não aparece na busca por veículo** da loja.
 - O selo **IA** marca os veículos que vieram do cadastro por foto e que você manteve.
+- O selo **ML** marca os veículos que vieram do anúncio importado do Mercado Livre (veja 4.6.1).
 
 **Publicar ou retirar da loja**
 - **Ativar** publica a peça (precisa de ao menos uma foto).
@@ -582,7 +583,7 @@ Se o Mercado Livre recusar a renovação (por exemplo, a senha da conta foi troc
 Se a loja já vendia no Mercado Livre antes da plataforma, traga os anúncios de lá como peças, sem cadastrar uma a uma:
 1. Com a conta conectada, clique em **Importar anúncios** (logo abaixo da conta).
 2. A importação roda em segundo plano, e a tela mostra o progresso. Pode sair da tela: ao voltar, aparece o resultado da última importação.
-3. No fim, a tela mostra quantas peças novas entraram, quantas foram ligadas a peças que você já tinha e quantos anúncios não entraram, com o motivo de cada um.
+3. No fim, a tela mostra quantas peças novas entraram, quantas foram ligadas a peças que você já tinha, quantos veículos compatíveis vieram e quantos anúncios não entraram, com o motivo de cada um.
 
 Como cada anúncio entra:
 - Entram os anúncios **ativos** e **pausados**. Encerrados e em revisão ficam de fora.
@@ -592,6 +593,9 @@ Como cada anúncio entra:
 - Anúncio **pausado** lá continua pausado. O sistema não reativa sozinho; para voltar a vender, clique em **Retomar** na peça.
 - Anúncio com **variações** (lado, cor) não entra. Cadastre cada variação como uma peça.
 - Se as fotos não puderem ser trazidas, a peça entra como **rascunho**, sem ligar ao anúncio. Envie uma foto, ative a peça e importe de novo para ligar.
+- Os **veículos compatíveis** do anúncio entram na **Compatibilidade** da peça nova, com o selo **ML**. Só entram os que existem na tabela de veículos e cuja versão dá para saber com certeza (marca, modelo, ano e motor). Os outros aparecem no relatório pelo nome: inclua à mão, se servirem.
+- Os veículos que o próprio Mercado Livre colocou no anúncio (pelo catálogo dele) não vêm, porque o Mercado Livre não informa quais são. O relatório mostra quantos são; confira a compatibilidade da peça.
+- Peça que você já tinha e que foi ligada ao anúncio **não recebe** veículos do anúncio.
 - Medidas e peso da embalagem não vêm do anúncio: preencha na peça antes de vender com frete calculado na loja virtual.
 - **Importar de novo não duplica.** Anúncios já ligados são pulados; só entram os novos.
 - O limite é de **5.000 anúncios** por importação.
@@ -843,7 +847,7 @@ Itens previstos que **ainda não estão no sistema**:
 - NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
 - Frete real (Melhor Envio): hoje o frete é simulado.
 - Compatibilidade com veículos e fotos pela planilha de importação; atualização em massa de peças já cadastradas.
-- Importação de anúncios do Mercado Livre com variações, e das compatibilidades com veículos que já estão nos anúncios (hoje, cadastre na peça).
+- Importação de anúncios do Mercado Livre com variações; veículos do anúncio para peças que você já tinha (hoje, cadastre na peça).
 - Envio automático da rastreabilidade ao banco de dados do Detran; rastreabilidade pela planilha de importação.
 - Alerta de falha de integração por WhatsApp (hoje, faixa no painel e e-mail aos Donos pelo guardião — 4.5.1).
 - Remetente da plataforma em produção (provedor ainda a escolher). Em teste, os e-mails ficam numa caixa interna e não chegam ao comprador.
@@ -882,6 +886,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
 | 18/10/2026 | Resumo diário por e-mail aos Donos (RF34): seção Resumo diário em 4.6 Dados da loja (horário, desligar, prévia) e perfis. |
 | 18/10/2026 | Perguntas de compradores do Mercado Livre com sugestão da IA (RF31): nova seção 4.5.2 (responder, novo rascunho, resposta automática das simples), perfis e textos de 4.6.1. Perguntas entram na exportação completa (4.9). |
+| 18/10/2026 | Importação de anúncios do Mercado Livre traz os veículos compatíveis para as peças novas, com o selo ML (4.3 e 4.6.1). |
 | 18/10/2026 | Guardião da sincronização (RF33): diagnóstico com o que fazer e alerta por e-mail aos Donos em 4.5.1 Integrações; perfis. |
 Ainda
 | 18/10/2026 | Catálogo do Instagram e Facebook (RF22): conectar com id e token, endereço do feed e atualização na hora (4.6.1). Preço mudado na peça agora vai na hora para os canais. |

@@ -74,6 +74,10 @@ public sealed class ChannelImport : ITenantOwned
     public int LinkedCount { get; private set; }
     public int AlreadyLinkedCount { get; private set; }
     public int RejectedCount { get; private set; }
+
+    /// <summary>Compatibilidades com veículos trazidas dos anúncios para as peças novas.</summary>
+    public int CompatibilitiesCount { get; private set; }
+
     public List<ChannelImportIssue> Issues { get; private set; } = [];
     public string? FailureReason { get; private set; }
 
@@ -114,11 +118,13 @@ public sealed class ChannelImport : ITenantOwned
         Status == ChannelImportStatus.Processing ? ExternalIds.Skip(ProcessedItems).Take(size).ToList() : [];
 
     /// <summary>Resultado de um lote, gravado na mesma transação das peças.</summary>
-    public void RecordBatch(IReadOnlyList<(ChannelImportItemOutcome Outcome, ChannelImportIssue? Issue)> results, DateTimeOffset now)
+    public void RecordBatch(IReadOnlyList<(ChannelImportItemOutcome Outcome, ChannelImportIssue? Issue)> results, DateTimeOffset now, int compatibilities = 0)
     {
         ArgumentNullException.ThrowIfNull(results);
         if (Status != ChannelImportStatus.Processing) throw new InvalidOperationException("A importação não está em andamento.");
         if (results.Count == 0 || ProcessedItems + results.Count > ExternalIds.Count) throw new ArgumentException("Lote inconsistente.", nameof(results));
+        ArgumentOutOfRangeException.ThrowIfNegative(compatibilities);
+        CompatibilitiesCount += compatibilities;
         foreach (var (outcome, issue) in results)
         {
             switch (outcome)

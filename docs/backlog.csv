@@ -105,7 +105,7 @@ Product Backlog Item,,,Implantação na VPS e backup,,"Requisitos: RNF05, RNF07,
 Task,,,,Compose de produção e Caddyfile,,,E1,,8
 Task,,,,Backup diário do PostgreSQL e do storage,,,E1,,8
 Task,,,,Runbook de implantação e restauração,,,E1,,4
-Epic,E2 — Canais (mês 4),,,,Mercado Livre e Instagram (catálogo Meta) sincronizados com o estoque único.,,E2,142,
+Epic,E2 — Canais (mês 4),,,,Mercado Livre e Instagram (catálogo Meta) sincronizados com o estoque único.,,E2,148,
 Feature,,Conector de canais comum,,,,,E2,34,
 Product Backlog Item,,,IChannelConnector e propagação de estoque,,"Requisitos: RF25, RF24","Interface comum (publicar, atualizar, pausar, retomar, eventos, estado remoto); handler de StockChanged atualiza todos os canais ativos; peça zerada pausa anúncios em ≤ 60 s; reativa só o que o sistema pausou.",E2; RF25; RF24,22,
 Task,,,,"Interface, fake e testes de contrato genéricos",,,E2,,8
@@ -113,7 +113,7 @@ Task,,,,Handler de propagação por canal,,,E2,,8
 Task,,,,Regras de pausa/reativação e métrica de latência,,,E2,,6
 Product Backlog Item,,,Reconciliação horária,,Requisitos: RF27,"Job horário compara quantidade, preço e status dos anúncios com o estoque local, corrige divergências e registra no log, respeitando limites de taxa.",E2; RF27,12,
 Task,,,,Job de reconciliação por tenant e canal,,,E2,,12
-Feature,,Mercado Livre,,,,,E2,84,
+Feature,,Mercado Livre,,,,,E2,90,
 Product Backlog Item,,,Conexão OAuth do vendedor,,Requisitos: RF21,Um app para todos os tenants; autorização OAuth por tenant; tokens no cofre; renovação automática; falha marca conexão para reautorizar e alerta.,E2; RF21,12,
 Task,,,,Fluxo OAuth e armazenamento de tokens,,,E2,,8
 Task,,,,Renovação automática e alertas,,,E2,,4
@@ -125,8 +125,9 @@ Task,,,,Envio de compatibilidades,,,E2,,12
 Task,,,,"Atualização, pausa e reativação",,,E2,,6
 Product Backlog Item,,,Pedidos do Mercado Livre no painel,,"Requisitos: RF17, RF21","Venda no ML cria pedido unificado, baixa o estoque atomicamente e propaga; venda sem saldo vira conflito de estoque com alerta.",E2; RF17; RF21,12,
 Task,,,,Processamento de orders_v2 e pagamentos,,,E2,,12
-Product Backlog Item,,,Importação dos anúncios existentes,,Requisitos: RF11,Lista anúncios do vendedor e cria peças vinculadas sem duplicar em reimportação.,E2; RF11,12,
+Product Backlog Item,,,Importação dos anúncios existentes,,Requisitos: RF11,Lista anúncios do vendedor e cria peças vinculadas sem duplicar em reimportação.,E2; RF11,18,
 Task,,,,Importação de anúncios com vínculo,,,E2,,12
+Task,,,,Compatibilidades dos anúncios importados,,,E2,,6
 Product Backlog Item,,,Recebimento de perguntas,,Requisitos: RF31,Perguntas do ML aparecem no painel vinculadas à peça e podem ser respondidas manualmente.,E2; RF31,6,
 Task,,,,Ingestão e resposta manual de perguntas,,,E2,,6
 Feature,,Instagram / catálogo Meta,,,,,E2,24,

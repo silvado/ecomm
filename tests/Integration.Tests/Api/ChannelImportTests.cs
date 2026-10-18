@@ -29,7 +29,7 @@ public sealed class ChannelImportTests(ApiFactory api) : IClassFixture<ApiFactor
     private sealed record IdDto(Guid Id);
     private sealed record IssueDto(string ExternalId, string Message);
     private sealed record ImportDto(Guid Id, string Status, int TotalItems, int ProcessedItems, int CreatedCount, int LinkedCount, int AlreadyLinkedCount,
-        int RejectedCount, List<IssueDto> Issues, string? FailureReason);
+        int RejectedCount, int CompatibilitiesCount, List<IssueDto> Issues, string? FailureReason);
 
     private sealed record Shop(Guid TenantId, string Owner, string Seller);
 
@@ -132,6 +132,42 @@ public sealed class ChannelImportTests(ApiFactory api) : IClassFixture<ApiFactor
         var again = await RunAsync(shop);
         Assert.Equal((5, 0, 0, 3, 2), (again.TotalItems, again.CreatedCount, again.LinkedCount, again.AlreadyLinkedCount, again.RejectedCount));
         Assert.Equal(3, await InTenantAsync(shop.TenantId, db => db.ChannelListings.CountAsync()));
+    }
+
+    [Fact]
+    public async Task Veiculos_do_anuncio_que_casam_com_a_tabela_viram_compatibilidades_da_peca()
+    {
+        Assert.True((await api.ImportVehiclesAsync("""
+            marca;modelo;motorizacao;ano_inicial;ano_final
+            Volkswagen;Gol;1.0 8V Flex (G5);2009;2012
+            Volkswagen;Gol;1.6 8V Flex (G5);2009;2012
+            Ford;Ka;1.0 Ti-VCT Flex;2015;2021
+            """)).Succeeded);
+        var shop = await ShopAsync();
+        var item = FakeMercadoLivreApi.Seed(shop.Seller, "Farol dianteiro Gol", 300m, 1, vehicles:
+        [
+            ("Volkswagen", "Gol", 2010, "1.6 8V"), ("Volkswagen", "Gol", 2011, "1.6 8V"),
+            ("Ford", "Ka", 2016, null),
+            ("Volkswagen", "Gol", 2010, null), // duas versões do Gol em 2010: sem motor, não dá para saber qual
+            ("Fiat", "Uno", 2012, "1.0 Fire"), // fora da tabela
+            ("", "", 0, null), // produto sem marca, modelo e ano
+        ], catalogVehicles: 4);
+
+        var import = await RunAsync(shop);
+        Assert.Equal(("completed", 1, 2), (import.Status, import.CreatedCount, import.CompatibilitiesCount));
+        var note = Assert.Single(import.Issues, i => i.ExternalId == item).Message;
+        Assert.Contains("Volkswagen Gol 2010, Fiat Uno 2012 1.0 Fire", note, StringComparison.Ordinal);
+        Assert.Contains("1 veículo do anúncio não pôde ser lido", note, StringComparison.Ordinal);
+        Assert.Contains("4 veículos do anúncio vêm do catálogo do Mercado Livre", note, StringComparison.Ordinal);
+
+        var saved = await InTenantAsync(shop.TenantId, db => (from c in db.PartCompatibilities
+                                                              join p in db.Parts on c.PartId equals p.Id
+                                                              join v in db.VehicleVersions on c.VehicleVersionId equals v.Id
+                                                              where p.InternalCode == item
+                                                              orderby v.Engine
+                                                              select new { v.Engine, c.YearFrom, c.YearTo, c.Source }).ToListAsync());
+        Assert.Equal([("1.0 Ti-VCT Flex", (int?)2016, (int?)2016, CompatibilitySource.MlImport), ("1.6 8V Flex (G5)", 2010, 2011, CompatibilitySource.MlImport)],
+            saved.Select(s => (s.Engine, s.YearFrom, s.YearTo, s.Source)).ToList());
     }
 
     [Fact]

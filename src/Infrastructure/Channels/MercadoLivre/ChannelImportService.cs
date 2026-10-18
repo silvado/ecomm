@@ -15,5 +15,5 @@ public sealed class ChannelImportService(TenantDbContext db) : IChannelImports
         (await db.ChannelImports.AsNoTracking().OrderByDescending(i => i.CreatedAt).Take(Math.Clamp(count, 1, 20)).ToListAsync(ct)).Select(View).ToList();
 
     private static ChannelImportView View(ChannelImport i) => new(i.Id, i.Status, i.CreatedAt, i.FinishedAt, i.TotalItems, i.Truncated, i.ProcessedItems,
-        i.CreatedCount, i.LinkedCount, i.AlreadyLinkedCount, i.RejectedCount, i.Issues, i.FailureReason);
+        i.CreatedCount, i.LinkedCount, i.AlreadyLinkedCount, i.RejectedCount, i.CompatibilitiesCount, i.Issues, i.FailureReason);
 }

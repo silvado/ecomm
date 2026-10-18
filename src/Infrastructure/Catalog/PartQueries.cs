@@ -55,7 +55,7 @@ public sealed class PartQueries(TenantDbContext db) : IPartQueries
                                      orderby b.Name, m.Name, v.YearFrom, v.Engine
                                      select new CompatibilityView(c.Id, v.Id, b.Name, m.Name, v.Engine,
                                          c.YearFrom ?? v.YearFrom, c.YearFrom != null ? c.YearTo : v.YearTo, c.YearFrom != null, v.Discontinued,
-                                         c.Source == CompatibilitySource.AiSuggested))
+                                         c.Source == CompatibilitySource.AiSuggested, c.Source == CompatibilitySource.MlImport))
             .AsNoTracking().ToListAsync(ct);
         return new PartView(part.Id, part.InternalCode, part.Title, part.Description, part.Condition, part.Price,
             part.LengthCm, part.WidthCm, part.HeightCm, part.WeightG, part.OemCodes.Select(c => c.Code).Order().ToList(),

@@ -28,6 +28,8 @@ export interface CompatibilityView {
   discontinued: boolean;
   /** Veio do cadastro por foto (RF30). */
   suggestedByAi?: boolean;
+  /** Veio do anúncio importado do Mercado Livre (RF11). */
+  fromMercadoLivre?: boolean;
 }
 
 /** "2009–2012" ou "2020–atual". */
