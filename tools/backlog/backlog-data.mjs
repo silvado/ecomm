@@ -406,7 +406,7 @@ export const epics = [
             title: 'Usabilidade do painel (testes de navegação do dono do produto)',
             rf: '—',
             ac: 'Menu lateral em grupos (gaveta no celular), área do usuário no topo, campos alinhados e retorno visível de cada ação (overlay e toast), no painel da loja e no da plataforma.',
-            t: [['Menu lateral, área do usuário e alinhamento dos campos', 8, 'done'], ['Overlay e toast nas ações', 6]],
+            t: [['Menu lateral, área do usuário e alinhamento dos campos', 8, 'done'], ['Overlay e toast nas ações', 6, 'done']],
           },
         ],
       },

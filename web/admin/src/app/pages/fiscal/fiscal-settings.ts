@@ -75,9 +75,6 @@ import { FiscalApi, FiscalSettings, UF } from './fiscal.api';
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
-      @if (saved()) {
-        <p class="ok" role="status">Nota fiscal salva.</p>
-      }
       <div class="order-actions">
         <button type="button" (click)="save()" [disabled]="busy()" data-save-fiscal>Salvar nota fiscal</button>
       </div>
@@ -96,7 +93,6 @@ export class FiscalSettingsSection implements OnInit {
   protected readonly cnpj = signal<string | null>(null);
   protected readonly connected = signal(false);
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
@@ -109,7 +105,6 @@ export class FiscalSettingsSection implements OnInit {
 
   protected async save(): Promise<void> {
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       const blank = (v: string | null) => (v?.trim() ? v.trim() : null);
@@ -122,7 +117,6 @@ export class FiscalSettingsSection implements OnInit {
           defaultTaxCode: blank(this.s.defaultTaxCode),
         }),
       );
-      this.saved.set(true);
     } catch (error) {
       this.error.set(problemTitle(error));
     } finally {

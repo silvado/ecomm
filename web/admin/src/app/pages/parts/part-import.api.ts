@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { feedback } from '../../core/feedback';
 
 export type PartImportStatus = 'validated' | 'processing' | 'completed';
 
@@ -34,11 +35,11 @@ export class PartImportApi {
 
   /** Corpo = bytes do arquivo; a API reconhece XLSX ou CSV pelo conteúdo. */
   preview(file: File): Promise<PartImportView> {
-    return firstValueFrom(this.http.post<PartImportView>(this.base, file, { params: new HttpParams().set('arquivo', file.name) }));
+    return firstValueFrom(this.http.post<PartImportView>(this.base, file, { params: new HttpParams().set('arquivo', file.name), context: feedback(null) }));
   }
 
   confirm(id: string): Promise<PartImportView> {
-    return firstValueFrom(this.http.post<PartImportView>(`${this.base}/${id}/confirmar`, {}));
+    return firstValueFrom(this.http.post<PartImportView>(`${this.base}/${id}/confirmar`, {}, { context: feedback('Importação iniciada.') }));
   }
 
   get(id: string): Promise<PartImportView> {

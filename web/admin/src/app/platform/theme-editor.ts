@@ -75,9 +75,6 @@ export function previewDocument(preview: ThemePreview, sampleHtml = ''): string 
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
-      @if (message()) {
-        <p class="ok" role="status">{{ message() }}</p>
-      }
       @if (removed().length) {
         <div class="notice" data-removed>
           <p>A limpeza removeu:</p>
@@ -150,7 +147,6 @@ export class PlatformThemePage implements OnInit {
   protected readonly theme = signal<PlatformTheme | null>(null);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly message = signal<string | null>(null);
   protected readonly removed = signal<string[]>([]);
   protected readonly previewHtml = signal<SafeHtml | null>(null);
   protected readonly editing = signal<string | null>(null);
@@ -187,7 +183,6 @@ export class PlatformThemePage implements OnInit {
       const saved = await this.api.saveTheme(this.id(), this.draft);
       this.show(saved.theme);
       this.removed.set(saved.removed);
-      this.message.set('Tema salvo. A loja virtual mostra a nova versão em até 1 minuto.');
     });
 
   protected savePage = () =>
@@ -198,7 +193,6 @@ export class PlatformThemePage implements OnInit {
       this.removed.set(saved.removed);
       const stored = saved.theme.pages.find((p) => p.slug === this.page.endereco.trim().toLowerCase());
       if (stored) this.edit(stored);
-      this.message.set('Página salva.');
     });
 
   protected deletePage = () =>
@@ -207,7 +201,6 @@ export class PlatformThemePage implements OnInit {
       if (!editing) return;
       this.show((await this.api.deletePage(this.id(), editing)).theme);
       this.newPage();
-      this.message.set('Página removida.');
     });
 
   protected edit(page: ThemePageItem): void {
@@ -235,7 +228,6 @@ export class PlatformThemePage implements OnInit {
   private async run(action: () => Promise<void>): Promise<void> {
     this.busy.set(true);
     this.error.set(null);
-    this.message.set(null);
     try {
       await action();
     } catch (error) {

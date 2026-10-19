@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { problemTitle } from '../../core/auth';
+import { FeedbackService } from '../../core/feedback';
 import { GatewayName, GatewaySettings, PaymentsApi } from './payments.api';
 
 /** Mesmos limites da API: só o formato é conferido aqui; a chave errada aparece no primeiro pagamento. */
@@ -85,9 +86,6 @@ const GATEWAYS: Gateway[] = [
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
-      @if (notice()) {
-        <p class="notice" role="status">{{ notice() }}</p>
-      }
 
       @if (loaded()) {
         @for (g of gateways; track g.name) {
@@ -144,13 +142,13 @@ const GATEWAYS: Gateway[] = [
 export class PaymentsPage implements OnInit {
   private readonly api = inject(PaymentsApi);
   private readonly fb = inject(FormBuilder).nonNullable;
+  private readonly toast = inject(FeedbackService);
 
   protected readonly gateways = GATEWAYS;
   protected readonly list = signal<GatewaySettings[]>([]);
   protected readonly loaded = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly notice = signal<string | null>(null);
   protected readonly forms = Object.fromEntries(
     GATEWAYS.map((g) => [
       g.name,
@@ -189,7 +187,7 @@ export class PaymentsPage implements OnInit {
       this.list.set(await this.api.save(gateway.name, values));
       // As chaves não ficam no formulário depois de salvas.
       form.reset();
-      this.notice.set(`${gateway.title} conectado. Os próximos pedidos já podem ser pagos pela loja.`);
+      this.toast.success(`${gateway.title} conectado. Os próximos pedidos já podem ser pagos pela loja.`);
     });
   }
 
@@ -199,14 +197,13 @@ export class PaymentsPage implements OnInit {
     }
     return this.run(async () => {
       this.list.set(await this.api.remove(gateway.name));
-      this.notice.set(`${gateway.title} desconectado.`);
+      this.toast.success(`${gateway.title} desconectado.`);
     });
   }
 
   private async run(action: () => Promise<void>): Promise<void> {
     this.busy.set(true);
     this.error.set(null);
-    this.notice.set(null);
     try {
       await action();
     } catch (error) {

@@ -1,6 +1,7 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { feedback } from '../../core/feedback';
 
 export type SecretKind = 'paymentGatewayCredential' | 'a1Certificate' | 'a1CertificatePassword' | 'oAuthToken' | 'apiKey';
 
@@ -44,11 +45,11 @@ export class VaultApi {
   }
 
   saveCertificate(pfxBase64: string, password: string): Promise<CertificateView> {
-    return firstValueFrom(this.http.put<CertificateView>('/api/painel/cofre/certificado', { pfxBase64, password }));
+    return firstValueFrom(this.http.put<CertificateView>('/api/painel/cofre/certificado', { pfxBase64, password }, { context: feedback('Certificado guardado.') }));
   }
 
   removeCertificate(): Promise<unknown> {
-    return firstValueFrom(this.http.delete('/api/painel/cofre/certificado'));
+    return firstValueFrom(this.http.delete('/api/painel/cofre/certificado', { context: feedback('Certificado removido.') }));
   }
 
   async alert(): Promise<CertificateAlert | null> {

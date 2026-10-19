@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PartView } from '../parts/parts.api';
+import { feedback } from '../../core/feedback';
 
 export type FiscalMode = 'disabled' | 'provider' | 'external';
 export type FiscalEnvironment = 'homologation' | 'production';
@@ -86,11 +87,11 @@ export class FiscalApi {
   }
 
   saveSettings(settings: FiscalSettings): Promise<FiscalSettingsView> {
-    return firstValueFrom(this.http.put<FiscalSettingsView>('/api/painel/loja/fiscal', settings));
+    return firstValueFrom(this.http.put<FiscalSettingsView>('/api/painel/loja/fiscal', settings, { context: feedback('Nota fiscal salva.') }));
   }
 
   setPartFiscal(partId: string, fiscal: PartFiscal): Promise<PartView> {
-    return firstValueFrom(this.http.put<PartView>(`/api/painel/pecas/${partId}/fiscal`, fiscal));
+    return firstValueFrom(this.http.put<PartView>(`/api/painel/pecas/${partId}/fiscal`, fiscal, { context: feedback('Dados fiscais salvos.') }));
   }
 
   draft(orderId: string): Promise<InvoiceDraft> {
@@ -98,15 +99,15 @@ export class FiscalApi {
   }
 
   emit(orderId: string, recipient: FiscalRecipient): Promise<InvoiceDraft> {
-    return firstValueFrom(this.http.post<InvoiceDraft>(`/api/painel/pedidos/${orderId}/nfe`, { recipient }));
+    return firstValueFrom(this.http.post<InvoiceDraft>(`/api/painel/pedidos/${orderId}/nfe`, { recipient }, { context: feedback('NF-e pedida. Acompanhe a situação no pedido.') }));
   }
 
   registerExternal(orderId: string, accessKey: string | null, xmlBase64: string | null): Promise<InvoiceDraft> {
-    return firstValueFrom(this.http.post<InvoiceDraft>(`/api/painel/pedidos/${orderId}/nfe/externa`, { accessKey, xmlBase64 }));
+    return firstValueFrom(this.http.post<InvoiceDraft>(`/api/painel/pedidos/${orderId}/nfe/externa`, { accessKey, xmlBase64 }, { context: feedback('NF-e emitida fora registrada.') }));
   }
 
   cancel(orderId: string, documentId: string, justification: string): Promise<InvoiceDraft> {
-    return firstValueFrom(this.http.post<InvoiceDraft>(`/api/painel/pedidos/${orderId}/nfe/${documentId}/cancelar`, { justification }));
+    return firstValueFrom(this.http.post<InvoiceDraft>(`/api/painel/pedidos/${orderId}/nfe/${documentId}/cancelar`, { justification }, { context: feedback('Cancelamento da NF-e pedido.') }));
   }
 
   /** Arquivo pelo HttpClient (o token vai no cabeçalho); o navegador salva com o nome da nota. */

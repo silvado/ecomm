@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { LegalTextsSection } from './legal-texts';
+import { FEEDBACK } from '../../core/feedback';
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
   await fixture.whenStable();
@@ -34,6 +35,6 @@ describe('LegalTextsSection', () => {
     save.flush({ privacyPolicy: 'Modelo de política', terms: 'Termos.', defaultPrivacyPolicy: 'Modelo de política', defaultTerms: 'Modelo de termos' });
     await settle(fixture);
 
-    expect(element.querySelector('[role=status]')!.textContent).toContain('Textos salvos');
+    expect(save.request.context.get(FEEDBACK)).toEqual({ success: 'Textos salvos. A loja mostra a nova versão em até 1 minuto.' });
   });
 });

@@ -4,6 +4,7 @@ import { Component, inject, Injectable, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { problemTitle } from '../../core/auth';
+import { feedback } from '../../core/feedback';
 
 export type DomainKind = 'customWww' | 'customApex';
 export type DomainStatus = 'pending' | 'verified' | 'failed';
@@ -46,15 +47,15 @@ export class DomainSettingsApi {
   }
 
   add(dominio: string): Promise<CustomDomains> {
-    return firstValueFrom(this.http.post<CustomDomains>(this.base, { dominio }));
+    return firstValueFrom(this.http.post<CustomDomains>(this.base, { dominio }, { context: feedback('Domínio adicionado.') }));
   }
 
   remove(id: string): Promise<CustomDomains> {
-    return firstValueFrom(this.http.delete<CustomDomains>(`${this.base}/${id}`));
+    return firstValueFrom(this.http.delete<CustomDomains>(`${this.base}/${id}`, { context: feedback('Domínio removido.') }));
   }
 
   verify(id: string): Promise<CustomDomains> {
-    return firstValueFrom(this.http.post<CustomDomains>(`${this.base}/${id}/verificar`, {}));
+    return firstValueFrom(this.http.post<CustomDomains>(`${this.base}/${id}/verificar`, {}, { context: feedback(null) }));
   }
 }
 

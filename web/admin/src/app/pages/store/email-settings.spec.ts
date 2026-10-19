@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { EmailSettingsSection, StoreEmailSettings } from './email-settings';
+import { FEEDBACK } from '../../core/feedback';
 
 const initial: StoreEmailSettings = {
   contactEmail: null,
@@ -51,7 +52,7 @@ describe('EmailSettingsSection', () => {
     expect(save.request.body).toEqual({ contactEmail: 'contato@loja.test', useOwnSmtp: false, smtp: null, password: null });
     save.flush({ ...initial, contactEmail: 'contato@loja.test' });
     await settle(fixture);
-    expect(element.querySelector('[role=status]')!.textContent).toContain('salvo');
+    expect(save.request.context.get(FEEDBACK)).toEqual({ success: 'E-mail de envio salvo.' });
     backend.verify();
   });
 

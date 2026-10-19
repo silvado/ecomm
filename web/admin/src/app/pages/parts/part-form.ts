@@ -246,9 +246,6 @@ const AI_FIELDS: AiField[] = ['title', 'description', 'condition', 'oemCodes'];
         @if (error()) {
           <p class="error" role="alert">{{ error() }}</p>
         }
-        @if (saved()) {
-          <p class="ok" role="status">Salvo.</p>
-        }
         <button type="submit" [disabled]="form.invalid || busy()">{{ part() ? 'Salvar' : 'Cadastrar' }}</button>
       </form>
     </main>
@@ -268,7 +265,6 @@ export class PartFormPage implements OnInit {
   protected readonly statusLabels = STATUS_LABELS;
   protected readonly part = signal<PartView | null>(null);
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = inject(FormBuilder).group({
@@ -404,13 +400,11 @@ export class PartFormPage implements OnInit {
   async save(): Promise<void> {
     if (this.form.invalid) return;
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       const current = this.part();
       if (current) {
         this.fill(await this.api.update(current.id, this.request()));
-        this.saved.set(true);
       } else {
         const created = await this.api.create(this.request());
         const notice = await this.completeNewPart(created.id);

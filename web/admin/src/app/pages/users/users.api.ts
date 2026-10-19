@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Role } from '../../core/auth';
+import { feedback } from '../../core/feedback';
 
 export interface StoreUser {
   userId: string;
@@ -22,18 +23,18 @@ export class UsersApi {
   }
 
   add(email: string, role: Role, temporaryPassword: string): Promise<StoreUser> {
-    return firstValueFrom(this.http.post<StoreUser>(this.base, { email, role, temporaryPassword }));
+    return firstValueFrom(this.http.post<StoreUser>(this.base, { email, role, temporaryPassword }, { context: feedback('Usuário criado.') }));
   }
 
   changeRole(userId: string, role: Role): Promise<void> {
-    return firstValueFrom(this.http.put<void>(`${this.base}/${userId}`, { role }));
+    return firstValueFrom(this.http.put<void>(`${this.base}/${userId}`, { role }, { context: feedback('Perfil alterado.') }));
   }
 
   remove(userId: string): Promise<void> {
-    return firstValueFrom(this.http.delete<void>(`${this.base}/${userId}`));
+    return firstValueFrom(this.http.delete<void>(`${this.base}/${userId}`, { context: feedback('Usuário removido.') }));
   }
 
   unlock(userId: string): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.base}/${userId}/desbloquear`, null));
+    return firstValueFrom(this.http.post<void>(`${this.base}/${userId}/desbloquear`, null, { context: feedback('Usuário desbloqueado.') }));
   }
 }

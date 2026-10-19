@@ -3,6 +3,7 @@ import { Component, effect, inject, input, OnInit, signal, untracked } from '@an
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { problemTitle } from '../core/auth';
+import { FeedbackService } from '../core/feedback';
 import { AUDIT_LABELS, AuditItem, FEATURE_LABELS, LIMIT_LABELS, PlatformApi, PlatformPlan } from './platform.api';
 
 /**
@@ -18,9 +19,6 @@ import { AUDIT_LABELS, AuditItem, FEATURE_LABELS, LIMIT_LABELS, PlatformApi, Pla
       <p class="muted">Os limites e recursos de cada plano mudam só por atualização do sistema. A mensalidade vale para as faturas geradas depois da mudança; zero = sem cobrança.</p>
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
-      }
-      @if (saved()) {
-        <p class="ok" role="status">{{ saved() }}</p>
       }
       <table>
         <thead><tr><th>Plano</th><th>Mensalidade (R$)</th><th>Limites</th><th>Recursos</th><th class="num">Lojas</th></tr></thead>
@@ -58,7 +56,7 @@ export class PlatformPlansPage implements OnInit {
   protected readonly featureLabels = FEATURE_LABELS;
   protected readonly plans = signal<PlatformPlan[]>([]);
   protected readonly error = signal<string | null>(null);
-  protected readonly saved = signal<string | null>(null);
+  private readonly toast = inject(FeedbackService);
   protected readonly busy = signal(false);
   protected prices: Record<string, number> = {};
 
@@ -73,10 +71,9 @@ export class PlatformPlansPage implements OnInit {
   protected async savePrice(plan: PlatformPlan): Promise<void> {
     this.busy.set(true);
     this.error.set(null);
-    this.saved.set(null);
     try {
       this.show(await this.api.setPlanPrice(plan.code, Number(this.prices[plan.code] ?? 0)));
-      this.saved.set(`Mensalidade do plano ${plan.name} salva.`);
+      this.toast.success(`Mensalidade do plano ${plan.name} salva.`);
     } catch (error) {
       this.error.set(problemTitle(error));
     } finally {

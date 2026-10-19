@@ -3,6 +3,7 @@ import { Component, inject, Injectable, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { problemTitle } from '../../core/auth';
+import { feedback } from '../../core/feedback';
 
 export interface DailySummarySettings {
   enabled: boolean;
@@ -30,7 +31,7 @@ export class DailySummaryApi {
   }
 
   save(ativo: boolean, hora: number): Promise<DailySummarySettings> {
-    return firstValueFrom(this.http.put<DailySummarySettings>(this.base, { ativo, hora }));
+    return firstValueFrom(this.http.put<DailySummarySettings>(this.base, { ativo, hora }, { context: feedback('Resumo diário salvo.') }));
   }
 
   preview(): Promise<DailySummaryPreview> {
@@ -68,9 +69,6 @@ export class DailySummaryApi {
         <button type="button" (click)="save()" [disabled]="busy()" data-save>Salvar</button>
         <button type="button" class="link" (click)="loadPreview()" [disabled]="busy()" data-preview>Ver os números de ontem</button>
       </div>
-      @if (saved()) {
-        <p class="ok" role="status">Resumo diário salvo.</p>
-      }
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
@@ -93,7 +91,6 @@ export class DailySummarySettingsSection implements OnInit {
 
   protected readonly hours = Array.from({ length: 24 }, (_, i) => i);
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly preview = signal<DailySummaryPreview | null>(null);
   protected enabled = true;
@@ -117,7 +114,6 @@ export class DailySummarySettingsSection implements OnInit {
       const settings = await this.api.save(this.enabled, this.hour);
       this.enabled = settings.enabled;
       this.hour = settings.hour;
-      this.saved.set(true);
     });
   }
 
@@ -127,7 +123,6 @@ export class DailySummarySettingsSection implements OnInit {
 
   private async run(action: () => Promise<void>): Promise<void> {
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       await action();

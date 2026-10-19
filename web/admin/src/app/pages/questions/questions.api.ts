@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { feedback } from '../../core/feedback';
 
 export type QuestionStatus = 'pending' | 'answered' | 'closed';
 export type QuestionKind = 'simple' | 'complex';
@@ -41,11 +42,11 @@ export class QuestionsApi {
   }
 
   answer(id: string, texto: string): Promise<BuyerQuestion> {
-    return firstValueFrom(this.http.post<BuyerQuestion>(`${this.base}/${id}/responder`, { texto }));
+    return firstValueFrom(this.http.post<BuyerQuestion>(`${this.base}/${id}/responder`, { texto }, { context: feedback('Resposta enviada.') }));
   }
 
   redraft(id: string): Promise<BuyerQuestion> {
-    return firstValueFrom(this.http.post<BuyerQuestion>(`${this.base}/${id}/rascunho`, {}));
+    return firstValueFrom(this.http.post<BuyerQuestion>(`${this.base}/${id}/rascunho`, {}, { context: feedback(null) }));
   }
 
   async settings(): Promise<boolean> {
@@ -53,6 +54,6 @@ export class QuestionsApi {
   }
 
   async setAutoAnswer(automatica: boolean): Promise<boolean> {
-    return (await firstValueFrom(this.http.put<{ autoAnswer: boolean }>(`${this.base}/configuracao`, { automatica }))).autoAnswer;
+    return (await firstValueFrom(this.http.put<{ autoAnswer: boolean }>(`${this.base}/configuracao`, { automatica }, { context: feedback('Configuração salva.') }))).autoAnswer;
   }
 }

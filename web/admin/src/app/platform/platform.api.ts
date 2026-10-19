@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { SubscriptionInvoice } from '../shared/invoice';
+import { feedback, silent } from '../core/feedback';
 
 export type TenantStatus = 'Onboarding' | 'Active' | 'ReadOnly' | 'Suspended' | 'Closing' | 'Closed';
 
@@ -205,23 +206,23 @@ export class PlatformApi {
   }
 
   create(tenant: NewTenant): Promise<CreatedTenant> {
-    return firstValueFrom(this.http.post<CreatedTenant>(`${this.base}/lojas`, tenant));
+    return firstValueFrom(this.http.post<CreatedTenant>(`${this.base}/lojas`, tenant, { context: feedback('Loja criada.') }));
   }
 
   changePlan(id: string, plano: string): Promise<PlatformTenantDetail> {
-    return firstValueFrom(this.http.put<PlatformTenantDetail>(`${this.base}/lojas/${id}/plano`, { plano }));
+    return firstValueFrom(this.http.put<PlatformTenantDetail>(`${this.base}/lojas/${id}/plano`, { plano }, { context: feedback('Plano alterado.') }));
   }
 
   suspend(id: string): Promise<PlatformTenantDetail> {
-    return firstValueFrom(this.http.post<PlatformTenantDetail>(`${this.base}/lojas/${id}/suspender`, null));
+    return firstValueFrom(this.http.post<PlatformTenantDetail>(`${this.base}/lojas/${id}/suspender`, null, { context: feedback('Loja suspensa.') }));
   }
 
   reactivate(id: string): Promise<PlatformTenantDetail> {
-    return firstValueFrom(this.http.post<PlatformTenantDetail>(`${this.base}/lojas/${id}/reativar`, null));
+    return firstValueFrom(this.http.post<PlatformTenantDetail>(`${this.base}/lojas/${id}/reativar`, null, { context: feedback('Loja reativada.') }));
   }
 
   setCustomStorefront(id: string, ligada: boolean): Promise<PlatformTenantDetail> {
-    return firstValueFrom(this.http.put<PlatformTenantDetail>(`${this.base}/lojas/${id}/loja-personalizada`, { ligada }));
+    return firstValueFrom(this.http.put<PlatformTenantDetail>(`${this.base}/lojas/${id}/loja-personalizada`, { ligada }, { context: feedback(ligada ? 'Loja personalizada ligada.' : 'Loja personalizada desligada.') }));
   }
 
   theme(id: string): Promise<PlatformTheme> {
@@ -229,23 +230,23 @@ export class PlatformApi {
   }
 
   previewTheme(id: string, draft: ThemeDraft): Promise<ThemePreview> {
-    return firstValueFrom(this.http.post<ThemePreview>(`${this.base}/lojas/${id}/tema/previa`, draft));
+    return firstValueFrom(this.http.post<ThemePreview>(`${this.base}/lojas/${id}/tema/previa`, draft, { context: silent() }));
   }
 
   saveTheme(id: string, draft: ThemeDraft): Promise<ThemeSaved> {
-    return firstValueFrom(this.http.put<ThemeSaved>(`${this.base}/lojas/${id}/tema`, draft));
+    return firstValueFrom(this.http.put<ThemeSaved>(`${this.base}/lojas/${id}/tema`, draft, { context: feedback('Tema salvo. A loja virtual mostra a nova versão em até 1 minuto.') }));
   }
 
   createPage(id: string, draft: PageDraft): Promise<ThemeSaved> {
-    return firstValueFrom(this.http.post<ThemeSaved>(`${this.base}/lojas/${id}/paginas`, draft));
+    return firstValueFrom(this.http.post<ThemeSaved>(`${this.base}/lojas/${id}/paginas`, draft, { context: feedback('Página criada.') }));
   }
 
   updatePage(id: string, pageId: string, draft: PageDraft): Promise<ThemeSaved> {
-    return firstValueFrom(this.http.put<ThemeSaved>(`${this.base}/lojas/${id}/paginas/${pageId}`, draft));
+    return firstValueFrom(this.http.put<ThemeSaved>(`${this.base}/lojas/${id}/paginas/${pageId}`, draft, { context: feedback('Página salva.') }));
   }
 
   deletePage(id: string, pageId: string): Promise<ThemeSaved> {
-    return firstValueFrom(this.http.delete<ThemeSaved>(`${this.base}/lojas/${id}/paginas/${pageId}`));
+    return firstValueFrom(this.http.delete<ThemeSaved>(`${this.base}/lojas/${id}/paginas/${pageId}`, { context: feedback('Página removida.') }));
   }
 
   plans(): Promise<PlatformPlan[]> {
@@ -253,7 +254,7 @@ export class PlatformApi {
   }
 
   setPlanPrice(code: string, valor: number): Promise<PlatformPlan[]> {
-    return firstValueFrom(this.http.put<PlatformPlan[]>(`${this.base}/planos/${code}/preco`, { valor }));
+    return firstValueFrom(this.http.put<PlatformPlan[]>(`${this.base}/planos/${code}/preco`, { valor }, { context: feedback(null) }));
   }
 
   billing(id: string): Promise<PlatformBilling> {
@@ -261,15 +262,15 @@ export class PlatformApi {
   }
 
   addSetupFee(id: string, valor: number, vencimento: string): Promise<PlatformBilling> {
-    return firstValueFrom(this.http.post<PlatformBilling>(`${this.base}/lojas/${id}/cobranca/implantacao`, { valor, vencimento }));
+    return firstValueFrom(this.http.post<PlatformBilling>(`${this.base}/lojas/${id}/cobranca/implantacao`, { valor, vencimento }, { context: feedback('Cobrança da implantação criada.') }));
   }
 
   recordPayment(id: string, invoiceId: string, observacao: string): Promise<PlatformBilling> {
-    return firstValueFrom(this.http.post<PlatformBilling>(`${this.base}/lojas/${id}/cobranca/faturas/${invoiceId}/pagamento-manual`, { observacao }));
+    return firstValueFrom(this.http.post<PlatformBilling>(`${this.base}/lojas/${id}/cobranca/faturas/${invoiceId}/pagamento-manual`, { observacao }, { context: feedback('Pagamento registrado.') }));
   }
 
   cancelInvoice(id: string, invoiceId: string, observacao: string): Promise<PlatformBilling> {
-    return firstValueFrom(this.http.post<PlatformBilling>(`${this.base}/lojas/${id}/cobranca/faturas/${invoiceId}/cancelar`, { observacao }));
+    return firstValueFrom(this.http.post<PlatformBilling>(`${this.base}/lojas/${id}/cobranca/faturas/${invoiceId}/cancelar`, { observacao }, { context: feedback('Fatura cancelada.') }));
   }
 
   audit(filter: { loja?: string; acao?: string; email?: string; pagina?: number }): Promise<AuditPage> {

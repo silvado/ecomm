@@ -3,6 +3,7 @@ import { Component, computed, inject, Injectable, OnInit, signal } from '@angula
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { problemTitle } from '../../core/auth';
+import { feedback } from '../../core/feedback';
 
 export type OnboardingStep = 'company' | 'domain' | 'payment' | 'fiscal' | 'shipping' | 'mercadoLivre' | 'instagram' | 'olx';
 
@@ -47,7 +48,7 @@ export class OnboardingApi {
   }
 
   publish(): Promise<OnboardingView> {
-    return firstValueFrom(this.http.post<OnboardingView>(`${this.base}/publicar`, null));
+    return firstValueFrom(this.http.post<OnboardingView>(`${this.base}/publicar`, null, { context: feedback(null) }));
   }
 }
 

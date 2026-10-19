@@ -3,6 +3,7 @@ import { Component, inject, Injectable, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { problemTitle } from '../../core/auth';
+import { feedback } from '../../core/feedback';
 
 export interface LegalTexts {
   privacyPolicy: string;
@@ -23,7 +24,7 @@ export class LegalTextsApi {
   }
 
   save(politica: string, termos: string): Promise<LegalTexts> {
-    return firstValueFrom(this.http.put<LegalTexts>('/api/painel/loja/privacidade', { politica, termos }));
+    return firstValueFrom(this.http.put<LegalTexts>('/api/painel/loja/privacidade', { politica, termos }, { context: feedback('Textos salvos. A loja mostra a nova versão em até 1 minuto.') }));
   }
 }
 
@@ -67,9 +68,6 @@ export class LegalTextsApi {
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
-      @if (saved()) {
-        <p class="ok" role="status">Textos salvos. A loja mostra a nova versão em até 1 minuto.</p>
-      }
       <div class="order-actions">
         <button type="button" (click)="save()" [disabled]="busy()" data-save-legal>Salvar privacidade e termos</button>
       </div>
@@ -84,7 +82,6 @@ export class LegalTextsSection implements OnInit {
   protected terms = '';
   protected defaults = { privacyPolicy: '', terms: '' };
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
@@ -97,11 +94,9 @@ export class LegalTextsSection implements OnInit {
 
   protected async save(): Promise<void> {
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       this.apply(await this.api.save(this.privacyPolicy, this.terms));
-      this.saved.set(true);
     } catch (error) {
       this.error.set(problemTitle(error));
     } finally {

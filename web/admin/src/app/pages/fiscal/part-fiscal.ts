@@ -29,9 +29,6 @@ import { ORIGINS } from './fiscal-settings';
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
-      @if (saved()) {
-        <p class="ok" role="status">Dados fiscais salvos.</p>
-      }
       <div class="order-actions">
         <button type="button" (click)="save()" [disabled]="busy()" data-save-part-fiscal>Salvar dados fiscais</button>
       </div>
@@ -49,7 +46,6 @@ export class PartFiscal {
   protected taxCode = '';
   protected origin: number | null = null;
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
 
   constructor() {
@@ -63,7 +59,6 @@ export class PartFiscal {
 
   protected async save(): Promise<void> {
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       const updated = await this.api.setPartFiscal(this.part().id, {
@@ -71,7 +66,6 @@ export class PartFiscal {
         taxCode: this.taxCode.trim() || null,
         origin: this.origin,
       });
-      this.saved.set(true);
       this.changed.emit(updated);
     } catch (error) {
       this.error.set(problemTitle(error));

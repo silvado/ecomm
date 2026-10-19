@@ -3,6 +3,7 @@ import { Component, inject, Injectable, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore, problemTitle } from '../../core/auth';
+import { feedback } from '../../core/feedback';
 
 export type SyncAction = 'reconnect' | 'fixPart' | 'replay' | 'waitService' | 'contactSupport';
 
@@ -34,7 +35,7 @@ export class SyncGuardianApi {
   }
 
   save(ativo: boolean): Promise<{ enabled: boolean }> {
-    return firstValueFrom(this.http.put<{ enabled: boolean }>('/api/painel/guardiao', { ativo }));
+    return firstValueFrom(this.http.put<{ enabled: boolean }>('/api/painel/guardiao', { ativo }, { context: feedback(`Aviso por e-mail ${ativo ? 'ligado' : 'desligado'}.`) }));
   }
 }
 
@@ -69,9 +70,6 @@ export class SyncGuardianApi {
           <input type="checkbox" [(ngModel)]="enabled" (ngModelChange)="save()" [disabled]="busy()" name="guardian-enabled" data-guardian-enabled />
           Avisar os Donos por e-mail quando a sincronização falhar
         </label>
-        @if (saved()) {
-          <p class="ok" role="status">Aviso por e-mail {{ enabled ? 'ligado' : 'desligado' }}.</p>
-        }
       }
     </section>
   `,
@@ -83,7 +81,6 @@ export class SyncGuardianSection implements OnInit {
   protected readonly diagnoses = signal<SyncDiagnosis[]>([]);
   protected readonly loaded = signal(false);
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
   protected enabled = false;
   protected readonly when = (iso: string) => WHEN.format(new Date(iso));
@@ -101,11 +98,9 @@ export class SyncGuardianSection implements OnInit {
 
   async save(): Promise<void> {
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       this.enabled = (await this.api.save(this.enabled)).enabled;
-      this.saved.set(true);
     } catch (error) {
       this.error.set(problemTitle(error));
     } finally {
