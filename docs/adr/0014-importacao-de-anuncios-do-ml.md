@@ -40,7 +40,8 @@ O CA3 pede que rode em segundo plano, com progresso visível.
 | Já vinculado nesta conta | pulado ("já vinculado"): reimportar não duplica |
 | Ativo | peça **ativa** + vínculo `Active` |
 | Pausado | peça ativa + vínculo `PausedByUser` (o sistema não reativa) |
-| Encerrado, em revisão, sem preço, com variações | não entra; o motivo vai para o relatório |
+| Encerrado, em revisão, sem preço | não entra; o motivo vai para o relatório |
+| Com variações | cada variação vira uma peça em **rascunho**, sem vínculo (ver "Variações") |
 | Código igual ao de peça ativa da loja | ligado a ela; a peça não muda e vale o estoque da loja (confirmado pelo usuário em 18/10/2026) |
 | Código igual ao de peça inativa ou já anunciada nesta conta | não entra, com o motivo |
 | Sem foto acessível | peça em **rascunho**, sem vínculo |
@@ -71,10 +72,25 @@ Na peça nova, `ChannelImportRules.PackageDimensions` lê os atributos `SELLER_P
 - **Peça existente ligada:** não muda.
 - **HIPÓTESE:** no `shipping.dimensions`, a ordem é altura x largura x comprimento (a página não diz). Os atributos têm prioridade.
 
+## Variações (19/10/2026)
+
+Cada variação do anúncio vira uma peça (Q15). `ChannelImportRules.MapVariations` monta as peças e o handler as grava.
+
+- **Leitura:** `GET /items/{id}?include_attributes=all`. Sem esse parâmetro, os `attributes` de cada variação (onde fica o SELLER_SKU) não vêm. Cada variação traz `id`, `attribute_combinations`, `price`, `available_quantity`, `picture_ids` (ids das fotos do anúncio) e `seller_custom_field`. Fonte: [variações](https://developers.mercadolivre.com.br/pt_br/variacoes).
+- **Peça:**
+  - título do anúncio com a combinação ("Farol Gol - Esquerdo"); se passar do limite, corta o título e mantém a combinação;
+  - preço e saldo da variação; sem preço próprio, o do anúncio;
+  - fotos da variação; sem fotos próprias, as do anúncio;
+  - descrição, condição, OEM, medidas e veículos do anúncio.
+- **Código:** SKU da variação (SELLER_SKU ou `seller_custom_field`). Sem SKU, o código do anúncio com o id da variação (`FAR-1-14979332589`). Se passar de 60 caracteres, o id do anúncio com o id da variação.
+- **Sem vínculo, em rascunho:** o `ChannelListing` aponta para o anúncio inteiro. A quantidade, a venda e a reconciliação seriam por variação, o que mudaria o modelo de dados e o caminho da baixa atômica (RNF02). O usuário escolheu, em 19/10/2026, a forma sem vínculo. O anúncio segue vendendo no ML com o saldo de lá. As peças entram em rascunho para não vender o mesmo item em dois lugares até o lojista decidir. O relatório orienta a ativar e publicar cada peça e encerrar o anúncio antigo.
+- **Reimportar:** variação cujo código já existe na loja fica como está; com todas assim, o anúncio aparece como não importado, com o motivo.
+- **Contagem:** o anúncio conta um resultado no progresso; as peças além da primeira somam em "peças novas" (`RecordBatch(..., extraParts)`).
+
 ## Consequências
 
 - O saldo inicial vem do ML, com movimento de ajuste "importação do Mercado Livre" em nome de quem pediu.
 - Se um lote cair depois de gravar fotos, os arquivos ficam sem registro. É um custo pequeno, preferível a baixar tudo de novo em cada tentativa.
 - **Pendente:**
-  - anúncios com variações;
+  - vínculo por variação (sincronizar o anúncio com variações), se o piloto precisar;
   - confirmar a paginação com o app real.

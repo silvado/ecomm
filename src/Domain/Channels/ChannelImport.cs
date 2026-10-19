@@ -70,6 +70,8 @@ public sealed class ChannelImport : ITenantOwned
     public bool Truncated { get; private set; }
 
     public int ProcessedItems { get; private set; }
+
+    /// <summary>Peças novas (anúncio com variações conta uma por variação que entrou).</summary>
     public int CreatedCount { get; private set; }
     public int LinkedCount { get; private set; }
     public int AlreadyLinkedCount { get; private set; }
@@ -117,14 +119,20 @@ public sealed class ChannelImport : ITenantOwned
     public IReadOnlyList<string> NextBatch(int size) =>
         Status == ChannelImportStatus.Processing ? ExternalIds.Skip(ProcessedItems).Take(size).ToList() : [];
 
-    /// <summary>Resultado de um lote, gravado na mesma transação das peças.</summary>
-    public void RecordBatch(IReadOnlyList<(ChannelImportItemOutcome Outcome, ChannelImportIssue? Issue)> results, DateTimeOffset now, int compatibilities = 0)
+    /// <summary>
+    /// Resultado de um lote, gravado na mesma transação das peças. <paramref name="extraParts"/>: peças além da primeira
+    /// dos anúncios com variações (cada variação vira uma peça; o anúncio conta um resultado só).
+    /// </summary>
+    public void RecordBatch(IReadOnlyList<(ChannelImportItemOutcome Outcome, ChannelImportIssue? Issue)> results, DateTimeOffset now, int compatibilities = 0,
+        int extraParts = 0)
     {
         ArgumentNullException.ThrowIfNull(results);
         if (Status != ChannelImportStatus.Processing) throw new InvalidOperationException("A importação não está em andamento.");
         if (results.Count == 0 || ProcessedItems + results.Count > ExternalIds.Count) throw new ArgumentException("Lote inconsistente.", nameof(results));
         ArgumentOutOfRangeException.ThrowIfNegative(compatibilities);
+        ArgumentOutOfRangeException.ThrowIfNegative(extraParts);
         CompatibilitiesCount += compatibilities;
+        CreatedCount += extraParts;
         foreach (var (outcome, issue) in results)
         {
             switch (outcome)

@@ -302,9 +302,11 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
         Text(e, name) is { } text && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var at) ? at.ToUniversalTime() : null;
 
     /// <summary>Nulo se o anúncio não existe (404).</summary>
-    public async Task<JsonElement?> GetItemAsync(string token, string itemId, CancellationToken ct)
+    /// <param name="allAttributes"><c>include_attributes=all</c>: traz os atributos de cada variação (ex.: SELLER_SKU).</param>
+    public async Task<JsonElement?> GetItemAsync(string token, string itemId, CancellationToken ct, bool allAttributes = false)
     {
-        using var response = await SendAsync(HttpMethod.Get, $"/items/{Uri.EscapeDataString(itemId)}", token, null, ct, allowNotFound: true);
+        var path = $"/items/{Uri.EscapeDataString(itemId)}" + (allAttributes ? "?include_attributes=all" : string.Empty);
+        using var response = await SendAsync(HttpMethod.Get, path, token, null, ct, allowNotFound: true);
         if (response.StatusCode == HttpStatusCode.NotFound) return null;
         return await JsonAsync(response, ct);
     }
@@ -332,12 +334,13 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
 
     /// <summary>
     /// O anúncio completo para a importação (RF11 CA2): <c>GET /items/{id}</c> e a descrição em
-    /// <c>GET /items/{id}/description</c> (texto simples; sem descrição, segue sem). Nulo se o anúncio não existe.
-    /// Fontes: https://developers.mercadolivre.com.br/itens-e-buscas e https://developers.mercadolivre.com.br/pt_br/publicacao-de-produtos.
+    /// <c>GET /items/{id}/description</c> (texto simples; sem descrição, segue sem). Nulo se o anúncio não existe. Os atributos
+    /// de cada variação só vêm com <c>include_attributes=all</c>. Fontes: https://developers.mercadolivre.com.br/itens-e-buscas,
+    /// https://developers.mercadolivre.com.br/pt_br/publicacao-de-produtos e https://developers.mercadolivre.com.br/pt_br/variacoes.
     /// </summary>
     public async Task<ChannelItemSnapshot?> GetItemSnapshotAsync(string token, string itemId, CancellationToken ct)
     {
-        if (await GetItemAsync(token, itemId, ct) is not { } item) return null;
+        if (await GetItemAsync(token, itemId, ct, allAttributes: true) is not { } item) return null;
         string? description = null;
         try
         {
@@ -358,16 +361,28 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
                 ? list.EnumerateArray().Where(a => a.ValueKind == JsonValueKind.Object && Text(a, "id") is not null)
                     .Select(a => new AttributeValue(Text(a, "id")!, Text(a, "value_id"), Text(a, "value_name"))).ToList()
                 : [];
+        static decimal Price(JsonElement e) => e.TryGetProperty("price", out var pr) && pr.ValueKind == JsonValueKind.Number ? pr.GetDecimal() : 0m;
+        static int Quantity(JsonElement e) => e.TryGetProperty("available_quantity", out var q) && q.TryGetInt32(out var qi) ? qi : 0;
+        // Fotos com id: as variações apontam para elas por picture_ids.
         var pictures = item.TryGetProperty("pictures", out var p) && p.ValueKind == JsonValueKind.Array
-            ? p.EnumerateArray().Select(x => Text(x, "secure_url") ?? Text(x, "url")).OfType<string>().ToList()
+            ? p.EnumerateArray().Where(x => x.ValueKind == JsonValueKind.Object)
+                .Select(x => (Id: Text(x, "id"), Url: Text(x, "secure_url") ?? Text(x, "url"))).Where(x => x.Url is not null).ToList()
+            : [];
+        var variations = item.TryGetProperty("variations", out var v) && v.ValueKind == JsonValueKind.Array
+            ? v.EnumerateArray().Where(x => x.ValueKind == JsonValueKind.Object).Select((x, n) =>
+            {
+                var ids = x.TryGetProperty("picture_ids", out var pi) && pi.ValueKind == JsonValueKind.Array
+                    ? pi.EnumerateArray().Select(i => i.ValueKind == JsonValueKind.String ? i.GetString() : null).OfType<string>().ToList()
+                    : [];
+                return new ChannelItemVariation(Text(x, "id") ?? (n + 1).ToString(CultureInfo.InvariantCulture), Values(x, "attribute_combinations"),
+                    Price(x), Quantity(x), ids.Select(id => pictures.FirstOrDefault(pic => pic.Id == id).Url).OfType<string>().ToList(),
+                    Text(x, "seller_custom_field"), Values(x, "attributes"));
+            }).ToList()
             : [];
         var title = Text(item, "title") ?? Text(item, "family_name") ?? string.Empty;
-        var price = item.TryGetProperty("price", out var pr) && pr.ValueKind == JsonValueKind.Number ? pr.GetDecimal() : 0m;
-        var quantity = item.TryGetProperty("available_quantity", out var q) && q.TryGetInt32(out var qi) ? qi : 0;
-        var variations = item.TryGetProperty("variations", out var v) && v.ValueKind == JsonValueKind.Array && v.GetArrayLength() > 0;
-        return new ChannelItemSnapshot(Text(item, "id") ?? string.Empty, title, price, quantity, Text(item, "status") ?? string.Empty, Text(item, "condition"),
-            Text(item, "seller_custom_field"), description, pictures, Text(item, "category_id"), Text(item, "listing_type_id"),
-            Values(item, "attributes"), Values(item, "sale_terms"), variations,
+        return new ChannelItemSnapshot(Text(item, "id") ?? string.Empty, title, Price(item), Quantity(item), Text(item, "status") ?? string.Empty,
+            Text(item, "condition"), Text(item, "seller_custom_field"), description, pictures.Select(x => x.Url!).ToList(), Text(item, "category_id"),
+            Text(item, "listing_type_id"), Values(item, "attributes"), Values(item, "sale_terms"), variations,
             item.TryGetProperty("shipping", out var shipping) && shipping.ValueKind == JsonValueKind.Object ? Text(shipping, "dimensions") : null);
     }
 

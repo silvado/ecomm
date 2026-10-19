@@ -18,7 +18,8 @@ namespace Ecommerce.Integration.Tests.Api;
 /// <summary>
 /// RF11 CA2/CA3 — importação dos anúncios que a loja já tem no Mercado Livre (ML simulado): anúncios ativos e pausados
 /// viram peças vinculadas, com fotos e o SKU como código; mesmo código liga à peça existente (vale o estoque da loja);
-/// variações e encerrados ficam no relatório; reimportar não duplica; sem foto, a peça fica em rascunho sem vínculo; só o
+/// cada variação vira uma peça em rascunho sem vínculo; encerrados ficam no relatório; reimportar não duplica; sem foto,
+/// a peça fica em rascunho sem vínculo; só o
 /// Dono importa e cada loja vê só as suas importações.
 /// </summary>
 public sealed class ChannelImportTests(ApiFactory api) : IClassFixture<ApiFactory>
@@ -96,15 +97,18 @@ public sealed class ChannelImportTests(ApiFactory api) : IClassFixture<ApiFactor
             description: "Farol original, sem trincas.", partNumber: "5U0941015",
             packageAttributes: [("SELLER_PACKAGE_LENGTH", "45 cm"), ("SELLER_PACKAGE_WIDTH", "35 cm"), ("SELLER_PACKAGE_HEIGHT", "25 cm"), ("SELLER_PACKAGE_WEIGHT", "2300 g")]);
         var paused = FakeMercadoLivreApi.Seed(shop.Seller, "Lanterna traseira Uno", 120m, 3, status: "paused", condition: "new", shippingDimensions: "10x20x30,500");
-        var withVariations = FakeMercadoLivreApi.Seed(shop.Seller, "Calota aro 14", 40m, 8, variations: true);
+        var capCode = "CAL-" + NewId()[..5];
+        var withVariations = FakeMercadoLivreApi.Seed(shop.Seller, "Calota aro 14", 40m, 8, sku: capCode,
+            variations: [("Esquerda", 3, capCode + "E"), ("Direita", 5, null)]);
         var closed = FakeMercadoLivreApi.Seed(shop.Seller, "Para-choque vendido", 200m, 0, status: "closed");
         var existingCode = "RET-" + NewId()[..5];
         var existingPart = await ActivePartAsync(shop, existingCode, quantity: 1);
         var sameCode = FakeMercadoLivreApi.Seed(shop.Seller, "Retrovisor direito Gol", 180m, 5, sku: existingCode);
 
         var import = await RunAsync(shop);
-        Assert.Equal(("completed", 5, 2, 1, 2), (import.Status, import.TotalItems, import.CreatedCount, import.LinkedCount, import.RejectedCount));
-        Assert.Contains(import.Issues, i => i.ExternalId == withVariations && i.Message.Contains("variações", StringComparison.Ordinal));
+        // 4 peças novas: 2 anúncios simples e as 2 variações da calota.
+        Assert.Equal(("completed", 5, 4, 1, 1), (import.Status, import.TotalItems, import.CreatedCount, import.LinkedCount, import.RejectedCount));
+        Assert.Contains(import.Issues, i => i.ExternalId == withVariations && i.Message.Contains("2 entraram como peças em rascunho", StringComparison.Ordinal));
         Assert.Contains(import.Issues, i => i.ExternalId == closed && i.Message.Contains("encerrado", StringComparison.Ordinal));
         Assert.Contains(import.Issues, i => i.ExternalId == sameCode && i.Message.Contains("vale o estoque da loja", StringComparison.Ordinal));
 
@@ -123,6 +127,18 @@ public sealed class ChannelImportTests(ApiFactory api) : IClassFixture<ApiFactor
         Assert.Null(parts.Single(p => p.ExternalId == sameCode).Part.LengthCm); // a peça existente não ganhou medidas
         var linked = parts.Single(p => p.ExternalId == sameCode);
         Assert.Equal((existingPart, 1), (linked.Part.Id, linked.OnHand)); // a peça existente não mudou
+
+        // Variações: uma peça em rascunho por variação, com o saldo dela, sem vínculo com o anúncio.
+        var caps = await InTenantAsync(shop.TenantId, db => (from p in db.Parts.Include(p => p.Photos)
+                                                             join s in db.Stocks on p.Id equals s.PartId
+                                                             where p.InternalCode.StartsWith(capCode)
+                                                             orderby p.Title descending
+                                                             select new { Part = p, s.OnHand }).ToListAsync());
+        Assert.Equal([("Calota aro 14 - Esquerda", 3), ("Calota aro 14 - Direita", 5)], caps.Select(c => (c.Part.Title, c.OnHand)).ToList());
+        Assert.Equal(capCode + "E", caps[0].Part.InternalCode); // SKU da variação
+        Assert.StartsWith(capCode + "-", caps[1].Part.InternalCode, StringComparison.Ordinal); // sem SKU: o do anúncio com o id da variação
+        Assert.All(caps, c => Assert.Equal((PartStatus.Draft, 1), (c.Part.Status, c.Part.Photos.Count)));
+        Assert.DoesNotContain(parts, p => p.ExternalId == withVariations);
 
         // Vale o estoque da loja: o anúncio de 5 passa a 1.
         var watch = Stopwatch.StartNew();

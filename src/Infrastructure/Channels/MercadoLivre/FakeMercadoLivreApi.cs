@@ -193,10 +193,11 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
 
     /// <summary>
     /// Anúncio que o vendedor já tinha no ML antes de usar a plataforma (RF11): aparece na busca dos anúncios dele, com
-    /// fotos servidas pelo servidor de imagens simulado (<c>mlstatic.com</c>).
+    /// fotos servidas pelo servidor de imagens simulado (<c>mlstatic.com</c>). Cada variação aponta para a foto de mesma posição
+    /// (se houver) e só mostra o SKU dela com <c>include_attributes=all</c>, como no ML.
     /// </summary>
     public static string Seed(string sellerId, string title, decimal price, int quantity, string status = "active", string? sku = null,
-        string condition = "used", bool variations = false, int pictures = 1, string? description = null, string? partNumber = null,
+        string condition = "used", IReadOnlyList<(string Side, int Quantity, string? Sku)>? variations = null, int pictures = 1, string? description = null, string? partNumber = null,
         IReadOnlyList<(string Brand, string Model, int Year, string? Engine)>? vehicles = null, int catalogVehicles = 0, string? shippingDimensions = null,
         IReadOnlyList<(string Id, string Value)>? packageAttributes = null)
     {
@@ -224,7 +225,17 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
             ["pictures"] = new JsonArray(Enumerable.Range(1, pictures)
                 .Select(n => (JsonNode)new JsonObject { ["id"] = $"SIM-{id}-{n}", ["secure_url"] = pictures > 0 ? $"https://http2.mlstatic.com/D_SIM_{id}_{n}.jpg" : MissingPicture })
                 .ToArray()),
-            ["variations"] = variations ? new JsonArray(new JsonObject { ["id"] = 1 }, new JsonObject { ["id"] = 2 }) : new JsonArray(),
+            ["variations"] = new JsonArray((variations ?? []).Select((v, n) => (JsonNode)new JsonObject
+            {
+                ["id"] = 180_000_000_000 + Interlocked.Increment(ref _variations),
+                ["attribute_combinations"] = new JsonArray(new JsonObject { ["id"] = "SIDE", ["name"] = "Lado", ["value_id"] = null, ["value_name"] = v.Side }),
+                ["price"] = price,
+                ["available_quantity"] = v.Quantity,
+                ["sold_quantity"] = 0,
+                ["picture_ids"] = n < pictures ? new JsonArray($"SIM-{id}-{n + 1}") : new JsonArray(),
+                ["seller_custom_field"] = null,
+                ["attributes"] = v.Sku is null ? new JsonArray() : new JsonArray(new JsonObject { ["id"] = "SELLER_SKU", ["name"] = "SKU", ["value_name"] = v.Sku }),
+            }).ToArray()),
             ["shipping"] = new JsonObject { ["mode"] = "me2", ["dimensions"] = shippingDimensions },
         };
         if (description is not null) Descriptions[id] = description;
@@ -259,6 +270,7 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
     }
 
     private static int _products;
+    private static long _variations;
 
     private static JsonObject ItemCompatibilities(string itemId)
     {
@@ -334,7 +346,7 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
             ("POST", ["items"]) => Create(await BodyAsync(request, cancellationToken)),
             ("POST", ["items", var id, "description"]) => Describe(id, await BodyAsync(request, cancellationToken)),
             ("PUT", ["items", var id]) => Update(id, await BodyAsync(request, cancellationToken)),
-            ("GET", ["items", var id]) => Get(id),
+            ("GET", ["items", var id]) => Get(id, query["include_attributes"] == "all"),
             ("POST", ["catalog_domains", MercadoLivreApiClient.VehicleDomain, "attributes", var attribute, "top_values"]) =>
                 Json(TopValues(attribute, await BodyAsync(request, cancellationToken))),
             ("POST", ["items", var id, "compatibilities"]) => Compatibilities(id, await BodyAsync(request, cancellationToken)),
@@ -440,10 +452,14 @@ public sealed class FakeMercadoLivreApi : HttpMessageHandler
         return Json((JsonObject)item.DeepClone());
     }
 
-    private static HttpResponseMessage Get(string id)
+    private static HttpResponseMessage Get(string id, bool allAttributes = false)
     {
         var item = Items.GetOrAdd(id, Unknown);
-        return item.ContainsKey("removed") ? NotFound() : Json((JsonObject)item.DeepClone());
+        if (item.ContainsKey("removed")) return NotFound();
+        var copy = (JsonObject)item.DeepClone();
+        if (!allAttributes && copy["variations"] is JsonArray variations)
+            foreach (var variation in variations.OfType<JsonObject>()) variation.Remove("attributes");
+        return Json(copy);
     }
 
     private static JsonArray TopValues(string attribute, JsonObject body)
