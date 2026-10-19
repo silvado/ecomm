@@ -177,8 +177,8 @@ const AI_FIELDS: AiField[] = ['title', 'description', 'condition', 'oemCodes'];
         @if (!part()) {
           <label>
             Código interno
-            <input type="text" formControlName="internalCode" [maxlength]="limits.code" required />
-            <small>Único na loja. Não muda depois (aparece em etiquetas e planilhas).</small>
+            <input type="text" formControlName="internalCode" [maxlength]="limits.code" placeholder="Automático (P-000001, P-000002…)" />
+            <small>Deixe em branco para gerar automaticamente. Único na loja; não muda depois (aparece em etiquetas e planilhas).</small>
           </label>
         }
         <label [class.ai-suggested]="aiFields().has('title')">
@@ -385,11 +385,7 @@ export class PartFormPage implements OnInit {
     const id = this.id();
     const state = (typeof history !== 'undefined' ? history.state : null) as { notice?: string } | null;
     if (id && state?.notice) this.notice.set(state.notice);
-    if (!id) {
-      this.form.controls.internalCode.addValidators(Validators.required);
-      this.form.controls.internalCode.updateValueAndValidity();
-      return;
-    }
+    if (!id) return;
     try {
       this.fill(await this.api.get(id));
     } catch (error) {

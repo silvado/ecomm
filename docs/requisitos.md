@@ -62,7 +62,7 @@ Passos: empresa → domínio → gateway → fiscal → frete → Mercado Livre 
 
 ### RF08 — Cadastro de peça · E1
 - CA1: campos: título, descrição, fotos (1–20), estado (nova/usada/recondicionada), preço, quantidade, dimensões (cm) e peso (kg) da embalagem, código interno, código OEM (0..n).
-- CA2: código interno é único por tenant.
+- CA2: código interno é único por tenant. Em branco (cadastro ou planilha), é gerado em sequência por loja: P-000001, P-000002… (decisão do dono do produto, 19/10/2026), pulando código já usado à mão.
 - CA3: fotos são convertidas para WebP em 3 tamanhos e guardadas no storage com caminho prefixado pelo tenant.
 - CA4: peça sem dimensões/peso não pode ser publicada em canal que exija frete calculado.
 - **HIPÓTESE (Q22):** código interno em maiúsculas e fixo após o cadastro; título até 120 caracteres (o anúncio do ML terá limite próprio); OEM guardado só com letras e dígitos; quantidade editada no formulário vira ajuste de estoque (nunca abaixo do reservado); peça não é excluída, só inativada.

@@ -176,7 +176,7 @@ Toda loja nova começa **em implantação**: a loja virtual mostra **"Loja em br
 **Cadastrar uma peça**
 1. **Peças → Nova peça**.
 2. Preencha:
-   - **Código interno**: único na loja. Não muda depois, porque aparece em etiquetas e planilhas.
+   - **Código interno** (opcional): deixe em branco e o sistema gera um código em sequência — **P-000001**, **P-000002**… Se a loja já tem um sistema de códigos próprio, digite o seu. O código é único na loja e não muda depois, porque aparece em etiquetas e planilhas. O aviso de cadastro mostra o código gerado.
    - **Título** e **Descrição**.
    - **Estado**: usada, nova ou recondicionada.
    - **Preço (R$)** e **Quantidade em estoque**.
@@ -193,7 +193,7 @@ Em **Nova peça**, a IA pode preencher o cadastro a partir das fotos. Você semp
 3. Clique em **Preencher com IA**. Em alguns segundos, a IA preenche **título**, **descrição**, **estado** e **códigos OEM**.
 4. Os campos preenchidos pela IA ficam **destacados em roxo** até você conferir: mexa no campo ou clique em **Revisado**. Códigos OEM só aparecem se a IA conseguiu lê-los nas fotos — confira com a peça.
 5. **Veículos sugeridos** aparecem marcados. **Desmarque** os que não servem. Veículos que a IA citou mas que não estão na tabela de veículos aparecem só como texto; se servirem, adicione à mão depois, em **Compatibilidade**.
-6. Informe o **código interno**, o **preço** (a IA nunca sugere preço) e a quantidade. Confira o resto e clique em **Cadastrar**.
+6. Informe o **preço** (a IA nunca sugere preço), a quantidade e, se quiser, o **código interno** (em branco, é gerado). Confira o resto e clique em **Cadastrar**.
 
 Ao cadastrar, a peça nasce como **rascunho**, as fotos escolhidas viram as **fotos da peça** e os veículos mantidos entram na **Compatibilidade** com o selo **IA**. Se alguma foto ou veículo não puder ser gravado, a peça é cadastrada assim mesmo e um aviso mostra o que faltou.
 
@@ -223,7 +223,8 @@ Use para cadastrar o estoque de uma vez, por exemplo na implantação da loja.
 
 1. **Peças → Importar planilha**.
 2. **Baixe o modelo** em Excel (.xlsx) ou CSV. Ele vem com o cabeçalho e duas linhas de exemplo; apague os exemplos e coloque uma peça por linha.
-   - **Obrigatórias:** código, título, estado (usada, nova ou recondicionada), preço e quantidade.
+   - **Obrigatórias:** título, estado (usada, nova ou recondicionada), preço e quantidade.
+   - **Código:** opcional. Em branco (ou sem a coluna), o sistema gera em sequência (P-000001…), sem repetir um código que já esteja em outra linha da planilha.
    - **Opcionais:** descrição, medidas da embalagem (comprimento, largura e altura em cm, peso em g) e códigos OEM (separados por |).
    - O preço pode ser escrito como no Excel em português (por exemplo, 1.234,56). A ordem das colunas não importa, desde que o cabeçalho tenha os nomes do modelo.
 3. **Envie o arquivo** (até 5 MB e 5.000 peças). O sistema confere cada linha com as mesmas regras do cadastro manual e mostra uma **prévia**:
@@ -922,6 +923,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 19/10/2026 | Importação de anúncios do Mercado Livre: cada variação de um anúncio vira uma peça em rascunho (4.6.1). |
 | 19/10/2026 | Painel da loja e da plataforma com menu lateral em grupos (gaveta no celular) e a área do usuário no topo, com Trocar de loja, Assinatura, Trocar senha e Sair (4, 4.1, 6.2). Campos com texto de ajuda ficam alinhados com os vizinhos. |
 | 19/10/2026 | Ações do painel mostram um aviso de sucesso ou de erro no canto da tela e escurecem a tela enquanto processam (4.1). As confirmações que ficavam no meio da página passaram para esse aviso. |
+| 19/10/2026 | Código interno opcional: em branco, no cadastro ou na planilha, o sistema gera P-000001, P-000002… (4.3). |
 | 18/10/2026 | Importação de anúncios do Mercado Livre traz os veículos compatíveis para as peças novas, com o selo ML (4.3 e 4.6.1). |
 | 18/10/2026 | Guardião da sincronização (RF33): diagnóstico com o que fazer e alerta por e-mail aos Donos em 4.5.1 Integrações; perfis. |
 Ainda

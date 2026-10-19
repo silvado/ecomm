@@ -38,6 +38,11 @@ public sealed class PartImportTests
             [Row(2, "K-1"), Row(3, "K-1")], [], 0, Now));
 
     [Fact]
+    public void Varias_linhas_com_codigo_em_branco_sao_aceitas() =>
+        Assert.Equal(3, PartImport.Validate(Guid.CreateVersion7(), Guid.CreateVersion7(), "a.csv", 3,
+            [Row(2, ""), Row(3, ""), Row(4, "K-1")], [], 0, Now).ValidRows);
+
+    [Fact]
     public void Confirmar_uma_vez_e_cadastrar_em_lotes_ate_concluir()
     {
         var import = Import(rows: 5);

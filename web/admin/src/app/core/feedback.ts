@@ -4,11 +4,14 @@ import { finalize, tap } from 'rxjs';
 import { problemTitle } from './auth';
 
 /**
- * Retorno de uma ação que grava (POST/PUT/PATCH/DELETE). `success`: texto do aviso de sucesso (nulo = sem aviso, quando a
- * própria tela mostra o resultado ou a ação leva a outra página). `overlay`: falso para ações com progresso próprio.
+ * Retorno de uma ação que grava (POST/PUT/PATCH/DELETE). `success`: texto do aviso de sucesso, ou função que o monta com a
+ * resposta (nulo = sem aviso, quando a própria tela mostra o resultado ou a ação leva a outra página). `overlay`: falso para
+ * ações com progresso próprio.
  */
+export type SuccessText = string | null | ((body: never) => string);
+
 export interface FeedbackOptions {
-  success?: string | null;
+  success?: SuccessText;
   overlay?: boolean;
 }
 
@@ -16,7 +19,7 @@ export interface FeedbackOptions {
 export const FEEDBACK = new HttpContextToken<FeedbackOptions | false>(() => ({}));
 
 /** Contexto da chamada com o retorno escolhido: `{ context: feedback('Peça salva.') }`. */
-export function feedback(success: string | null, options: Omit<FeedbackOptions, 'success'> = {}): HttpContext {
+export function feedback(success: SuccessText, options: Omit<FeedbackOptions, 'success'> = {}): HttpContext {
   return new HttpContext().set(FEEDBACK, { ...options, success });
 }
 
@@ -115,7 +118,8 @@ export const feedbackInterceptor: HttpInterceptorFn = (req, next) => {
     tap({
       next: (event) => {
         if (!(event instanceof HttpResponse)) return;
-        const text = options.success === undefined ? defaultSuccess(req.method) : options.success;
+        const success = options.success === undefined ? defaultSuccess(req.method) : options.success;
+        const text = typeof success === 'function' ? success(event.body as never) : success;
         if (text) service.success(text);
       },
       error: (error: unknown) => service.error(errorText(error)),

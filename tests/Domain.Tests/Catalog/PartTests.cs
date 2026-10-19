@@ -25,6 +25,15 @@ public sealed class PartTests
     }
 
     [Fact]
+    public void Codigo_gerado_tem_prefixo_e_seis_digitos()
+    {
+        Assert.Equal("P-000001", Part.GeneratedCode(1));
+        Assert.Equal("P-123456", Part.GeneratedCode(123_456));
+        Assert.Equal("P-1000000", Part.GeneratedCode(1_000_000));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Part.GeneratedCode(0));
+    }
+
+    [Fact]
     public void Peca_exige_tenant() =>
         Assert.Throws<ArgumentException>(() => Part.Create(Guid.Empty, "A-1", Details(), Now));
 

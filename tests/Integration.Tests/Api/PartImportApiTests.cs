@@ -121,6 +121,25 @@ public sealed class PartImportApiTests(ApiFactory api) : IClassFixture<ApiFactor
     }
 
     [Fact]
+    public async Task Codigo_em_branco_na_planilha_e_gerado_sem_tomar_o_de_outra_linha()
+    {
+        var tenant = await api.CreateTenantAsync();
+        var owner = await api.SessionForAsync(tenant);
+        var preview = await PreviewAsync(owner, Header
+            + ";Farol;;usada;100;1;;;;;\n"
+            + ";Lanterna;;usada;80;1;;;;;\n"
+            + "P-000002;Retrovisor;;usada;90;1;;;;;\n");
+        Assert.Equal((3, 0), (preview.ValidRows, preview.ErrorCount));
+
+        var done = await ConfirmAndWaitAsync(owner, preview.Id);
+
+        Assert.Equal((3, 0), (done.ImportedCount, done.SkippedCount));
+        Assert.Equal("Farol", (await PartAsync(owner, "P-000001"))!.Title);
+        Assert.Equal("Lanterna", (await PartAsync(owner, "P-000003"))!.Title); // P-000002 é da 3ª linha
+        Assert.Equal("Retrovisor", (await PartAsync(owner, "P-000002"))!.Title);
+    }
+
+    [Fact]
     public async Task Planilha_grande_e_cadastrada_em_lotes_e_confirmar_duas_vezes_nao_repete()
     {
         var tenant = await api.CreateTenantAsync();

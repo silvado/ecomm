@@ -1,4 +1,4 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Text;
 using Ecommerce.Domain.Catalog;
 using Ecommerce.Infrastructure.Catalog.Import;
@@ -46,7 +46,7 @@ public sealed class PartSpreadsheetTests
         var result = Csv("codigo;titulo;estado;preco;quantidade;comprimento_cm\n"
             + "K-1;Farol;usada;100;1;\n"
             + "K-1;Farol de novo;usada;100;1;\n"
-            + ";Sem código;usada;100;1;\n"
+            + ";Sem código;usada;100;1;\n" // código gerado no cadastro
             + "K-3;;usada;100;1;\n"
             + "K-4;Peça;seminova;100;1;\n"
             + "K-5;Peça;usada;abc;1;\n"
@@ -55,11 +55,11 @@ public sealed class PartSpreadsheetTests
             + "K-8;Peça;usada;0,001;1;\n");
 
         Assert.Equal(9, result.TotalRows);
-        Assert.Equal("K-1", Assert.Single(result.Rows).InternalCode);
-        Assert.Equal([3, 4, 5, 6, 7, 8, 9, 10], result.Issues.Select(i => i.Line));
+        Assert.Equal(["K-1", ""], result.Rows.Select(r => r.InternalCode));
+        Assert.Equal([3, 5, 6, 7, 8, 9, 10], result.Issues.Select(i => i.Line));
         Assert.Contains("repetido na planilha (já está na linha 2)", result.Issues[0].Message, StringComparison.Ordinal);
-        Assert.Contains("Estado inválido", result.Issues[3].Message, StringComparison.Ordinal);
-        Assert.Contains("Comprimento precisa ser um número inteiro", result.Issues[6].Message, StringComparison.Ordinal);
+        Assert.Contains("Estado inválido", result.Issues[2].Message, StringComparison.Ordinal);
+        Assert.Contains("Comprimento precisa ser um número inteiro", result.Issues[5].Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -69,6 +69,15 @@ public sealed class PartSpreadsheetTests
 
         Assert.Equal(0, result.TotalRows);
         Assert.Contains("estado, quantidade", Assert.Single(result.Issues).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Sem_a_coluna_codigo_todas_as_linhas_ficam_para_gerar()
+    {
+        var result = Csv("titulo;estado;preco;quantidade\nFarol;usada;100;1\nRetrovisor;usada;80;2\n");
+
+        Assert.Empty(result.Issues);
+        Assert.Equal(["", ""], result.Rows.Select(r => r.InternalCode));
     }
 
     [Fact]
@@ -90,7 +99,7 @@ public sealed class PartSpreadsheetTests
         {
             var result = PartSpreadsheet.Parse(SpreadsheetReader.Read(template));
             Assert.Empty(result.Issues);
-            Assert.Equal(["K-0001", "K-0002"], result.Rows.Select(r => r.InternalCode));
+            Assert.Equal(["K-0001", ""], result.Rows.Select(r => r.InternalCode)); // o 2º exemplo mostra o código em branco
             Assert.Equal((350m, 180.5m), (result.Rows[0].Price, result.Rows[1].Price));
         }
     }

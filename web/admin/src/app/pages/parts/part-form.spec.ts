@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import localePt from '@angular/common/locales/pt';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { FEEDBACK } from '../../core/feedback';
 import { PartFormPage } from './part-form';
 import { PartSuggestion } from './parts.api';
 
@@ -105,6 +106,24 @@ describe('PartFormPage — preencher com IA (RF30)', () => {
     expect(el.querySelector('fieldset.ai-assist [role=alert]')!.textContent).toContain('50 cadastros com IA');
     expect(el.querySelector<HTMLInputElement>('input[formControlName=title]')!.value).toBe('');
     expect(el.querySelectorAll('label.ai-suggested')).toHaveLength(0);
+  });
+
+  it('código em branco: cadastra assim mesmo (o sistema gera) e o aviso mostra o código gerado', async () => {
+    const { fixture, el, backend } = setup();
+    for (const [name, value] of [['title', 'Lanterna traseira'], ['price', '120']]) {
+      const input = el.querySelector<HTMLInputElement>(`input[formControlName=${name}]`)!;
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+    }
+    fixture.detectChanges();
+    expect(el.querySelector<HTMLInputElement>('input[formControlName=internalCode]')!.required).toBe(false);
+    button(el, 'Cadastrar').click();
+
+    const create = backend.expectOne({ method: 'POST', url: '/api/painel/pecas' });
+    expect(create.request.body).toMatchObject({ internalCode: '', title: 'Lanterna traseira' });
+    const success = create.request.context.get(FEEDBACK) as { success: (body: unknown) => string };
+    expect(success.success({ internalCode: 'P-000007' })).toBe('Peça P-000007 cadastrada.');
+    create.flush({ id: 'p2', internalCode: 'P-000007' });
   });
 
   it('recusa mais de 10 fotos antes de enviar', () => {

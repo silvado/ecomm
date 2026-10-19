@@ -271,6 +271,13 @@ public sealed class Part : ITenantOwned
 
     public void Rename(string title) => Title = string.IsNullOrWhiteSpace(title) ? throw new ArgumentException("Título obrigatório.", nameof(title)) : title.Trim();
 
+    /// <summary>Prefixo do código gerado quando a loja deixa o campo em branco.</summary>
+    public const string GeneratedCodePrefix = "P-";
+
+    /// <summary>Código gerado pela sequência da loja: P-000001, P-000002… (mais dígitos depois do milionésimo).</summary>
+    public static string GeneratedCode(long number) =>
+        number > 0 ? $"{GeneratedCodePrefix}{number:D6}" : throw new ArgumentOutOfRangeException(nameof(number), "Número precisa ser positivo.");
+
     public static string NormalizeInternalCode(string? code)
     {
         var value = code?.Trim().ToUpperInvariant() ?? string.Empty;
