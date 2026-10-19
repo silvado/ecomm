@@ -22,7 +22,21 @@ public sealed record ProcessChannelImport(Guid ImportId);
 public sealed record ChannelItemSnapshot(
     string Id, string Title, decimal Price, int Quantity, string Status, string? Condition, string? SellerCustomField, string? Description,
     IReadOnlyList<string> PictureUrls, string? CategoryId, string? ListingTypeId, IReadOnlyList<AttributeValue> Attributes,
-    IReadOnlyList<AttributeValue> SaleTerms, bool HasVariations, string? ShippingDimensions = null);
+    IReadOnlyList<AttributeValue> SaleTerms, IReadOnlyList<ChannelItemVariation> Variations, string? ShippingDimensions = null)
+{
+    public bool HasVariations => Variations.Count > 0;
+}
+
+/// <summary>
+/// Variação do anúncio (ex.: lado esquerdo e lado direito): a combinação que a distingue, preço, saldo, fotos (já como
+/// endereços) e o SKU próprio (atributo SELLER_SKU ou <c>seller_custom_field</c> da variação).
+/// </summary>
+public sealed record ChannelItemVariation(
+    string Id, IReadOnlyList<AttributeValue> Combinations, decimal Price, int Quantity, IReadOnlyList<string> PictureUrls, string? SellerCustomField,
+    IReadOnlyList<AttributeValue> Attributes);
+
+/// <summary>Variação pronta para virar peça em rascunho (<see cref="Item"/>) ou, sem ela, o motivo.</summary>
+public sealed record ImportedVariation(string VariationId, string Label, ImportedItem? Item, IReadOnlyList<string> PictureUrls, string? Reason);
 
 /// <summary>Anúncio pronto para virar peça: código, dados, saldo e a situação do vínculo.</summary>
 public sealed record ImportedItem(string InternalCode, PartDetails Details, int Quantity, ListingStatus ListingStatus, MercadoLivreListingOptions Options);
@@ -55,7 +69,7 @@ public interface IChannelImports
 /// <summary>
 /// Regras fixas de como um anúncio do Mercado Livre vira peça (RF11 CA2). Código: o SKU do anúncio (SELLER_SKU ou
 /// <c>seller_custom_field</c>) ou, sem SKU, o próprio id do anúncio. Pausado lá entra como pausado pelo lojista (o sistema
-/// não reativa). Anúncio com variações, encerrado ou em revisão não entra.
+/// não reativa). Encerrado ou em revisão não entra. Anúncio com variações passa por <see cref="MapVariations"/>.
 /// </summary>
 public static class ChannelImportRules
 {
@@ -68,44 +82,92 @@ public static class ChannelImportRules
     public static (ImportedItem? Item, string? Reason) Map(ChannelItemSnapshot item)
     {
         ArgumentNullException.ThrowIfNull(item);
-        if (item.HasVariations) return (null, "Anúncio com variações: cadastre cada variação como uma peça.");
-        var status = item.Status switch
-        {
-            "active" => ListingStatus.Active,
-            "paused" => ListingStatus.PausedByUser,
-            _ => (ListingStatus?)null,
-        };
-        if (status is null) return (null, "Anúncio encerrado ou em revisão no Mercado Livre.");
+        if (item.HasVariations) return (null, "Anúncio com variações: cada variação vira uma peça.");
+        if (ListingStatusOf(item) is not { } status) return (null, Closed);
         if (item.Price <= 0) return (null, "Anúncio sem preço.");
+        var code = CodeOrNull(Value(item.Attributes, SkuAttribute) ?? item.SellerCustomField) ?? Part.NormalizeInternalCode(item.Id);
+        return (new ImportedItem(code, Details(item, item.Title.Trim(), item.Price), Math.Max(0, item.Quantity), status, Options(item)), null);
+    }
 
-        var sku = Value(item.Attributes, SkuAttribute) ?? item.SellerCustomField;
-        string code;
+    /// <summary>
+    /// Cada variação do anúncio vira uma peça (Q15: sem variações, cada variação é uma peça): título do anúncio com a
+    /// combinação ("Farol Gol - Esquerdo"), preço, saldo e fotos da variação (sem fotos próprias, as do anúncio) e o resto
+    /// do anúncio. Código: o SKU da variação ou, sem ele, o código do anúncio com o id da variação. As peças não são
+    /// ligadas ao anúncio (o vínculo é com o anúncio inteiro, não com a variação) e entram em rascunho.
+    /// </summary>
+    /// <returns>As variações, ou o motivo de o anúncio inteiro ficar de fora.</returns>
+    public static (IReadOnlyList<ImportedVariation> Variations, string? Reason) MapVariations(ChannelItemSnapshot item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (!item.HasVariations) return ([], "Anúncio sem variações.");
+        if (ListingStatusOf(item) is not { } status) return ([], Closed);
+
+        var baseCode = CodeOrNull(Value(item.Attributes, SkuAttribute) ?? item.SellerCustomField) ?? item.Id;
+        var options = Options(item);
+        var result = new List<ImportedVariation>();
+        foreach (var variation in item.Variations)
+        {
+            var label = string.Join(" / ", variation.Combinations.Select(c => c.ValueName?.Trim()).Where(n => n is { Length: > 0 }));
+            if (label.Length == 0) label = variation.Id;
+            var pictures = variation.PictureUrls.Count > 0 ? variation.PictureUrls : item.PictureUrls;
+            var price = variation.Price > 0 ? variation.Price : item.Price;
+            if (price <= 0)
+            {
+                result.Add(new ImportedVariation(variation.Id, label, null, pictures, "variação sem preço."));
+                continue;
+            }
+            var code = CodeOrNull(Value(variation.Attributes, SkuAttribute) ?? variation.SellerCustomField)
+                ?? CodeOrNull($"{baseCode}-{variation.Id}") ?? Part.NormalizeInternalCode($"{item.Id}-{variation.Id}");
+            var suffix = $" - {label}";
+            var title = item.Title.Trim();
+            title = suffix.Length >= Part.TitleMaxLength ? (title + suffix)[..Part.TitleMaxLength]
+                : (title.Length + suffix.Length > Part.TitleMaxLength ? title[..(Part.TitleMaxLength - suffix.Length)].TrimEnd() : title) + suffix;
+            result.Add(new ImportedVariation(variation.Id, label,
+                new ImportedItem(code, Details(item, title, price), Math.Max(0, variation.Quantity), status, options), pictures, null));
+        }
+        return (result, null);
+    }
+
+    private const string Closed = "Anúncio encerrado ou em revisão no Mercado Livre.";
+
+    private static ListingStatus? ListingStatusOf(ChannelItemSnapshot item) => item.Status switch
+    {
+        "active" => ListingStatus.Active,
+        "paused" => ListingStatus.PausedByUser,
+        _ => null,
+    };
+
+    /// <summary>O código normalizado, ou nulo se vazio ou fora do limite da peça.</summary>
+    private static string? CodeOrNull(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return null;
         try
         {
-            code = Part.NormalizeInternalCode(string.IsNullOrWhiteSpace(sku) ? item.Id : sku);
+            return Part.NormalizeInternalCode(code);
         }
         catch (ArgumentException)
         {
-            code = Part.NormalizeInternalCode(item.Id);
+            return null;
         }
+    }
 
-        var title = item.Title.Trim();
+    private static PartDetails Details(ChannelItemSnapshot item, string title, decimal price)
+    {
         if (title.Length > Part.TitleMaxLength) title = title[..Part.TitleMaxLength].TrimEnd();
         var description = item.Description?.Trim();
         if (description is { Length: > Part.DescriptionMaxLength }) description = description[..Part.DescriptionMaxLength];
         var oem = Value(item.Attributes, "PART_NUMBER") ?? Value(item.Attributes, "OEM");
         var oemCodes = oem is { Length: > 0 and <= PartOemCode.MaxLength } ? new[] { oem.Trim() } : [];
-
         var package = PackageDimensions(item);
-        var details = new PartDetails(title, string.IsNullOrEmpty(description) ? null : description, Condition(item), item.Price,
+        return new PartDetails(title, string.IsNullOrEmpty(description) ? null : description, Condition(item), price,
             package?.LengthCm, package?.WidthCm, package?.HeightCm, package?.WeightG, oemCodes);
-        var options = new MercadoLivreListingOptions(
-            item.CategoryId ?? string.Empty, item.ListingTypeId ?? "gold_special",
-            item.Attributes.Where(a => !NotEditable.Contains(a.Id) && (a.ValueId is { Length: > 0 } || a.ValueName is { Length: > 0 })).ToList(),
-            Value(item.SaleTerms, "WARRANTY_TYPE") is { } warranty && !warranty.Equals("Sem garantia", StringComparison.OrdinalIgnoreCase) ? warranty : null,
-            Value(item.SaleTerms, "WARRANTY_TIME"));
-        return (new ImportedItem(code, details, Math.Max(0, item.Quantity), status.Value, options), null);
     }
+
+    private static MercadoLivreListingOptions Options(ChannelItemSnapshot item) => new(
+        item.CategoryId ?? string.Empty, item.ListingTypeId ?? "gold_special",
+        item.Attributes.Where(a => !NotEditable.Contains(a.Id) && (a.ValueId is { Length: > 0 } || a.ValueName is { Length: > 0 })).ToList(),
+        Value(item.SaleTerms, "WARRANTY_TYPE") is { } warranty && !warranty.Equals("Sem garantia", StringComparison.OrdinalIgnoreCase) ? warranty : null,
+        Value(item.SaleTerms, "WARRANTY_TIME"));
 
     /// <summary>Medidas da embalagem para o frete: cm e gramas inteiros (arredondados para cima, para a caixa caber).</summary>
     public sealed record Package(int LengthCm, int WidthCm, int HeightCm, int WeightG);

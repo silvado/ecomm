@@ -50,7 +50,12 @@ public sealed class MercadoLivreImportContractTests
                  "category_id":"MLB1747","listing_type_id":"gold_special","seller_custom_field":"FAR-1",
                  "pictures":[{"id":"p1","secure_url":"https://http2.mlstatic.com/a.jpg"},{"id":"p2","url":"https://http2.mlstatic.com/b.jpg"}],
                  "attributes":[{"id":"BRAND","value_id":null,"value_name":"VW"},{"id":"SELLER_SKU","value_name":"FAR-001"}],
-                 "sale_terms":[{"id":"WARRANTY_TYPE","value_name":"Sem garantia"}],"variations":[{"id":1}],"shipping":{"mode":"me2","dimensions":"10x20x30,500"}}
+                 "sale_terms":[{"id":"WARRANTY_TYPE","value_name":"Sem garantia"}],"shipping":{"mode":"me2","dimensions":"10x20x30,500"},
+                 "variations":[{"id":14979332589,"attribute_combinations":[{"id":"SIDE","name":"Lado","value_id":"1","value_name":"Esquerdo"}],
+                   "price":360,"available_quantity":1,"sold_quantity":0,"picture_ids":["p2"],"seller_custom_field":null,"catalog_product_id":null,
+                   "attributes":[{"id":"SELLER_SKU","name":"SKU","value_id":null,"value_name":"FAR-1E"}]},
+                  {"id":14979332592,"attribute_combinations":[{"id":"SIDE","name":"Lado","value_id":"2","value_name":"Direito"}],
+                   "price":360,"available_quantity":1,"sold_quantity":0,"picture_ids":["p9"],"seller_custom_field":"DIR"}]}
                 """));
         var item = (await Api(handler).GetItemSnapshotAsync("token", "MLB1", CancellationToken.None))!;
         Assert.Equal(("MLB1", "Farol Gol", 350.5m, 2, "paused", "used", "FAR-1"), (item.Id, item.Title, item.Price, item.Quantity, item.Status, item.Condition, item.SellerCustomField));
@@ -58,6 +63,14 @@ public sealed class MercadoLivreImportContractTests
         Assert.Equal(("Sem trincas.", true, 2), (item.Description, item.HasVariations, item.Attributes.Count));
         Assert.Equal("FAR-001", item.Attributes.Single(a => a.Id == "SELLER_SKU").ValueName);
         Assert.Equal("10x20x30,500", item.ShippingDimensions);
+        // Variações (https://developers.mercadolivre.com.br/pt_br/variacoes): foto pelo id; os atributos pedem include_attributes=all.
+        Assert.Equal(2, item.Variations.Count);
+        var (left, right) = (item.Variations[0], item.Variations[1]);
+        Assert.Equal(("14979332589", "Esquerdo", 360m, 1), (left.Id, left.Combinations.Single().ValueName, left.Price, left.Quantity));
+        Assert.Equal(["https://http2.mlstatic.com/b.jpg"], left.PictureUrls);
+        Assert.Equal("FAR-1E", left.Attributes.Single(a => a.Id == "SELLER_SKU").ValueName);
+        Assert.Equal(("DIR", 0), (right.SellerCustomField, right.PictureUrls.Count)); // foto que o anúncio não tem fica de fora
+        Assert.Contains("include_attributes=all", handler.Requests.First(r => r.AbsolutePath == "/items/MLB1").Query, StringComparison.Ordinal);
     }
 
     [Theory]

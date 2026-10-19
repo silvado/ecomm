@@ -111,6 +111,7 @@ public static class ChannelImportHandler
         var codesInBatch = new HashSet<string>(StringComparer.Ordinal);
         var results = new List<(ChannelImportItemOutcome, ChannelImportIssue?)>();
         var compatibilities = 0;
+        var extraParts = 0;
 
         foreach (var externalId in batch)
         {
@@ -123,6 +124,14 @@ public static class ChannelImportHandler
             if (snapshot is null)
             {
                 results.Add(Rejected(externalId, "Anúncio não encontrado no Mercado Livre."));
+                continue;
+            }
+            if (snapshot.HasVariations)
+            {
+                var variations = await VariationsAsync(db, api, storage, cache, token, import, snapshot, codesInBatch, outgoing, now, ct);
+                results.Add(variations.Result);
+                extraParts += Math.Max(0, variations.Parts - 1);
+                compatibilities += variations.Compatibilities;
                 continue;
             }
             var (item, reason) = ChannelImportRules.Map(snapshot);
@@ -176,9 +185,78 @@ public static class ChannelImportHandler
             results.Add((ChannelImportItemOutcome.Created, vehiclesNote is null ? null : new ChannelImportIssue(externalId, vehiclesNote)));
         }
 
-        import.RecordBatch(results, now, compatibilities);
+        import.RecordBatch(results, now, compatibilities, extraParts);
         if (import.Status == ChannelImportStatus.Processing) outgoing.Add(new ProcessChannelImport(import.Id));
         return outgoing;
+    }
+
+    /// <summary>
+    /// Anúncio com variações: cada variação vira uma peça em rascunho, com o saldo, o preço e as fotos dela e os veículos do
+    /// anúncio. O anúncio não é ligado: o vínculo é com o anúncio inteiro, e o saldo lá é de cada variação. Variação cujo
+    /// código já existe na loja fica como está (importar de novo não duplica). Devolve o resultado do anúncio, quantas peças
+    /// entraram e quantas compatibilidades.
+    /// </summary>
+    private static async Task<((ChannelImportItemOutcome, ChannelImportIssue?) Result, int Parts, int Compatibilities)> VariationsAsync(
+        TenantDbContext db, MercadoLivreApiClient api, IFileStorage storage, IMemoryCache cache, string token, ChannelImport import,
+        ChannelItemSnapshot snapshot, HashSet<string> codesInBatch, OutgoingMessages outgoing, DateTimeOffset now, CancellationToken ct)
+    {
+        var externalId = snapshot.Id;
+        var (variations, reason) = ChannelImportRules.MapVariations(snapshot);
+        if (reason is not null) return (Rejected(externalId, reason), 0, 0);
+
+        var tenantId = db.RequireTenantId();
+        var codes = variations.Where(v => v.Item is not null).Select(v => v.Item!.InternalCode).ToList();
+        var existing = (await db.Parts.Where(p => codes.Contains(p.InternalCode)).Select(p => p.InternalCode).ToListAsync(ct)).ToHashSet(StringComparer.Ordinal);
+        ListingVehicles? vehicles = null;
+        var created = new List<string>();
+        var notes = new List<string>();
+        var compatibilities = 0;
+        foreach (var variation in variations)
+        {
+            if (variation.Item is not { } item)
+            {
+                notes.Add($"Variação {variation.Label}: {variation.Reason}");
+                continue;
+            }
+            if (existing.Contains(item.InternalCode))
+            {
+                notes.Add($"Variação {variation.Label}: já existe a peça {item.InternalCode}, que não mudou.");
+                continue;
+            }
+            if (!codesInBatch.Add(item.InternalCode))
+            {
+                notes.Add($"Variação {variation.Label}: outro anúncio desta importação já usa o código {item.InternalCode}.");
+                continue;
+            }
+            Part part;
+            try
+            {
+                part = Part.Create(tenantId, item.InternalCode, item.Details, now);
+            }
+            catch (ArgumentException e)
+            {
+                notes.Add($"Variação {variation.Label}: {e.Message.Split(" (Parameter", 2)[0]}");
+                continue;
+            }
+            await AddPhotosAsync(api, storage, tenantId, part, variation.PictureUrls, now, ct);
+            vehicles ??= await VehiclesAsync(api, cache, token, externalId, ct);
+            var (added, vehiclesNote) = await AddCompatibilitiesAsync(db, part, vehicles, now, ct);
+            compatibilities += added;
+            if (vehiclesNote is not null) notes.Add(vehiclesNote);
+            db.Parts.Add(part);
+            db.Stocks.Add(new Stock(tenantId, part.Id, item.Quantity));
+            if (item.Quantity > 0)
+                db.StockMovements.Add(new StockMovement(tenantId, part.Id, item.Quantity, StockMovementReason.Adjustment, Reference, reservationId: null, now, import.UserId));
+            outgoing.Add(new StockChanged(part.Id, item.Quantity));
+            created.Add(item.InternalCode);
+        }
+
+        var details = notes.Count == 0 ? null : string.Join(' ', notes);
+        if (created.Count == 0) return (Rejected(externalId, Join("Anúncio com variações: nenhuma variação virou peça.", details)), 0, 0);
+        var summary = $"Anúncio com {variations.Count} variações: {created.Count} entraram como peças em rascunho ({string.Join(", ", created)}). "
+            + "O anúncio não foi ligado e continua vendendo no Mercado Livre com o estoque de lá. Para o estoque da loja valer, "
+            + "confira as peças, ative e publique cada uma no Mercado Livre e encerre o anúncio antigo.";
+        return ((ChannelImportItemOutcome.Created, new ChannelImportIssue(externalId, Join(summary, details))), created.Count, compatibilities);
     }
 
     /// <summary>Mesmo código de uma peça da loja: liga o anúncio a ela, sem mudar a peça (vale o estoque da loja).</summary>

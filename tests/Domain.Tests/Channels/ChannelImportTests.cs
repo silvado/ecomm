@@ -43,10 +43,11 @@ public sealed class ChannelImportTests
     {
         var import = New();
         import.AddPage(["A", "B", "C", "D"], null, Now);
-        import.RecordBatch([(ChannelImportItemOutcome.Created, null), (ChannelImportItemOutcome.Linked, new ChannelImportIssue("B", "ligado"))], Now);
+        // "A" tem 3 variações: um resultado, 3 peças novas.
+        import.RecordBatch([(ChannelImportItemOutcome.Created, null), (ChannelImportItemOutcome.Linked, new ChannelImportIssue("B", "ligado"))], Now, extraParts: 2);
         Assert.Equal(["C", "D"], import.NextBatch(10));
-        import.RecordBatch([(ChannelImportItemOutcome.AlreadyLinked, null), (ChannelImportItemOutcome.Rejected, new ChannelImportIssue("D", "variações"))], Now);
-        Assert.Equal((ChannelImportStatus.Completed, 4, 1, 1, 1, 1, 2), (import.Status, import.ProcessedItems, import.CreatedCount, import.LinkedCount,
+        import.RecordBatch([(ChannelImportItemOutcome.AlreadyLinked, null), (ChannelImportItemOutcome.Rejected, new ChannelImportIssue("D", "encerrado"))], Now);
+        Assert.Equal((ChannelImportStatus.Completed, 4, 3, 1, 1, 1, 2), (import.Status, import.ProcessedItems, import.CreatedCount, import.LinkedCount,
             import.AlreadyLinkedCount, import.RejectedCount, import.Issues.Count));
         Assert.Throws<InvalidOperationException>(() => import.RecordBatch([(ChannelImportItemOutcome.Created, null)], Now));
     }

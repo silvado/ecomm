@@ -591,7 +591,10 @@ Como cada anúncio entra:
 - O **código** da peça é o SKU do anúncio. Sem SKU, o código é o número do anúncio (por exemplo, MLB1234567890).
 - Se você já tem uma peça com o mesmo código, o anúncio é **ligado a ela**. A peça não muda e **vale o estoque da loja**: o anúncio passa a mostrar a quantidade da loja.
 - Anúncio **pausado** lá continua pausado. O sistema não reativa sozinho; para voltar a vender, clique em **Retomar** na peça.
-- Anúncio com **variações** (lado, cor) não entra. Cadastre cada variação como uma peça.
+- Anúncio com **variações** (por exemplo, lado esquerdo e lado direito): cada variação vira uma peça separada, com o lado no título ("Farol Gol - Esquerdo"), a quantidade, o preço e as fotos dela. O código é o SKU da variação; sem SKU, é o código do anúncio seguido do número da variação.
+  - Essas peças entram como **rascunho** e **não são ligadas** ao anúncio. O anúncio continua vendendo no Mercado Livre com a quantidade de lá.
+  - Para o estoque da loja valer: confira cada peça, ative e publique no Mercado Livre e, depois, encerre o anúncio antigo lá. Enquanto os dois estiverem vendendo, a mesma peça pode ser vendida duas vezes.
+  - Importar de novo não duplica: a variação cujo código já existe na loja fica como está.
 - Se as fotos não puderem ser trazidas, a peça entra como **rascunho**, sem ligar ao anúncio. Envie uma foto, ative a peça e importe de novo para ligar.
 - Os **veículos compatíveis** do anúncio entram na **Compatibilidade** da peça nova, com o selo **ML**. Só entram os que existem na tabela de veículos e cuja versão dá para saber com certeza (marca, modelo, ano e motor). Os outros aparecem no relatório pelo nome: inclua à mão, se servirem.
 - Os veículos que o próprio Mercado Livre colocou no anúncio (pelo catálogo dele) não vêm, porque o Mercado Livre não informa quais são. O relatório mostra quantos são; confira a compatibilidade da peça.
@@ -847,7 +850,7 @@ Itens previstos que **ainda não estão no sistema**:
 - NFC-e (cupom fiscal eletrônico do balcão) e emissão automática da NF-e ao confirmar o pagamento.
 - Frete real (Melhor Envio): hoje o frete é simulado.
 - Compatibilidade com veículos e fotos pela planilha de importação; atualização em massa de peças já cadastradas.
-- Importação de anúncios do Mercado Livre com variações; veículos do anúncio para peças que você já tinha (hoje, cadastre na peça).
+- Ligar ao estoque da loja um anúncio do Mercado Livre com variações (hoje, as variações entram como peças em rascunho, sem ligação); veículos do anúncio para peças que você já tinha (hoje, cadastre na peça).
 - Envio automático da rastreabilidade ao banco de dados do Detran; rastreabilidade pela planilha de importação.
 - Alerta de falha de integração por WhatsApp (hoje, faixa no painel e e-mail aos Donos pelo guardião — 4.5.1).
 - Remetente da plataforma em produção (provedor ainda a escolher). Em teste, os e-mails ficam numa caixa interna e não chegam ao comprador.
@@ -887,6 +890,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 18/10/2026 | Resumo diário por e-mail aos Donos (RF34): seção Resumo diário em 4.6 Dados da loja (horário, desligar, prévia) e perfis. |
 | 18/10/2026 | Perguntas de compradores do Mercado Livre com sugestão da IA (RF31): nova seção 4.5.2 (responder, novo rascunho, resposta automática das simples), perfis e textos de 4.6.1. Perguntas entram na exportação completa (4.9). |
 | 18/10/2026 | Importação de anúncios do Mercado Livre traz as medidas e o peso da embalagem para as peças novas (4.6.1). |
+| 19/10/2026 | Importação de anúncios do Mercado Livre: cada variação de um anúncio vira uma peça em rascunho (4.6.1). |
 | 18/10/2026 | Importação de anúncios do Mercado Livre traz os veículos compatíveis para as peças novas, com o selo ML (4.3 e 4.6.1). |
 | 18/10/2026 | Guardião da sincronização (RF33): diagnóstico com o que fazer e alerta por e-mail aos Donos em 4.5.1 Integrações; perfis. |
 Ainda

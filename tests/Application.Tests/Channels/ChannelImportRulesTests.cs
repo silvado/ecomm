@@ -8,10 +8,16 @@ namespace Ecommerce.Application.Tests.Channels;
 public sealed class ChannelImportRulesTests
 {
     private static ChannelItemSnapshot Item(string status = "active", string? condition = "used", string? sku = null, string? customField = null,
-        bool variations = false, decimal price = 350m, string title = "Farol dianteiro Gol", IReadOnlyList<AttributeValue>? attributes = null) =>
+        IReadOnlyList<ChannelItemVariation>? variations = null, decimal price = 350m, string title = "Farol dianteiro Gol",
+        IReadOnlyList<AttributeValue>? attributes = null) =>
         new("MLB123456", title, price, 2, status, condition, customField, "Sem trincas.", ["https://http2.mlstatic.com/a.jpg"], "MLB1747", "gold_pro",
             [.. attributes ?? [], .. sku is null ? Array.Empty<AttributeValue>() : [new AttributeValue("SELLER_SKU", null, sku)]],
-            [new AttributeValue("WARRANTY_TYPE", "2230280", "Garantia do vendedor"), new AttributeValue("WARRANTY_TIME", null, "90 dias")], variations);
+            [new AttributeValue("WARRANTY_TYPE", "2230280", "Garantia do vendedor"), new AttributeValue("WARRANTY_TIME", null, "90 dias")], variations ?? []);
+
+    private static ChannelItemVariation Variation(string id, string side, int quantity = 1, decimal price = 350m, string? sku = null,
+        IReadOnlyList<string>? pictures = null) =>
+        new(id, [new AttributeValue("SIDE", null, side)], price, quantity, pictures ?? [], null,
+            sku is null ? [] : [new AttributeValue("SELLER_SKU", null, sku)]);
 
     [Fact]
     public void Anuncio_ativo_vira_peca_com_o_SKU_como_codigo()
@@ -52,15 +58,57 @@ public sealed class ChannelImportRulesTests
     }
 
     [Theory]
-    [InlineData("closed", false, 350, "encerrado")]
-    [InlineData("under_review", false, 350, "encerrado")]
-    [InlineData("active", true, 350, "variações")]
-    [InlineData("active", false, 0, "sem preço")]
-    public void Anuncio_que_nao_entra_tem_motivo(string status, bool variations, int price, string reason)
+    [InlineData("closed", 350, "encerrado")]
+    [InlineData("under_review", 350, "encerrado")]
+    [InlineData("active", 0, "sem preço")]
+    public void Anuncio_que_nao_entra_tem_motivo(string status, int price, string reason)
     {
-        var (item, why) = ChannelImportRules.Map(Item(status: status, variations: variations, price: price));
+        var (item, why) = ChannelImportRules.Map(Item(status: status, price: price));
         Assert.Null(item);
         Assert.Contains(reason, why!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Cada_variacao_vira_uma_peca_com_a_combinacao_no_titulo()
+    {
+        var item = Item(sku: "far-1", status: "paused", variations:
+        [
+            Variation("101", "Esquerdo", quantity: 1, sku: "far-1e", pictures: ["https://http2.mlstatic.com/e.jpg"]),
+            Variation("102", "Direito", quantity: 3, price: 0),
+        ]);
+        Assert.Contains("variações", ChannelImportRules.Map(item).Reason!, StringComparison.Ordinal);
+
+        var (variations, reason) = ChannelImportRules.MapVariations(item);
+        Assert.Null(reason);
+        Assert.Equal(2, variations.Count);
+        var (left, right) = (variations[0].Item!, variations[1].Item!);
+        Assert.Equal(("FAR-1E", "Farol dianteiro Gol - Esquerdo", 1, 350m), (left.InternalCode, left.Details.Title, left.Quantity, left.Details.Price));
+        Assert.Equal(("FAR-1-102", "Farol dianteiro Gol - Direito", 3, 350m), (right.InternalCode, right.Details.Title, right.Quantity, right.Details.Price));
+        Assert.Equal(["https://http2.mlstatic.com/e.jpg"], variations[0].PictureUrls);
+        Assert.Equal(["https://http2.mlstatic.com/a.jpg"], variations[1].PictureUrls); // sem foto própria: as do anúncio
+        Assert.Equal(("Sem trincas.", PartCondition.Used), (right.Details.Description, right.Details.Condition));
+        Assert.Equal("MLB123456-102", ChannelImportRules.MapVariations(Item(variations: [Variation("102", "Direito")])).Variations[0].Item!.InternalCode);
+    }
+
+    [Fact]
+    public void Variacao_sem_preco_ou_anuncio_encerrado_fica_de_fora()
+    {
+        var (variations, _) = ChannelImportRules.MapVariations(Item(price: 0, variations: [Variation("1", "Esquerdo", price: 0), Variation("2", "Direito", price: 90)]));
+        Assert.Null(variations[0].Item);
+        Assert.Contains("sem preço", variations[0].Reason!, StringComparison.Ordinal);
+        Assert.Equal(90m, variations[1].Item!.Details.Price);
+
+        var (none, reason) = ChannelImportRules.MapVariations(Item(status: "closed", variations: [Variation("1", "Esquerdo")]));
+        Assert.Empty(none);
+        Assert.Contains("encerrado", reason!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Titulo_longo_da_variacao_guarda_a_combinacao()
+    {
+        var title = ChannelImportRules.MapVariations(Item(title: new string('a', 200), variations: [Variation("1", "Esquerdo")])).Variations[0].Item!.Details.Title;
+        Assert.Equal(Part.TitleMaxLength, title.Length);
+        Assert.EndsWith(" - Esquerdo", title, StringComparison.Ordinal);
     }
 
     [Fact]
