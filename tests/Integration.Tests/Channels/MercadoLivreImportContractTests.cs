@@ -50,13 +50,14 @@ public sealed class MercadoLivreImportContractTests
                  "category_id":"MLB1747","listing_type_id":"gold_special","seller_custom_field":"FAR-1",
                  "pictures":[{"id":"p1","secure_url":"https://http2.mlstatic.com/a.jpg"},{"id":"p2","url":"https://http2.mlstatic.com/b.jpg"}],
                  "attributes":[{"id":"BRAND","value_id":null,"value_name":"VW"},{"id":"SELLER_SKU","value_name":"FAR-001"}],
-                 "sale_terms":[{"id":"WARRANTY_TYPE","value_name":"Sem garantia"}],"variations":[{"id":1}]}
+                 "sale_terms":[{"id":"WARRANTY_TYPE","value_name":"Sem garantia"}],"variations":[{"id":1}],"shipping":{"mode":"me2","dimensions":"10x20x30,500"}}
                 """));
         var item = (await Api(handler).GetItemSnapshotAsync("token", "MLB1", CancellationToken.None))!;
         Assert.Equal(("MLB1", "Farol Gol", 350.5m, 2, "paused", "used", "FAR-1"), (item.Id, item.Title, item.Price, item.Quantity, item.Status, item.Condition, item.SellerCustomField));
         Assert.Equal(["https://http2.mlstatic.com/a.jpg", "https://http2.mlstatic.com/b.jpg"], item.PictureUrls);
         Assert.Equal(("Sem trincas.", true, 2), (item.Description, item.HasVariations, item.Attributes.Count));
         Assert.Equal("FAR-001", item.Attributes.Single(a => a.Id == "SELLER_SKU").ValueName);
+        Assert.Equal("10x20x30,500", item.ShippingDimensions);
     }
 
     [Theory]

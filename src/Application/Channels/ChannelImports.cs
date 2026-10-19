@@ -17,12 +17,12 @@ public sealed record ProcessChannelImport(Guid ImportId);
 
 /// <summary>
 /// Anúncio do vendedor lido do canal (RF11 CA2): o que interessa para virar peça e para o vínculo. <paramref name="Condition"/>
-/// é o campo <c>condition</c> do ML ("new", "used", "not_specified").
+/// é o campo <c>condition</c> do ML ("new", "used", "not_specified"); <paramref name="ShippingDimensions"/>, o <c>shipping.dimensions</c>.
 /// </summary>
 public sealed record ChannelItemSnapshot(
     string Id, string Title, decimal Price, int Quantity, string Status, string? Condition, string? SellerCustomField, string? Description,
     IReadOnlyList<string> PictureUrls, string? CategoryId, string? ListingTypeId, IReadOnlyList<AttributeValue> Attributes,
-    IReadOnlyList<AttributeValue> SaleTerms, bool HasVariations);
+    IReadOnlyList<AttributeValue> SaleTerms, bool HasVariations, string? ShippingDimensions = null);
 
 /// <summary>Anúncio pronto para virar peça: código, dados, saldo e a situação do vínculo.</summary>
 public sealed record ImportedItem(string InternalCode, PartDetails Details, int Quantity, ListingStatus ListingStatus, MercadoLivreListingOptions Options);
@@ -96,14 +96,59 @@ public static class ChannelImportRules
         var oem = Value(item.Attributes, "PART_NUMBER") ?? Value(item.Attributes, "OEM");
         var oemCodes = oem is { Length: > 0 and <= PartOemCode.MaxLength } ? new[] { oem.Trim() } : [];
 
+        var package = PackageDimensions(item);
         var details = new PartDetails(title, string.IsNullOrEmpty(description) ? null : description, Condition(item), item.Price,
-            null, null, null, null, oemCodes);
+            package?.LengthCm, package?.WidthCm, package?.HeightCm, package?.WeightG, oemCodes);
         var options = new MercadoLivreListingOptions(
             item.CategoryId ?? string.Empty, item.ListingTypeId ?? "gold_special",
             item.Attributes.Where(a => !NotEditable.Contains(a.Id) && (a.ValueId is { Length: > 0 } || a.ValueName is { Length: > 0 })).ToList(),
             Value(item.SaleTerms, "WARRANTY_TYPE") is { } warranty && !warranty.Equals("Sem garantia", StringComparison.OrdinalIgnoreCase) ? warranty : null,
             Value(item.SaleTerms, "WARRANTY_TIME"));
         return (new ImportedItem(code, details, Math.Max(0, item.Quantity), status.Value, options), null);
+    }
+
+    /// <summary>Medidas da embalagem para o frete: cm e gramas inteiros (arredondados para cima, para a caixa caber).</summary>
+    public sealed record Package(int LengthCm, int WidthCm, int HeightCm, int WeightG);
+
+    /// <summary>
+    /// Medidas da embalagem do anúncio: os atributos SELLER_PACKAGE_LENGTH/WIDTH/HEIGHT (cm) e SELLER_PACKAGE_WEIGHT (g)
+    /// ou, sem eles, o <c>shipping.dimensions</c> no formato "AxBxC,peso" (cm e g). Fonte:
+    /// https://developers.mercadolivre.com.br/pt_br/itens-atributos-de-envio-e-dimensoes. HIPÓTESE: no
+    /// <c>shipping.dimensions</c>, a ordem é altura x largura x comprimento (a página não diz). Só vale com as quatro medidas
+    /// dentro dos limites da peça — senão, nenhuma (medida pela metade não calcula frete).
+    /// </summary>
+    public static Package? PackageDimensions(ChannelItemSnapshot item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        var fromAttributes = (Measure(Value(item.Attributes, "SELLER_PACKAGE_LENGTH"), Length), Measure(Value(item.Attributes, "SELLER_PACKAGE_WIDTH"), Length),
+            Measure(Value(item.Attributes, "SELLER_PACKAGE_HEIGHT"), Length), Measure(Value(item.Attributes, "SELLER_PACKAGE_WEIGHT"), Weight));
+        if (fromAttributes is ({ } l, { } w, { } h, { } g)) return Valid(l, w, h, g);
+
+        // "10x20x30,500"
+        var parts = (item.ShippingDimensions ?? string.Empty).Split(',', 2, StringSplitOptions.TrimEntries);
+        var sides = parts[0].Split('x', StringSplitOptions.TrimEntries);
+        if (parts.Length != 2 || sides.Length != 3) return null;
+        return (Measure(sides[2], Length), Measure(sides[1], Length), Measure(sides[0], Length), Measure(parts[1], Weight)) is ({ } sl, { } sw, { } sh, { } sg)
+            ? Valid(sl, sw, sh, sg)
+            : null;
+    }
+
+    private static readonly Dictionary<string, decimal> Length = new(StringComparer.OrdinalIgnoreCase) { [""] = 1, ["cm"] = 1, ["mm"] = 0.1m, ["m"] = 100 };
+    private static readonly Dictionary<string, decimal> Weight = new(StringComparer.OrdinalIgnoreCase) { [""] = 1, ["g"] = 1, ["kg"] = 1000 };
+
+    /// <summary>"20", "20 cm", "1,5 kg", "500g" → na unidade base; nulo se não for número com unidade conhecida.</summary>
+    private static decimal? Measure(string? text, Dictionary<string, decimal> units)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(text?.Trim() ?? string.Empty, @"^(\d{1,9}(?:[.,]\d{1,6})?)\s*([a-zA-Z]*)$");
+        if (!match.Success || !units.TryGetValue(match.Groups[2].Value, out var factor)) return null;
+        return decimal.Parse(match.Groups[1].Value.Replace(',', '.'), System.Globalization.CultureInfo.InvariantCulture) * factor;
+    }
+
+    private static Package? Valid(decimal length, decimal width, decimal height, decimal weight)
+    {
+        var (l, w, h, g) = ((int)Math.Ceiling(Math.Min(length, int.MaxValue)), (int)Math.Ceiling(Math.Min(width, int.MaxValue)),
+            (int)Math.Ceiling(Math.Min(height, int.MaxValue)), (int)Math.Ceiling(Math.Min(weight, int.MaxValue)));
+        return new[] { l, w, h }.All(d => d is > 0 and <= Part.MaxDimensionCm) && g is > 0 and <= Part.MaxWeightG ? new Package(l, w, h, g) : null;
     }
 
     private static PartCondition Condition(ChannelItemSnapshot item)

@@ -40,8 +40,10 @@ async function create(key, type, fields, parentId) {
     existing.push({ id: ids[key], type, title: fields['System.Title'], fields });
     return ids[key];
   }
+  // O Azure só cria item no estado inicial (criar já "Done" dá HTTP 400): cria sem estado e o
+  // updateExisting leva ao estado certo (e limpa o Remaining Work de tarefa Done).
   const ops = Object.entries(fields)
-    .filter(([, v]) => v !== undefined && v !== null && v !== '')
+    .filter(([f, v]) => f !== 'System.State' && v !== undefined && v !== null && v !== '')
     .map(([f, v]) => ({ op: 'add', path: `/fields/${f}`, value: v }));
   if (parentId) {
     ops.push({
@@ -63,6 +65,7 @@ async function create(key, type, fields, parentId) {
   const item = await res.json();
   ids[key] = item.id;
   save();
+  existing.push({ id: item.id, type, title: fields['System.Title'], fields });
   console.log(`#${item.id} ${type}: ${fields['System.Title']}`);
   return item.id;
 }
@@ -97,6 +100,8 @@ async function updateExisting() {
       continue;
     }
     const ops = SYNCED.filter((f) => item.fields[f] !== undefined && !same(now[f], item.fields[f]))
+      // Effort de item já Done é somente leitura no processo Scrum (TF401320): fica como está no board.
+      .filter((f) => !(f === 'Microsoft.VSTS.Scheduling.Effort' && now['System.State'] === 'Done'))
       // null = campo vazio (ex.: Remaining Work de tarefa Done, que o processo Scrum exige vazio).
       .map((f) => (item.fields[f] === null ? { op: 'remove', path: `/fields/${f}` } : { op: 'add', path: `/fields/${f}`, value: item.fields[f] }));
     if (ops.length === 0) continue;

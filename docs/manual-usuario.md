@@ -1,7 +1,7 @@
 # Manual do usuário
 
 > **Documento vivo.** É atualizado a cada entrega que muda uma tela ou um fluxo, e descreve o que já está no ar. No fim do projeto, passa por revisão para virar o manual oficial.
-> Última atualização: 18/10/2026 (veículos compatíveis na importação de anúncios do Mercado Livre).
+> Última atualização: 18/10/2026 (medidas da embalagem na importação de anúncios do Mercado Livre).
 
 ## Sumário
 
@@ -596,7 +596,7 @@ Como cada anúncio entra:
 - Os **veículos compatíveis** do anúncio entram na **Compatibilidade** da peça nova, com o selo **ML**. Só entram os que existem na tabela de veículos e cuja versão dá para saber com certeza (marca, modelo, ano e motor). Os outros aparecem no relatório pelo nome: inclua à mão, se servirem.
 - Os veículos que o próprio Mercado Livre colocou no anúncio (pelo catálogo dele) não vêm, porque o Mercado Livre não informa quais são. O relatório mostra quantos são; confira a compatibilidade da peça.
 - Peça que você já tinha e que foi ligada ao anúncio **não recebe** veículos do anúncio.
-- Medidas e peso da embalagem não vêm do anúncio: preencha na peça antes de vender com frete calculado na loja virtual.
+- As **medidas e o peso da embalagem** vêm do anúncio quando ele tem os quatro valores (comprimento, largura, altura e peso). Os valores são arredondados para cima, em cm e gramas. Se faltar algum, a peça entra sem medidas: preencha na peça antes de vender com frete calculado na loja virtual. Peça que você já tinha não muda.
 - **Importar de novo não duplica.** Anúncios já ligados são pulados; só entram os novos.
 - O limite é de **5.000 anúncios** por importação.
 
@@ -886,6 +886,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 16/10/2026 | Fatura em atraso (RF38): faixa, painel somente leitura, suspensão com anúncios pausados e volta ao pagar (4.10); suspensão e bloqueio pela cobrança em 6.3. |
 | 18/10/2026 | Resumo diário por e-mail aos Donos (RF34): seção Resumo diário em 4.6 Dados da loja (horário, desligar, prévia) e perfis. |
 | 18/10/2026 | Perguntas de compradores do Mercado Livre com sugestão da IA (RF31): nova seção 4.5.2 (responder, novo rascunho, resposta automática das simples), perfis e textos de 4.6.1. Perguntas entram na exportação completa (4.9). |
+| 18/10/2026 | Importação de anúncios do Mercado Livre traz as medidas e o peso da embalagem para as peças novas (4.6.1). |
 | 18/10/2026 | Importação de anúncios do Mercado Livre traz os veículos compatíveis para as peças novas, com o selo ML (4.3 e 4.6.1). |
 | 18/10/2026 | Guardião da sincronização (RF33): diagnóstico com o que fazer e alerta por e-mail aos Donos em 4.5.1 Integrações; perfis. |
 Ainda

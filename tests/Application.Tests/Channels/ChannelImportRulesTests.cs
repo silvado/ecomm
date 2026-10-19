@@ -68,4 +68,39 @@ public sealed class ChannelImportRulesTests
     {
         Assert.Equal(Part.TitleMaxLength, ChannelImportRules.Map(Item(title: new string('a', 200))).Item!.Details.Title.Length);
     }
+
+    private static ChannelImportRules.Package? Package(string? shipping, params (string Id, string Value)[] attributes) =>
+        ChannelImportRules.PackageDimensions(Item(attributes: attributes.Select(a => new AttributeValue(a.Id, null, a.Value)).ToList()) with { ShippingDimensions = shipping });
+
+    [Fact]
+    public void Medidas_da_embalagem_vem_dos_atributos_com_unidade()
+    {
+        Assert.Equal(new ChannelImportRules.Package(40, 30, 21, 1500),
+            Package("1x1x1,1", ("SELLER_PACKAGE_LENGTH", "40 cm"), ("SELLER_PACKAGE_WIDTH", "300 mm"), ("SELLER_PACKAGE_HEIGHT", "20,5"), ("SELLER_PACKAGE_WEIGHT", "1.5 kg")));
+        var (item, _) = ChannelImportRules.Map(Item(attributes: [new("SELLER_PACKAGE_LENGTH", null, "40"), new("SELLER_PACKAGE_WIDTH", null, "30"),
+            new("SELLER_PACKAGE_HEIGHT", null, "20"), new("SELLER_PACKAGE_WEIGHT", null, "800")]));
+        Assert.Equal((40, 30, 20, 800), (item!.Details.LengthCm, item.Details.WidthCm, item.Details.HeightCm, item.Details.WeightG));
+    }
+
+    [Fact]
+    public void Sem_atributos_usa_o_shipping_dimensions()
+    {
+        // HIPÓTESE: altura x largura x comprimento, peso em gramas.
+        Assert.Equal(new ChannelImportRules.Package(30, 20, 10, 500), Package("10x20x30,500"));
+        Assert.Equal(new ChannelImportRules.Package(30, 20, 10, 500), Package("10x20x30,500", ("SELLER_PACKAGE_LENGTH", "40"))); // atributo pela metade
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("10x20,500")]
+    [InlineData("10x20x30")]
+    [InlineData("10x20x0,500")]
+    [InlineData("10x20x2000,500")] // acima de 1.000 cm
+    [InlineData("10x20x30,meio quilo")]
+    [InlineData("10x20x30,99999999999999999999")]
+    public void Medida_incompleta_ou_fora_do_limite_fica_em_branco(string? shipping)
+    {
+        Assert.Null(Package(shipping));
+    }
 }

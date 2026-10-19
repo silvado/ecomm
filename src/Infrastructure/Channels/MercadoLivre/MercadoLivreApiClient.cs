@@ -367,7 +367,8 @@ public sealed class MercadoLivreApiClient(HttpClient http, IOptions<MercadoLivre
         var variations = item.TryGetProperty("variations", out var v) && v.ValueKind == JsonValueKind.Array && v.GetArrayLength() > 0;
         return new ChannelItemSnapshot(Text(item, "id") ?? string.Empty, title, price, quantity, Text(item, "status") ?? string.Empty, Text(item, "condition"),
             Text(item, "seller_custom_field"), description, pictures, Text(item, "category_id"), Text(item, "listing_type_id"),
-            Values(item, "attributes"), Values(item, "sale_terms"), variations);
+            Values(item, "attributes"), Values(item, "sale_terms"), variations,
+            item.TryGetProperty("shipping", out var shipping) && shipping.ValueKind == JsonValueKind.Object ? Text(shipping, "dimensions") : null);
     }
 
     public const int MaxPictureBytes = 10 * 1024 * 1024;
