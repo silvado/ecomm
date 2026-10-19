@@ -1,5 +1,5 @@
 import { HttpContext, HttpContextToken, HttpErrorResponse, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
-import { Component, computed, inject, Injectable, signal } from '@angular/core';
+import { Component, inject, Injectable, signal } from '@angular/core';
 import { finalize, tap } from 'rxjs';
 import { problemTitle } from './auth';
 
@@ -29,33 +29,43 @@ export interface Toast {
   text: string;
 }
 
-/** Só aparece se a ação passar disso: as rápidas não piscam a tela. */
-export const OVERLAY_DELAY_MS = 300;
+/** O overlay aparece no clique e fica ao menos isso na tela: nas ações rápidas, vira um "piscar" visível, não um flash. */
+export const OVERLAY_MIN_MS = 400;
 const SUCCESS_MS = 4000;
 const ERROR_MS = 8000;
 
 /** Overlay enquanto há ação gravando e os avisos (toasts) do painel. */
 @Injectable({ providedIn: 'root' })
 export class FeedbackService {
-  private readonly pending = signal(0);
-  private readonly delayed = signal(false);
-  private timer: ReturnType<typeof setTimeout> | null = null;
+  private pending = 0;
+  private shownAt = 0;
+  private hideTimer: ReturnType<typeof setTimeout> | null = null;
   private nextId = 1;
 
   readonly toasts = signal<Toast[]>([]);
-  readonly busy = computed(() => this.pending() > 0 && this.delayed());
+  readonly busy = signal(false);
 
   begin(): void {
-    this.pending.update((n) => n + 1);
-    this.timer ??= setTimeout(() => this.delayed.set(true), OVERLAY_DELAY_MS);
+    this.pending++;
+    if (this.hideTimer) clearTimeout(this.hideTimer);
+    this.hideTimer = null;
+    if (this.busy()) return;
+    this.shownAt = Date.now();
+    this.busy.set(true);
   }
 
   end(): void {
-    this.pending.update((n) => Math.max(0, n - 1));
-    if (this.pending() > 0) return;
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-    this.delayed.set(false);
+    this.pending = Math.max(0, this.pending - 1);
+    if (this.pending > 0 || !this.busy()) return;
+    const left = OVERLAY_MIN_MS - (Date.now() - this.shownAt);
+    if (left <= 0) {
+      this.busy.set(false);
+      return;
+    }
+    this.hideTimer = setTimeout(() => {
+      this.hideTimer = null;
+      this.busy.set(false);
+    }, left);
   }
 
   success(text: string): void {
@@ -91,7 +101,7 @@ export function errorText(error: unknown): string {
 }
 
 /**
- * Toda ação que grava ganha overlay (depois de {@link OVERLAY_DELAY_MS}) e um aviso de sucesso ou de erro (com a
+ * Toda ação que grava ganha overlay (no mínimo {@link OVERLAY_MIN_MS}) e um aviso de sucesso ou de erro (com a
  * mensagem da API). Fica por fora dos interceptores de sessão: vê o resultado depois de uma renovação de token.
  */
 export const feedbackInterceptor: HttpInterceptorFn = (req, next) => {

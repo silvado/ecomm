@@ -117,7 +117,7 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 A área fecha ao escolher uma ação, ao clicar fora ou com a tecla Esc.
 
 **Aviso de cada ação:** ao salvar, excluir, publicar ou enviar algo:
-- se a ação demorar, a tela escurece com um indicador de "processando" e não aceita outro clique até terminar (evita salvar duas vezes);
+- ao clicar, a tela escurece com um indicador de "processando" e não aceita outro clique até terminar (evita salvar duas vezes);
 - no fim, aparece um aviso no canto superior direito:
   - **verde** quando deu certo (por exemplo, "Peça salva." ou "Certificado guardado."), que some sozinho em poucos segundos;
   - **vermelho** quando deu errado, com o motivo (por exemplo, "Código interno já usado por outra peça."), que fica um pouco mais na tela;

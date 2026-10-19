@@ -2,7 +2,7 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
-import { feedback, FeedbackHost, feedbackInterceptor, FeedbackService, OVERLAY_DELAY_MS, silent } from './feedback';
+import { feedback, FeedbackHost, feedbackInterceptor, FeedbackService, OVERLAY_MIN_MS, silent } from './feedback';
 
 describe('Retorno das ações (overlay e avisos)', () => {
   let http: HttpClient;
@@ -24,11 +24,10 @@ describe('Retorno das ações (overlay e avisos)', () => {
 
   const texts = () => service.toasts().map((t) => `${t.kind}: ${t.text}`);
 
-  it('ação que grava: overlay só depois do atraso, some ao terminar, e aviso de sucesso', async () => {
+  it('ação que grava: overlay no clique, some ao terminar, e aviso de sucesso', async () => {
     const call = firstValueFrom(http.put('/api/painel/loja', {}, { context: feedback('Dados salvos.') }));
-    expect(service.busy()).toBe(false);
-    vi.advanceTimersByTime(OVERLAY_DELAY_MS);
     expect(service.busy()).toBe(true);
+    vi.advanceTimersByTime(OVERLAY_MIN_MS);
 
     backend.expectOne('/api/painel/loja').flush({});
     await call;
@@ -39,16 +38,19 @@ describe('Retorno das ações (overlay e avisos)', () => {
     expect(texts()).toEqual([]);
   });
 
-  it('ação rápida não pisca o overlay; sem texto, aviso padrão pelo tipo de ação', async () => {
+  it('ação rápida mantém o overlay o tempo mínimo; sem texto, aviso padrão pelo tipo de ação', async () => {
     const save = firstValueFrom(http.post('/api/painel/x', {}));
     backend.expectOne('/api/painel/x').flush({});
     await save;
-    vi.advanceTimersByTime(OVERLAY_DELAY_MS);
-    expect(service.busy()).toBe(false);
+    expect(service.busy()).toBe(true);
 
+    // Outra ação antes de o overlay sumir: continua um só, sem piscar.
     const remove = firstValueFrom(http.delete('/api/painel/x/1'));
+    vi.advanceTimersByTime(OVERLAY_MIN_MS);
+    expect(service.busy()).toBe(true);
     backend.expectOne('/api/painel/x/1').flush(null);
     await remove;
+    expect(service.busy()).toBe(false);
     expect(texts()).toEqual(['success: Feito.', 'success: Removido.']);
   });
 
@@ -62,18 +64,18 @@ describe('Retorno das ações (overlay e avisos)', () => {
     await expect(offline).rejects.toBeTruthy();
 
     expect(texts()).toEqual(['error: Código interno já usado por outra peça.', 'error: Sem conexão com o servidor. Confira a internet e tente de novo.']);
+    vi.advanceTimersByTime(OVERLAY_MIN_MS);
     expect(service.busy()).toBe(false);
   });
 
   it('sem aviso de sucesso quando a tela mostra o resultado; sem overlay em ação com progresso próprio', async () => {
     const preview = firstValueFrom(http.post('/api/painel/importacoes', {}, { context: feedback(null) }));
-    vi.advanceTimersByTime(OVERLAY_DELAY_MS);
     expect(service.busy()).toBe(true);
     backend.expectOne('/api/painel/importacoes').flush({});
     await preview;
+    vi.advanceTimersByTime(OVERLAY_MIN_MS);
 
     const photo = firstValueFrom(http.post('/api/painel/pecas/1/fotos', {}, { context: feedback(null, { overlay: false }) }));
-    vi.advanceTimersByTime(OVERLAY_DELAY_MS);
     expect(service.busy()).toBe(false);
     backend.expectOne('/api/painel/pecas/1/fotos').flush({});
     await photo;
@@ -87,7 +89,6 @@ describe('Retorno das ações (overlay e avisos)', () => {
       firstValueFrom(http.post('/api/plataforma/auth/entrar', {})),
       firstValueFrom(http.post('/api/plataforma/lojas/1/tema/previa', {}, { context: silent() })),
     ];
-    vi.advanceTimersByTime(OVERLAY_DELAY_MS);
     expect(service.busy()).toBe(false);
     backend.expectOne('/api/painel/pecas').flush([]);
     backend.expectOne('/api/auth/login').flush({}, { status: 401, statusText: 'Unauthorized' });
