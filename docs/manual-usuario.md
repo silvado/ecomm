@@ -83,7 +83,19 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 | Privacidade e termos da loja (Dados da loja) | ✔ | — |
 | Assinatura (mensalidade e faturas da plataforma) | ✔ | — |
 
-O menu mostra só os módulos que o perfil pode usar.
+**O menu** fica na lateral esquerda, em grupos que abrem e fecham com um clique:
+
+| Grupo | Itens |
+|---|---|
+| **Início** | tela inicial |
+| **Catálogo** | Peças, Nova peça, Importar planilha, Veículos doadores |
+| **Vendas** | Pedidos, Balcão, Perguntas |
+| **Canais** | Canais de venda, Integrações |
+| **Configurações** | Primeiros passos, Dados da loja, Pagamentos, Cofre, Usuários, Privacidade |
+
+- O grupo da página em que você está abre sozinho, com o item marcado.
+- O menu mostra só os módulos que o perfil pode usar. Um grupo sem nada para o perfil não aparece, e um grupo com um item só vira um link direto.
+- No celular, o menu fica escondido: toque no botão ☰ no canto superior esquerdo para abrir e escolha o item (o menu fecha sozinho).
 
 ## 4. Painel da loja
 
@@ -96,13 +108,19 @@ O menu mostra só os módulos que o perfil pode usar.
 
 **Bloqueio por tentativas:** depois de **5 senhas erradas seguidas**, a conta fica bloqueada por **15 minutos**. O Dono pode desbloquear antes em **Usuários** (seção 4.8).
 
-**No topo do painel:** nome da loja e seu perfil; à direita, seu e-mail, **Trocar de loja** (quando há mais de uma), **Trocar senha** e **Sair**.
+**No topo do painel:** o nome da loja à esquerda (clique para voltar ao Início) e, à direita, a **sua área**: um círculo com as iniciais, o seu e-mail e o seu perfil. Clique nela para abrir as ações da conta:
+- **Trocar de loja** (só quando você tem acesso a mais de uma);
+- **Assinatura** (só o Dono);
+- **Trocar senha**;
+- **Sair**.
+
+A área fecha ao escolher uma ação, ao clicar fora ou com a tecla Esc.
 
 A sessão continua aberta por até 7 dias sem uso. Depois disso, é preciso entrar de novo.
 
 ### 4.2 Início
 
-Tela de boas-vindas com o nome da loja. Os módulos ficam no menu do topo.
+Tela de boas-vindas com o nome da loja. Os módulos ficam no menu da lateral.
 
 **Seu plano** (só o Dono)
 - Mostra o plano da loja (Essencial, Profissional ou Completo) e quanto de cada limite já foi usado: peças ativas, usuários e cadastros com IA no mês.
@@ -120,7 +138,7 @@ Tela de boas-vindas com o nome da loja. Os módulos ficam no menu do topo.
 
 ### 4.2.1 Primeiros passos
 
-Toda loja nova começa **em implantação**: a loja virtual mostra **"Loja em breve"** e não vende até o Dono publicar. Em **Primeiros passos** (menu do topo, só o Dono) aparece cada passo e a situação dele:
+Toda loja nova começa **em implantação**: a loja virtual mostra **"Loja em breve"** e não vende até o Dono publicar. Em **Primeiros passos** (menu **Configurações**, só o Dono) aparece cada passo e a situação dele:
 
 | Passo | Onde se configura | |
 |---|---|---|
@@ -139,7 +157,7 @@ Toda loja nova começa **em implantação**: a loja virtual mostra **"Loja em br
 
 ### 4.3 Peças
 
-**Acesso:** menu **Peças** (Dono e Operador).
+**Acesso:** menu **Catálogo › Peças** (Dono e Operador).
 
 **Lista de peças**
 - Busca por **título, código interno ou código OEM** (espaços, pontos e hífens são ignorados).
@@ -243,7 +261,7 @@ Use para cadastrar o estoque de uma vez, por exemplo na implantação da loja.
 
 ### 4.3.1 Veículos doadores e rastreabilidade
 
-**Acesso:** menu **Doadores** (Dono e Operador) e seção **Rastreabilidade** no cadastro de cada peça.
+**Acesso:** menu **Catálogo › Veículos doadores** (Dono e Operador) e seção **Rastreabilidade** no cadastro de cada peça.
 
 Serve para registrar de onde veio cada peça usada, como pede a Lei 12.977/2014 para empresas de desmontagem. **Esses dados ficam só no painel:** nunca aparecem na loja nem nos canais de venda.
 
@@ -285,7 +303,7 @@ O cadastro do veículo mostra todas as peças ligadas a ele. Um veículo só pod
 
 ### 4.4 Pedidos
 
-**Acesso:** menu **Pedidos** (Dono e Operador).
+**Acesso:** menu **Vendas › Pedidos** (Dono e Operador).
 
 **Situações do pedido**
 
@@ -381,7 +399,7 @@ Antes de emitir, a tela avisa o que falta: configuração da loja incompleta, pe
 
 ### 4.5 Venda de balcão
 
-**Acesso:** menu **Balcão** (Dono e Operador).
+**Acesso:** menu **Vendas › Balcão** (Dono e Operador).
 
 Use para registrar a peça vendida no balcão da loja. A venda baixa o estoque na hora, então a peça deixa de aparecer como disponível na loja virtual, e entra na tela **Pedidos** com origem **Balcão**, já como **Retirado**.
 
@@ -401,7 +419,7 @@ Use para registrar a peça vendida no balcão da loja. A venda baixa o estoque n
 
 ### 4.5.1 Integrações
 
-**Acesso:** menu **Integrações** (Dono e Operador). O detalhe de cada **pedido** e de cada **peça** também mostra as chamadas ligadas a ele, na seção "Integrações".
+**Acesso:** menu **Canais › Integrações** (Dono e Operador). O detalhe de cada **pedido** e de cada **peça** também mostra as chamadas ligadas a ele, na seção "Integrações".
 
 A loja conversa com serviços externos: gateway de pagamento (Mercado Pago ou Cielo), frete e, depois, canais de venda. Esta tela mostra cada uma dessas conversas e o que deu errado.
 
@@ -427,7 +445,7 @@ A loja conversa com serviços externos: gateway de pagamento (Mercado Pago ou Ci
 
 ### 4.5.2 Perguntas de compradores
 
-**Acesso:** menu **Perguntas** (Dono e Operador).
+**Acesso:** menu **Vendas › Perguntas** (Dono e Operador).
 
 Quando um comprador pergunta num anúncio da loja no Mercado Livre, a pergunta aparece aqui em poucos segundos, com a peça do anúncio. A IA já deixa uma **sugestão de resposta**, escrita só com o que está no cadastro da peça: título, estado, se tem estoque, códigos, medidas, descrição, veículos compatíveis, retirada no balcão e a política de troca e devolução. A IA não vê o preço e nunca fala de preço, desconto ou frete.
 
@@ -458,7 +476,7 @@ As respostas enviadas sozinhas aparecem em **Todas** como "Respondida automatica
 
 ### 4.6 Dados da loja
 
-**Acesso:** menu **Dados da loja** (só Dono).
+**Acesso:** menu **Configurações › Dados da loja** (só Dono).
 
 - **Razão social, CNPJ e endereço da loja** aparecem no topo e não mudam por aqui.
 - **Logo**: PNG, JPG ou WebP, até 2 MB. Sem logo, a loja mostra o nome no cabeçalho.
@@ -551,7 +569,7 @@ A loja virtual sempre tem as páginas **Política de privacidade** e **Termos de
 
 ### 4.6.1 Canais de venda
 
-**Acesso:** menu **Canais de venda** (só o Dono).
+**Acesso:** menu **Canais › Canais de venda** (só o Dono).
 
 Aqui a loja liga as contas onde vende. Nesta versão dá para **conectar a conta do Mercado Livre** e, depois, **anunciar** as peças pela seção Anúncios de cada peça (4.3). As vendas de lá chegam em **Pedidos** (4.4) e as perguntas dos compradores em **Perguntas** (4.5.2). Também dá para ligar o catálogo do Instagram e do Facebook; a OLX chega numa próxima versão.
 
@@ -624,7 +642,7 @@ O catálogo da Meta mostra as peças da loja no Instagram e no Facebook, com lin
 
 ### 4.7 Pagamentos
 
-**Acesso:** menu **Pagamentos** (só Dono).
+**Acesso:** menu **Configurações › Pagamentos** (só Dono).
 
 O dinheiro vai **direto para a conta da loja** no gateway. O comprador paga com cartão ou Pix na página do próprio gateway. As chaves ficam guardadas cifradas e **nunca são mostradas de novo**: o painel exibe só os últimos caracteres.
 
@@ -647,7 +665,7 @@ O dinheiro vai **direto para a conta da loja** no gateway. O comprador paga com 
 
 ### 4.7.1 Cofre e certificado digital
 
-**Acesso:** menu **Cofre** (só Dono).
+**Acesso:** menu **Configurações › Cofre** (só Dono).
 
 Chaves e certificados ficam guardados **cifrados**. Depois de salvos, nunca aparecem de novo.
 
@@ -672,7 +690,7 @@ Chaves e certificados ficam guardados **cifrados**. Depois de salvos, nunca apar
 
 ### 4.8 Usuários
 
-**Acesso:** menu **Usuários** (só Dono).
+**Acesso:** menu **Configurações › Usuários** (só Dono).
 
 - A lista mostra e-mail, perfil e situação: **Ativo**, **Senha provisória** ou **Bloqueado**.
 - **Adicionar usuário**:
@@ -685,7 +703,7 @@ Chaves e certificados ficam guardados **cifrados**. Depois de salvos, nunca apar
 
 ### 4.9 Privacidade (LGPD) e exportação
 
-**Acesso:** menu **Privacidade** (só Dono).
+**Acesso:** menu **Configurações › Privacidade** (só Dono).
 
 **Apagar dados de um comprador** — quando um comprador pedir (a lei dá até 15 dias para atender):
 1. Digite o **e-mail** ou o **CPF/CNPJ** que ele usou nos pedidos e clique em **Procurar pedidos**.
@@ -711,7 +729,7 @@ O que acontece:
 
 ### 4.10 Assinatura
 
-**Acesso:** menu **Assinatura** (só Dono).
+**Acesso:** na sua área, no topo do painel, opção **Assinatura** (só Dono).
 
 Mostra o plano da loja, o valor da mensalidade e as faturas da plataforma (mensalidades e taxa de implantação), com vencimento, valor e situação: **Em aberto**, **Vencida**, **Paga** ou **Cancelada**.
 
@@ -793,7 +811,9 @@ Limites para evitar abuso:
 
 ### 6.2 Entrar no dia a dia
 
-E-mail e senha, depois o código de 6 dígitos do app (ou um código de recuperação). A sessão dura até 8 horas; depois, entre de novo. **Sair** encerra a sessão na hora.
+E-mail e senha, depois o código de 6 dígitos do app (ou um código de recuperação). A sessão dura até 8 horas; depois, entre de novo. **Sair** (na sua área, no canto superior direito) encerra a sessão na hora.
+
+O painel da plataforma tem o mesmo jeito do painel da loja: menu na lateral com **Lojas** e **Gestão** (Planos e Auditoria) e, no topo, a sua área com o e-mail e **Sair**.
 
 Cinco erros seguidos (senha ou código) bloqueiam a conta por 15 minutos. Um mesmo código do app não vale duas vezes.
 
@@ -891,6 +911,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 18/10/2026 | Perguntas de compradores do Mercado Livre com sugestão da IA (RF31): nova seção 4.5.2 (responder, novo rascunho, resposta automática das simples), perfis e textos de 4.6.1. Perguntas entram na exportação completa (4.9). |
 | 18/10/2026 | Importação de anúncios do Mercado Livre traz as medidas e o peso da embalagem para as peças novas (4.6.1). |
 | 19/10/2026 | Importação de anúncios do Mercado Livre: cada variação de um anúncio vira uma peça em rascunho (4.6.1). |
+| 19/10/2026 | Painel da loja e da plataforma com menu lateral em grupos (gaveta no celular) e a área do usuário no topo, com Trocar de loja, Assinatura, Trocar senha e Sair (4, 4.1, 6.2). Campos com texto de ajuda ficam alinhados com os vizinhos. |
 | 18/10/2026 | Importação de anúncios do Mercado Livre traz os veículos compatíveis para as peças novas, com o selo ML (4.3 e 4.6.1). |
 | 18/10/2026 | Guardião da sincronização (RF33): diagnóstico com o que fazer e alerta por e-mail aos Donos em 4.5.1 Integrações; perfis. |
 Ainda

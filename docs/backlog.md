@@ -10,12 +10,12 @@ Hierarquia Scrum do Azure Boards: **Epic → Feature → Product Backlog Item �
 | E2 — Canais (mês 4) | 155 |
 | E3 — IA e OLX (mês 5) | 96 |
 | E4 — Produto vendável (mês 6) | 187 |
-| E5 — Primeiros clientes (meses 7–8) | 116 |
-| **Total** | **1024** |
+| E5 — Primeiros clientes (meses 7–8) | 130 |
+| **Total** | **1038** |
 
-Progresso: 800 h de 1024 h em tarefas concluídas (78%).
+Progresso: 808 h de 1038 h em tarefas concluídas (78%).
 
-Referência: 6 h produtivas/dia ≈ 171 dias úteis ≈ 8,1 meses de uma pessoa.
+Referência: 6 h produtivas/dia ≈ 173 dias úteis ≈ 8,2 meses de uma pessoa.
 
 ## E1 — Núcleo e loja (meses 1–3) — 470 h
 
@@ -408,7 +408,7 @@ Onboarding, domínio próprio, assinatura, superadmin e LGPD.
 - [x] Log de acesso a dados pessoais — 6 h
 - [x] Exportação completa do tenant — 12 h
 
-## E5 — Primeiros clientes (meses 7–8) — 116 h
+## E5 — Primeiros clientes (meses 7–8) — 130 h
 
 IA de atendimento, resumo diário, guardião da sincronização e 3–5 clientes beta.
 
@@ -430,7 +430,7 @@ IA de atendimento, resumo diário, guardião da sincronização e 3–5 clientes
 - [x] Resumo diário — 12 h
 - [x] Guardião da sincronização — 12 h
 
-### Programa beta — 40 h
+### Programa beta — 54 h
 
 #### Implantação de 3 a 5 clientes beta — 40 h  `—`
 
@@ -438,3 +438,10 @@ IA de atendimento, resumo diário, guardião da sincronização e 3–5 clientes
 
 - [ ] Acompanhamento de implantação — 24 h
 - [ ] Correções e ajustes do beta — 16 h
+
+#### Usabilidade do painel (testes de navegação do dono do produto) — 14 h  `—` · **em andamento**
+
+**Critérios de aceite:** Menu lateral em grupos (gaveta no celular), área do usuário no topo, campos alinhados e retorno visível de cada ação (overlay e toast), no painel da loja e no da plataforma.
+
+- [x] Menu lateral, área do usuário e alinhamento dos campos — 8 h
+- [ ] Overlay e toast nas ações — 6 h
