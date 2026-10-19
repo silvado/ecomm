@@ -23,7 +23,7 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024;
       <section>
         <h2>1. Baixe o modelo</h2>
         <p class="muted">
-          Uma linha por peça. Obrigatórias: código, título, estado (usada, nova ou recondicionada), preço e quantidade. Medidas da
+          Uma linha por peça. Código em branco (ou sem a coluna) é gerado no cadastro (P-000001…). Obrigatórias: título, estado (usada, nova ou recondicionada), preço e quantidade. Medidas da
           embalagem (cm e g) e códigos OEM (separados por |) são opcionais. As peças entram como rascunho: envie as fotos e ative
           depois. Códigos que já existem na loja são pulados, sem mudar a peça cadastrada.
         </p>

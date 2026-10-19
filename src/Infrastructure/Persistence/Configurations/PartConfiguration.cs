@@ -42,6 +42,11 @@ internal sealed class PartConfiguration : IEntityTypeConfiguration<Part>
     }
 }
 
+internal sealed class PartCodeCounterConfiguration : IEntityTypeConfiguration<PartCodeCounter>
+{
+    public void Configure(EntityTypeBuilder<PartCodeCounter> builder) => builder.HasKey(c => c.TenantId);
+}
+
 internal sealed class PartPhotoConfiguration : IEntityTypeConfiguration<PartPhoto>
 {
     public void Configure(EntityTypeBuilder<PartPhoto> builder)

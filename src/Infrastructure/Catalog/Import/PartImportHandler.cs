@@ -46,9 +46,11 @@ public static class PartImportHandler
 
         var tenantId = db.RequireTenantId();
         var now = clock.GetUtcNow();
-        var codes = batch.Select(r => r.InternalCode).ToList();
+        var codes = batch.Select(r => r.InternalCode).Where(c => c.Length > 0).ToList();
         var existing = (await db.Parts.Where(p => codes.Contains(p.InternalCode)).Select(p => p.InternalCode).ToListAsync(ct)).ToHashSet(StringComparer.Ordinal);
         var reference = Reference(import.FileName);
+        // Código gerado não pode tomar o de outra linha da planilha (deste lote ou dos próximos).
+        HashSet<string>? planned = null;
 
         var imported = 0;
         var skipped = new List<PartImportSkip>();
@@ -63,7 +65,13 @@ public static class PartImportHandler
             Part part;
             try
             {
-                part = Part.Create(tenantId, row.InternalCode, row.Details(), now);
+                var code = row.InternalCode;
+                if (code.Length == 0)
+                {
+                    planned ??= import.Rows.Select(r => r.InternalCode).Where(c => c.Length > 0).ToHashSet(StringComparer.Ordinal);
+                    code = await PartCodes.NextAsync(db, planned, ct);
+                }
+                part = Part.Create(tenantId, code, row.Details(), now);
             }
             catch (ArgumentException e)
             {

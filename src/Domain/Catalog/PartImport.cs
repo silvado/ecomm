@@ -11,7 +11,7 @@ public enum PartImportStatus
     Completed,
 }
 
-/// <summary>Linha válida da planilha, já normalizada, pronta para virar peça (RF11).</summary>
+/// <summary>Linha válida da planilha, já normalizada, pronta para virar peça (RF11). Código vazio = gerado no cadastro.</summary>
 public sealed record PartImportRow(
     int Line, string InternalCode, string Title, string? Description, PartCondition Condition, decimal Price, int Quantity,
     int? LengthCm, int? WidthCm, int? HeightCm, int? WeightG, IReadOnlyList<string> OemCodes)
@@ -45,7 +45,8 @@ public sealed class PartImport : ITenantOwned
     {
         if (tenantId == Guid.Empty) throw new ArgumentException("Tenant obrigatório.", nameof(tenantId));
         if (rows.Count > MaxRows) throw new ArgumentException($"No máximo {MaxRows} linhas por planilha.", nameof(rows));
-        if (rows.Select(r => r.InternalCode).Distinct(StringComparer.Ordinal).Count() != rows.Count)
+        var codes = rows.Select(r => r.InternalCode).Where(c => c.Length > 0).ToList();
+        if (codes.Distinct(StringComparer.Ordinal).Count() != codes.Count)
             throw new ArgumentException("Código interno repetido entre as linhas válidas.", nameof(rows));
         var name = (fileName ?? string.Empty).Trim();
         return new PartImport

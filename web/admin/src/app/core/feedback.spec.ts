@@ -54,6 +54,13 @@ describe('Retorno das ações (overlay e avisos)', () => {
     expect(texts()).toEqual(['success: Feito.', 'success: Removido.']);
   });
 
+  it('aviso montado com a resposta da API', async () => {
+    const call = firstValueFrom(http.post('/api/painel/pecas', {}, { context: feedback((p: { internalCode: string }) => `Peça ${p.internalCode} cadastrada.`) }));
+    backend.expectOne('/api/painel/pecas').flush({ internalCode: 'P-000001' });
+    await call;
+    expect(texts()).toEqual(['success: Peça P-000001 cadastrada.']);
+  });
+
   it('erro mostra a mensagem da API; sem conexão, um texto próprio', async () => {
     const fail = firstValueFrom(http.post('/api/painel/pecas', {}));
     backend.expectOne('/api/painel/pecas').flush({ title: 'Código interno já usado por outra peça.' }, { status: 409, statusText: 'Conflict' });

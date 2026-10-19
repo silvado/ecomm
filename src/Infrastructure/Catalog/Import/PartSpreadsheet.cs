@@ -20,7 +20,8 @@ public static class PartSpreadsheet
     /// <summary>Cabeçalho do modelo, na ordem, e os nomes aceitos de cada coluna.</summary>
     private static readonly (Column Column, string Header, bool Required, string[] Aliases)[] Columns =
     [
-        (Column.Code, "codigo", true, ["codigo", "codigointerno", "cod"]),
+        // Em branco (ou sem a coluna): o código é gerado no cadastro (P-000001…).
+        (Column.Code, "codigo", false, ["codigo", "codigointerno", "cod"]),
         (Column.Title, "titulo", true, ["titulo", "nome"]),
         (Column.Description, "descricao", false, ["descricao"]),
         (Column.Condition, "estado", true, ["estado", "condicao"]),
@@ -43,7 +44,7 @@ public static class PartSpreadsheet
     private static readonly string[][] Examples =
     [
         ["K-0001", "Farol dianteiro esquerdo Gol G5", "Original, lente sem trincas.", "usada", "350,00", "1", "45", "30", "25", "3500", "5U0941015 | 5U0941015A"],
-        ["K-0002", "Retrovisor direito elétrico Onix", "", "usada", "180,50", "2", "30", "20", "20", "1200", ""],
+        ["", "Retrovisor direito elétrico Onix", "Código em branco: gerado no cadastro.", "usada", "180,50", "2", "30", "20", "20", "1200", ""],
     ];
 
     public static ParseResult Parse(IReadOnlyList<SpreadsheetReader.Row> sheet)
@@ -76,8 +77,8 @@ public static class PartSpreadsheet
             string Cell(Column column) => map.TryGetValue(column, out var i) && i < row.Cells.Count ? row.Cells[i].Trim() : string.Empty;
             try
             {
-                var code = Part.NormalizeInternalCode(Cell(Column.Code));
-                if (seen.TryGetValue(code, out var first)) throw new ArgumentException($"Código {code} repetido na planilha (já está na linha {first}).");
+                var code = Cell(Column.Code).Length == 0 ? string.Empty : Part.NormalizeInternalCode(Cell(Column.Code));
+                if (code.Length > 0 && seen.TryGetValue(code, out var first)) throw new ArgumentException($"Código {code} repetido na planilha (já está na linha {first}).");
                 var condition = Conditions.GetValueOrDefault(Key(Cell(Column.Condition)), (PartCondition)(-1));
                 if (condition < 0) throw new ArgumentException("Estado inválido: use usada, nova ou recondicionada.");
                 var price = Money(Cell(Column.Price)) ?? throw new ArgumentException("Preço inválido: use, por exemplo, 350,00.");
@@ -90,9 +91,9 @@ public static class PartSpreadsheet
                     Integer(Cell(Column.Length), "Comprimento"), Integer(Cell(Column.Width), "Largura"), Integer(Cell(Column.Height), "Altura"),
                     Integer(Cell(Column.Weight), "Peso"), oem);
                 // Mesmas regras do cadastro manual (título, descrição, preço, medidas, OEM).
-                var part = Part.Create(validator, code, line.Details(), DateTimeOffset.UnixEpoch);
+                var part = Part.Create(validator, code.Length == 0 ? Part.GeneratedCode(1) : code, line.Details(), DateTimeOffset.UnixEpoch);
                 valid.Add(line with { Title = part.Title, Description = NullIfEmpty(part.Description), OemCodes = part.OemCodes.Select(o => o.Code).ToList() });
-                seen[code] = row.Line;
+                if (code.Length > 0) seen[code] = row.Line;
             }
             catch (ArgumentException e)
             {

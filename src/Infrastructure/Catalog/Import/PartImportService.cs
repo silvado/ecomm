@@ -29,7 +29,7 @@ public sealed class PartImportService(TenantDbContext db, TimeProvider clock) : 
         }
         if (parsed.TotalRows == 0) return Invalid(parsed.Issues.Count > 0 ? parsed.Issues[0].Message : "A planilha está vazia.");
 
-        var codes = parsed.Rows.Select(r => r.InternalCode).ToList();
+        var codes = parsed.Rows.Select(r => r.InternalCode).Where(c => c.Length > 0).ToList();
         var existing = codes.Count == 0 ? 0 : await db.Parts.CountAsync(p => codes.Contains(p.InternalCode), ct);
 
         var import = PartImport.Validate(db.RequireTenantId(), userId, fileName ?? string.Empty, parsed.TotalRows, parsed.Rows, parsed.Issues,

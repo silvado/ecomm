@@ -12,6 +12,7 @@ namespace Ecommerce.Infrastructure.Catalog;
 /// Cadastro de peça (RF08). Roda na transação do Wolverine (AutoApplyTransactions): peça, saldo, movimento e o evento
 /// <see cref="StockChanged"/> são confirmados juntos. A quantidade só muda por UPDATE condicional (RNF02).
 /// O código interno repetido em corrida é barrado pelo índice único — o chamador recebe a exceção e responde 409.
+/// Código em branco: gerado pela sequência da loja (<see cref="PartCodes"/>).
 /// </summary>
 public static class PartHandler
 {
@@ -29,11 +30,15 @@ public static class PartHandler
 
         var tenantId = db.RequireTenantId();
         var now = clock.GetUtcNow();
+        var generate = string.IsNullOrWhiteSpace(command.InternalCode);
         Part part;
-        try { part = Part.Create(tenantId, command.InternalCode, command.Details, now); }
+        // Em branco: valida os dados antes de gastar um número da sequência.
+        try { part = Part.Create(tenantId, generate ? Part.GeneratedCode(1) : command.InternalCode, command.Details, now); }
         catch (ArgumentException e) { return (Invalid(Message(e)), outgoing); }
 
-        if (await db.Parts.AnyAsync(p => p.InternalCode == part.InternalCode, ct))
+        if (generate)
+            part = Part.Create(tenantId, await PartCodes.NextAsync(db, taken: null, ct), command.Details, now);
+        else if (await db.Parts.AnyAsync(p => p.InternalCode == part.InternalCode, ct))
             return (PartCommandResult.Fail(PartCommandOutcome.CodeTaken, CodeTakenMessage), outgoing);
 
         db.Parts.Add(part);

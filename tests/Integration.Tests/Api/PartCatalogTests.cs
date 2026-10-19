@@ -100,6 +100,39 @@ public sealed class PartCatalogTests(ApiFactory api) : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task Codigo_em_branco_e_gerado_em_sequencia_por_loja_pulando_o_ja_usado()
+    {
+        var (a, b) = (await api.CreateTenantAsync(), await api.CreateTenantAsync());
+        var (ownerA, ownerB) = (await api.SessionForAsync(a), await api.SessionForAsync(b));
+
+        Assert.Equal("P-000001", (await CreateAsync(ownerA, Body(code: null))).InternalCode);
+        await CreateAsync(ownerA, Body(code: "p-000002")); // digitado à mão no formato da sequência
+        Assert.Equal("P-000003", (await CreateAsync(ownerA, Body(code: "  "))).InternalCode);
+
+        // Cadastro recusado não gasta número.
+        var invalid = await SendAsync(api.PanelClient(), ownerA, HttpMethod.Post, "/api/painel/pecas", Body(code: null, price: 0m));
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        Assert.Equal("P-000004", (await CreateAsync(ownerA, Body(code: null))).InternalCode);
+
+        // Cada loja tem a sua sequência.
+        Assert.Equal("P-000001", (await CreateAsync(ownerB, Body(code: null))).InternalCode);
+    }
+
+    [Fact]
+    public async Task Cadastros_simultaneos_com_codigo_em_branco_recebem_codigos_diferentes()
+    {
+        var tenant = await api.CreateTenantAsync();
+        var owner = await api.SessionForAsync(tenant);
+
+        var responses = await Task.WhenAll(Enumerable.Range(0, 6).Select(_ => Task.Run(() =>
+            SendAsync(api.PanelClient(), owner, HttpMethod.Post, "/api/painel/pecas", Body(code: null)))));
+
+        Assert.All(responses, r => Assert.Equal(HttpStatusCode.Created, r.StatusCode));
+        var codes = await InTenantAsync(tenant.Id, db => db.Parts.OrderBy(p => p.InternalCode).Select(p => p.InternalCode).ToListAsync());
+        Assert.Equal(Enumerable.Range(1, 6).Select(n => $"P-{n:D6}"), codes);
+    }
+
+    [Fact]
     public async Task Peca_de_outra_loja_nao_aparece_nem_e_alterada()
     {
         var (a, b) = (await api.CreateTenantAsync(), await api.CreateTenantAsync());

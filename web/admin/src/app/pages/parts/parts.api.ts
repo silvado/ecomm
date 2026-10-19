@@ -133,7 +133,7 @@ export class PartsApi {
   }
 
   create(request: PartRequest): Promise<PartView> {
-    return firstValueFrom(this.http.post<PartView>(this.base, request, { context: feedback('Peça cadastrada.') }));
+    return firstValueFrom(this.http.post<PartView>(this.base, request, { context: feedback((part: PartView) => `Peça ${part.internalCode} cadastrada.`) }));
   }
 
   update(id: string, request: PartRequest): Promise<PartView> {
