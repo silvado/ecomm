@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { SubscriptionInvoice } from '../../shared/invoice';
+import { feedback } from '../../core/feedback';
 
 export interface SubscriptionView {
   planCode: string;
@@ -38,7 +39,7 @@ export class SubscriptionApi {
 
   /** Página de pagamento do gateway da plataforma para a fatura. */
   pay(invoiceId: string): Promise<{ redirectUrl: string }> {
-    return firstValueFrom(this.http.post<{ redirectUrl: string }>(`${this.base}/faturas/${invoiceId}/pagar`, null));
+    return firstValueFrom(this.http.post<{ redirectUrl: string }>(`${this.base}/faturas/${invoiceId}/pagar`, null, { context: feedback(null) }));
   }
 }
 

@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { DailySummarySettingsSection } from './daily-summary-settings';
+import { FEEDBACK } from '../../core/feedback';
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
   for (let i = 0; i < 3; i++) {
@@ -36,7 +37,7 @@ describe('DailySummarySettingsSection (RF34)', () => {
     expect(request.request.body).toEqual({ ativo: true, hora: 18 });
     request.flush({ enabled: true, hour: 18 });
     await settle(fixture);
-    expect(el.querySelector('[role=status]')!.textContent).toContain('Resumo diário salvo.');
+    expect(request.request.context.get(FEEDBACK)).toEqual({ success: 'Resumo diário salvo.' });
   });
 
   it('a prévia mostra os números de ontem', async () => {

@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { feedback } from '../../core/feedback';
 
 export interface IntegrationLogEntry {
   id: string;
@@ -89,6 +90,6 @@ export class IntegrationsApi {
   }
 
   replay(id: string): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.base}/falhas/${id}/reprocessar`, {}));
+    return firstValueFrom(this.http.post<void>(`${this.base}/falhas/${id}/reprocessar`, {}, { context: feedback('Mandado reprocessar: em alguns segundos o processamento roda de novo.') }));
   }
 }

@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { feedback } from '../../core/feedback';
 
 export interface DataSubject {
   email?: string;
@@ -61,11 +62,11 @@ export class PrivacyApi {
   private readonly base = '/api/painel/privacidade';
 
   preview(subject: DataSubject): Promise<AnonymizationPreview> {
-    return firstValueFrom(this.http.post<AnonymizationPreview>(`${this.base}/titular/previa`, subject));
+    return firstValueFrom(this.http.post<AnonymizationPreview>(`${this.base}/titular/previa`, subject, { context: feedback(null) }));
   }
 
   anonymize(subject: DataSubject): Promise<AnonymizationPreview> {
-    return firstValueFrom(this.http.post<AnonymizationPreview>(`${this.base}/titular/anonimizar`, subject));
+    return firstValueFrom(this.http.post<AnonymizationPreview>(`${this.base}/titular/anonimizar`, subject, { context: feedback(null) }));
   }
 
   exports(): Promise<DataExport[]> {
@@ -73,7 +74,7 @@ export class PrivacyApi {
   }
 
   requestExport(): Promise<DataExport> {
-    return firstValueFrom(this.http.post<DataExport>(`${this.base}/exportacoes`, null));
+    return firstValueFrom(this.http.post<DataExport>(`${this.base}/exportacoes`, null, { context: feedback('Exportação iniciada.') }));
   }
 
   /** O arquivo vem pelo painel (com o token): o download fica registrado. */

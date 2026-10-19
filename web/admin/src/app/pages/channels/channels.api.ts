@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { feedback } from '../../core/feedback';
 
 export type ChannelConnectionStatus = 'active' | 'reauthRequired' | 'disabled';
 
@@ -50,16 +51,16 @@ export class ChannelsApi {
 
   /** Endereço da página de autorização do Mercado Livre (o navegador vai para lá). */
   async startMercadoLivre(): Promise<string> {
-    return (await firstValueFrom(this.http.post<{ authorizationUrl: string }>(`${this.base}/mercado-livre/conectar`, {}))).authorizationUrl;
+    return (await firstValueFrom(this.http.post<{ authorizationUrl: string }>(`${this.base}/mercado-livre/conectar`, {}, { context: feedback(null) }))).authorizationUrl;
   }
 
   /** Repassa a volta do Mercado Livre (código e state, ou o erro se a loja negou). */
   completeMercadoLivre(code: string | null, state: string | null, error: string | null): Promise<ChannelConnection> {
-    return firstValueFrom(this.http.post<ChannelConnection>(`${this.base}/mercado-livre/retorno`, { code, state, error }));
+    return firstValueFrom(this.http.post<ChannelConnection>(`${this.base}/mercado-livre/retorno`, { code, state, error }, { context: feedback(null) }));
   }
 
   disconnect(id: string): Promise<void> {
-    return firstValueFrom(this.http.delete<void>(`${this.base}/${id}`));
+    return firstValueFrom(this.http.delete<void>(`${this.base}/${id}`, { context: feedback('Conta desconectada.') }));
   }
 
   /** Nulo quando não há catálogo ligado (204). */
@@ -68,10 +69,10 @@ export class ChannelsApi {
   }
 
   connectMeta(catalogId: string, accessToken: string): Promise<MetaCatalogView> {
-    return firstValueFrom(this.http.post<MetaCatalogView>(`${this.base}/meta/conectar`, { catalogId, accessToken }));
+    return firstValueFrom(this.http.post<MetaCatalogView>(`${this.base}/meta/conectar`, { catalogId, accessToken }, { context: feedback('Catálogo conectado.') }));
   }
 
   disconnectMeta(): Promise<void> {
-    return firstValueFrom(this.http.delete<void>(`${this.base}/meta`));
+    return firstValueFrom(this.http.delete<void>(`${this.base}/meta`, { context: feedback('Catálogo desconectado.') }));
   }
 }

@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { AuthStore } from '../../core/auth';
 import { SyncDiagnosis, SyncGuardianSection } from './sync-guardian';
+import { FEEDBACK } from '../../core/feedback';
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
   for (let i = 0; i < 3; i++) {
@@ -51,7 +52,7 @@ describe('SyncGuardianSection (RF33)', () => {
     expect(request.request.body).toEqual({ ativo: false });
     request.flush({ enabled: false });
     await settle(fixture);
-    expect(el.querySelector('[role=status]')!.textContent).toContain('Aviso por e-mail desligado.');
+    expect(request.request.context.get(FEEDBACK)).toEqual({ success: 'Aviso por e-mail desligado.' });
     backend.verify();
   });
 

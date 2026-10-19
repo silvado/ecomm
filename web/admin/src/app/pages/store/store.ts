@@ -136,9 +136,6 @@ const APPEARANCE = ['tradeName', 'primaryColor', 'backgroundColor', 'textColor',
         @if (error()) {
           <p class="error" role="alert">{{ error() }}</p>
         }
-        @if (saved()) {
-          <p class="ok" role="status">Salvo. A loja mostra as mudanças em até 1 minuto.</p>
-        }
         <button type="submit" [disabled]="form.invalid || busy()">Salvar</button>
       </form>
 
@@ -182,7 +179,6 @@ export class StorePage implements OnInit, OnDestroy {
   protected readonly profile = signal<StoreProfile | null>(null);
   protected readonly custom = computed(() => this.profile()?.customStorefront === true);
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly form = inject(FormBuilder).nonNullable.group({
     tradeName: ['', [Validators.required, Validators.maxLength(120)]],
@@ -293,7 +289,6 @@ export class StorePage implements OnInit, OnDestroy {
   async save(): Promise<void> {
     if (this.form.invalid) return;
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       const { originPostalCode, pickupEnabled, pickupAddress, ...v } = this.form.getRawValue();
@@ -306,7 +301,6 @@ export class StorePage implements OnInit, OnDestroy {
           shipping: { originPostalCode: originPostalCode.trim() || null, pickupEnabled, pickupAddress: pickupEnabled ? pickupAddress.trim() || null : null },
         }),
       );
-      this.saved.set(true);
     } catch (error) {
       this.error.set(problemTitle(error));
     } finally {

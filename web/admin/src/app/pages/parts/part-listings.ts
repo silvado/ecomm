@@ -5,6 +5,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { problemTitle } from '../../core/auth';
+import { feedback } from '../../core/feedback';
 
 export type ListingStatus = 'pending' | 'active' | 'pausedBySystem' | 'pausedByUser' | 'closed' | 'error';
 
@@ -96,7 +97,7 @@ export class ListingsApi {
   }
 
   change(listingId: string, action: 'pausar' | 'retomar'): Promise<unknown> {
-    return firstValueFrom(this.http.post(`/api/painel/anuncios/${listingId}/${action}`, {}));
+    return firstValueFrom(this.http.post(`/api/painel/anuncios/${listingId}/${action}`, {}, { context: feedback(action === 'pausar' ? 'Anúncio pausado.' : 'Anúncio retomado.') }));
   }
 
   mercadoLivreCategories(partId: string): Promise<CategoryOption[]> {
@@ -111,12 +112,12 @@ export class ListingsApi {
 
   publishMercadoLivre(partId: string, options: MercadoLivreListingOptions): Promise<{ listings: ListingView[]; compatibilities: CompatibilityReport | null }> {
     return firstValueFrom(
-      this.http.post<{ listings: ListingView[]; compatibilities: CompatibilityReport | null }>(`/api/painel/pecas/${partId}/mercado-livre/anunciar`, options),
+      this.http.post<{ listings: ListingView[]; compatibilities: CompatibilityReport | null }>(`/api/painel/pecas/${partId}/mercado-livre/anunciar`, options, { context: feedback('Peça anunciada no Mercado Livre.') }),
     );
   }
 
   sendCompatibilities(listingId: string): Promise<CompatibilityReport> {
-    return firstValueFrom(this.http.post<CompatibilityReport>(`/api/painel/anuncios/${listingId}/compatibilidades`, {}));
+    return firstValueFrom(this.http.post<CompatibilityReport>(`/api/painel/anuncios/${listingId}/compatibilidades`, {}, { context: feedback(null) }));
   }
 }
 

@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 import { IntegrationLog } from './integration-log';
 import { IntegrationsPage } from './integrations';
 import { IntegrationLogPage, MessageFailure } from './integrations.api';
+import { FEEDBACK } from '../../core/feedback';
 
 describe('Integrações (RF28/RF29)', () => {
   const failure: MessageFailure = {
@@ -55,12 +56,13 @@ describe('Integrações (RF28/RF29)', () => {
     expect(element.querySelector('[data-log]')!.textContent).toContain('nº 42');
 
     element.querySelector<HTMLButtonElement>('[data-replay="f1"]')!.click();
-    backend.expectOne({ method: 'POST', url: '/api/painel/integracoes/falhas/f1/reprocessar' }).flush(null, { status: 204, statusText: 'No Content' });
+    const replay = backend.expectOne({ method: 'POST', url: '/api/painel/integracoes/falhas/f1/reprocessar' });
+    expect(replay.request.context.get(FEEDBACK)).toEqual({ success: 'Mandado reprocessar: em alguns segundos o processamento roda de novo.' });
+    replay.flush(null, { status: 204, statusText: 'No Content' });
     await settle(fixture);
     backend.expectOne((r) => r.url === '/api/painel/integracoes/falhas').flush([]);
     await settle(fixture);
 
-    expect(element.querySelector('[role=status]')!.textContent).toContain('Mandado reprocessar');
     expect(element.textContent).toContain('Nenhuma falha pendente');
     backend.verify();
   });

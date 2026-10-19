@@ -60,9 +60,6 @@ import { PartView } from './parts.api';
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
-      @if (saved()) {
-        <p class="ok" role="status">Rastreabilidade salva.</p>
-      }
       <div class="order-actions">
         <button type="button" (click)="save()" [disabled]="busy()" data-save-traceability>Salvar rastreabilidade</button>
       </div>
@@ -85,7 +82,6 @@ export class PartTraceability implements OnInit {
   protected readonly results = signal<DonorVehicleView[]>([]);
   protected readonly searching = signal(false);
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
 
   constructor() {
@@ -126,12 +122,10 @@ export class PartTraceability implements OnInit {
 
   protected async save(): Promise<void> {
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       const customFields = Object.fromEntries(Object.entries(this.fields).filter(([, v]) => v?.trim()).map(([k, v]) => [k, v.trim()]));
       const updated = await this.api.setPartTraceability(this.part().id, { donorVehicleId: this.donorId, tag: this.tag.trim() || null, customFields });
-      this.saved.set(true);
       this.changed.emit(updated);
     } catch (error) {
       this.error.set(problemTitle(error));

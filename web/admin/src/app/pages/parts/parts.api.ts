@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { CompatibilityView } from './vehicles.api';
+import { feedback } from '../../core/feedback';
 
 export type PartCondition = 'new' | 'used' | 'refurbished';
 export type PartStatus = 'draft' | 'active' | 'inactive';
@@ -132,11 +133,11 @@ export class PartsApi {
   }
 
   create(request: PartRequest): Promise<PartView> {
-    return firstValueFrom(this.http.post<PartView>(this.base, request));
+    return firstValueFrom(this.http.post<PartView>(this.base, request, { context: feedback('Peça cadastrada.') }));
   }
 
   update(id: string, request: PartRequest): Promise<PartView> {
-    return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}`, request));
+    return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}`, request, { context: feedback('Peça salva.') }));
   }
 
   /** Cadastro por foto (RF30): conta 1 no limite mensal do plano quando dá certo. */
@@ -144,23 +145,23 @@ export class PartsApi {
     const form = new FormData();
     photos.forEach((photo, index) => form.append('fotos', photo, (photo as File).name ?? `foto${index + 1}`));
     if (notes.trim()) form.append('informacoes', notes.trim());
-    return firstValueFrom(this.http.post<PartSuggestion>(`${this.base}/sugestao-ia`, form));
+    return firstValueFrom(this.http.post<PartSuggestion>(`${this.base}/sugestao-ia`, form, { context: feedback(null) }));
   }
 
   /** Bytes da imagem no corpo; a API reconhece o formato pelo conteúdo e gera os WebP. */
   addPhoto(id: string, file: Blob): Promise<PartView> {
-    return firstValueFrom(this.http.post<PartView>(`${this.base}/${id}/fotos`, file));
+    return firstValueFrom(this.http.post<PartView>(`${this.base}/${id}/fotos`, file, { context: feedback(null, { overlay: false }) }));
   }
 
   removePhoto(id: string, photoId: string): Promise<PartView> {
-    return firstValueFrom(this.http.delete<PartView>(`${this.base}/${id}/fotos/${photoId}`));
+    return firstValueFrom(this.http.delete<PartView>(`${this.base}/${id}/fotos/${photoId}`, { context: feedback('Foto removida.') }));
   }
 
   reorderPhotos(id: string, photoIds: string[]): Promise<PartView> {
-    return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}/fotos/ordem`, { photoIds }));
+    return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}/fotos/ordem`, { photoIds }, { context: feedback('Ordem das fotos salva.') }));
   }
 
   setStatus(id: string, status: PartStatus): Promise<PartView> {
-    return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}/situacao`, { status }));
+    return firstValueFrom(this.http.put<PartView>(`${this.base}/${id}/situacao`, { status }, { context: feedback('Situação da peça alterada.') }));
   }
 }

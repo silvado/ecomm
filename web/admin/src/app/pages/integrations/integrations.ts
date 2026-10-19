@@ -50,9 +50,6 @@ const WHEN = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', d
       } @else {
         <p class="ok">Nenhuma falha pendente.</p>
       }
-      @if (replayed()) {
-        <p class="ok" role="status">Mandado reprocessar: em alguns segundos o processamento roda de novo.</p>
-      }
 
       <h2>Log de chamadas</h2>
       <div class="filters">
@@ -118,7 +115,6 @@ export class IntegrationsPage implements OnInit {
   protected readonly failures = signal<MessageFailure[]>([]);
   protected readonly page = signal<IntegrationLogPage | null>(null);
   protected readonly busy = signal(false);
-  protected readonly replayed = signal(false);
   protected readonly failuresError = signal<string | null>(null);
   protected readonly logError = signal<string | null>(null);
   protected readonly when = (iso: string) => WHEN.format(new Date(iso));
@@ -129,11 +125,9 @@ export class IntegrationsPage implements OnInit {
 
   protected async replay(f: MessageFailure): Promise<void> {
     this.busy.set(true);
-    this.replayed.set(false);
     this.failuresError.set(null);
     try {
       await this.api.replay(f.id);
-      this.replayed.set(true);
       await this.loadFailures();
     } catch (error) {
       this.failuresError.set(problemTitle(error));

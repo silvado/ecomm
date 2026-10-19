@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { feedback } from '../../core/feedback';
 
 export type OrderStatus = 'pendingPayment' | 'paid' | 'canceled' | 'needsReview' | 'shipped' | 'delivered' | 'pickedUp' | 'returned';
 export type ReturnReason = 'regret' | 'defect' | 'wrongPart' | 'other';
@@ -208,16 +209,16 @@ export class OrdersApi {
 
   /** Venda de balcão (RF18): devolve o pedido criado; o mesmo token enviado de novo devolve a mesma venda. */
   sell(request: CounterSaleRequest): Promise<OrderView> {
-    return firstValueFrom(this.http.post<OrderView>('/api/painel/balcao', request));
+    return firstValueFrom(this.http.post<OrderView>('/api/painel/balcao', request, { context: feedback(null) }));
   }
 
   /** Devolução (RF20): parcial ou total; devolve o pedido atualizado. */
   returnItems(id: string, request: ReturnRequest): Promise<OrderView> {
-    return firstValueFrom(this.http.post<OrderView>(`${this.base}/${id}/devolucoes`, request));
+    return firstValueFrom(this.http.post<OrderView>(`${this.base}/${id}/devolucoes`, request, { context: feedback('Devolução registrada.') }));
   }
 
   /** Executa a ação e devolve o pedido já atualizado (400/404/409 com a mensagem em "title"). */
   act(id: string, action: OrderAction, body: { motivo?: string; rastreio?: string } = {}): Promise<OrderView> {
-    return firstValueFrom(this.http.post<OrderView>(`${this.base}/${id}/${action}`, body));
+    return firstValueFrom(this.http.post<OrderView>(`${this.base}/${id}/${action}`, body, { context: feedback('Pedido atualizado.') }));
   }
 }

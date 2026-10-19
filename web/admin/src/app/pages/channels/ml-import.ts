@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, computed, DestroyRef, inject, Injectable, OnInit, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { problemTitle } from '../../core/auth';
+import { feedback } from '../../core/feedback';
 
 export interface ChannelImport {
   id: string;
@@ -27,7 +28,7 @@ export class MercadoLivreImportApi {
   private readonly base = '/api/painel/canais/mercado-livre/importacoes';
 
   start(): Promise<ChannelImport> {
-    return firstValueFrom(this.http.post<ChannelImport>(this.base, {}));
+    return firstValueFrom(this.http.post<ChannelImport>(this.base, {}, { context: feedback('Importação iniciada.') }));
   }
 
   get(id: string): Promise<ChannelImport> {

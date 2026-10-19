@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { feedback } from '../../core/feedback';
 
 export type GatewayName = 'mercado-pago' | 'cielo';
 
@@ -26,10 +27,10 @@ export class PaymentsApi {
   }
 
   save(gateway: GatewayName, credentials: Record<string, string>): Promise<GatewaySettings[]> {
-    return firstValueFrom(this.http.put<GatewaySettings[]>(`${this.base}/${gateway}`, credentials));
+    return firstValueFrom(this.http.put<GatewaySettings[]>(`${this.base}/${gateway}`, credentials, { context: feedback(null) }));
   }
 
   remove(gateway: GatewayName): Promise<GatewaySettings[]> {
-    return firstValueFrom(this.http.delete<GatewaySettings[]>(`${this.base}/${gateway}`));
+    return firstValueFrom(this.http.delete<GatewaySettings[]>(`${this.base}/${gateway}`, { context: feedback(null) }));
   }
 }

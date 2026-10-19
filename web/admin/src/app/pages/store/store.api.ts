@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { feedback } from '../../core/feedback';
 
 export interface StoreShipping {
   originPostalCode: string | null;
@@ -47,16 +48,16 @@ export class StoreApi {
   }
 
   update(update: StoreProfileUpdate): Promise<StoreProfile> {
-    return firstValueFrom(this.http.put<StoreProfile>('/api/painel/loja', update));
+    return firstValueFrom(this.http.put<StoreProfile>('/api/painel/loja', update, { context: feedback('Salvo. A loja mostra as mudanças em até 1 minuto.') }));
   }
 
   /** Envia os bytes da imagem como corpo (a API detecta o formato pelo conteúdo). */
   uploadLogo(file: Blob): Promise<StoreProfile> {
-    return firstValueFrom(this.http.put<StoreProfile>('/api/painel/loja/logo', file));
+    return firstValueFrom(this.http.put<StoreProfile>('/api/painel/loja/logo', file, { context: feedback('Logo enviado.') }));
   }
 
   removeLogo(): Promise<StoreProfile> {
-    return firstValueFrom(this.http.delete<StoreProfile>('/api/painel/loja/logo'));
+    return firstValueFrom(this.http.delete<StoreProfile>('/api/painel/loja/logo', { context: feedback('Logo removido.') }));
   }
 
   /** Prévia do logo atual (a URL pública só responde no domínio da loja). */

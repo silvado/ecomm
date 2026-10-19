@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PartView } from './parts.api';
+import { feedback } from '../../core/feedback';
 
 export interface VehicleOption {
   id: string;
@@ -57,10 +58,10 @@ export class VehiclesApi {
   /** `suggestedByAi`: veículo sugerido no cadastro por foto e mantido pela pessoa (RF30). */
   addCompatibility(partId: string, vehicleVersionId: string, yearFrom: number | null, yearTo: number | null, suggestedByAi = false): Promise<PartView> {
     const body = suggestedByAi ? { vehicleVersionId, yearFrom, yearTo, suggestedByAi } : { vehicleVersionId, yearFrom, yearTo };
-    return firstValueFrom(this.http.post<PartView>(`/api/painel/pecas/${partId}/compatibilidades`, body));
+    return firstValueFrom(this.http.post<PartView>(`/api/painel/pecas/${partId}/compatibilidades`, body, { context: feedback('Compatibilidade adicionada.') }));
   }
 
   removeCompatibility(partId: string, compatibilityId: string): Promise<PartView> {
-    return firstValueFrom(this.http.delete<PartView>(`/api/painel/pecas/${partId}/compatibilidades/${compatibilityId}`));
+    return firstValueFrom(this.http.delete<PartView>(`/api/painel/pecas/${partId}/compatibilidades/${compatibilityId}`, { context: feedback('Compatibilidade removida.') }));
   }
 }

@@ -116,6 +116,15 @@ Cada pessoa tem um perfil **em cada loja** (a mesma pessoa pode ser Dono numa lo
 
 A área fecha ao escolher uma ação, ao clicar fora ou com a tecla Esc.
 
+**Aviso de cada ação:** ao salvar, excluir, publicar ou enviar algo:
+- ao clicar, a tela escurece com um indicador de "processando" e não aceita outro clique até terminar (evita salvar duas vezes);
+- no fim, aparece um aviso no canto superior direito:
+  - **verde** quando deu certo (por exemplo, "Peça salva." ou "Certificado guardado."), que some sozinho em poucos segundos;
+  - **vermelho** quando deu errado, com o motivo (por exemplo, "Código interno já usado por outra peça."), que fica um pouco mais na tela;
+- os dois avisos podem ser fechados no **×**;
+- erros de preenchimento continuam aparecendo também junto do campo;
+- resultados com detalhes (relatório de importação, venda do balcão, compatibilidades enviadas ao Mercado Livre) continuam na própria tela.
+
 A sessão continua aberta por até 7 dias sem uso. Depois disso, é preciso entrar de novo.
 
 ### 4.2 Início
@@ -912,6 +921,7 @@ Itens previstos que **ainda não estão no sistema**:
 | 18/10/2026 | Importação de anúncios do Mercado Livre traz as medidas e o peso da embalagem para as peças novas (4.6.1). |
 | 19/10/2026 | Importação de anúncios do Mercado Livre: cada variação de um anúncio vira uma peça em rascunho (4.6.1). |
 | 19/10/2026 | Painel da loja e da plataforma com menu lateral em grupos (gaveta no celular) e a área do usuário no topo, com Trocar de loja, Assinatura, Trocar senha e Sair (4, 4.1, 6.2). Campos com texto de ajuda ficam alinhados com os vizinhos. |
+| 19/10/2026 | Ações do painel mostram um aviso de sucesso ou de erro no canto da tela e escurecem a tela enquanto processam (4.1). As confirmações que ficavam no meio da página passaram para esse aviso. |
 | 18/10/2026 | Importação de anúncios do Mercado Livre traz os veículos compatíveis para as peças novas, com o selo ML (4.3 e 4.6.1). |
 | 18/10/2026 | Guardião da sincronização (RF33): diagnóstico com o que fazer e alerta por e-mail aos Donos em 4.5.1 Integrações; perfis. |
 Ainda

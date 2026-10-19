@@ -3,6 +3,7 @@ import { Component, inject, Injectable, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { problemTitle } from '../../core/auth';
+import { feedback } from '../../core/feedback';
 
 export type SmtpSecurity = 'startTls' | 'sslOnConnect' | 'none';
 
@@ -38,11 +39,11 @@ export class EmailSettingsApi {
   }
 
   save(request: { contactEmail: string | null; useOwnSmtp: boolean; smtp: SmtpServer | null; password: string | null }): Promise<StoreEmailSettings> {
-    return firstValueFrom(this.http.put<StoreEmailSettings>('/api/painel/loja/email', request));
+    return firstValueFrom(this.http.put<StoreEmailSettings>('/api/painel/loja/email', request, { context: feedback('E-mail de envio salvo.') }));
   }
 
   test(destinatario: string): Promise<{ outcome: 'sent' | 'failed'; message: string | null }> {
-    return firstValueFrom(this.http.post<{ outcome: 'sent' | 'failed'; message: string | null }>('/api/painel/loja/email/teste', { destinatario }));
+    return firstValueFrom(this.http.post<{ outcome: 'sent' | 'failed'; message: string | null }>('/api/painel/loja/email/teste', { destinatario }, { context: feedback(null) }));
   }
 }
 
@@ -98,9 +99,6 @@ export class EmailSettingsApi {
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
-      @if (saved()) {
-        <p class="ok" role="status">E-mail de envio salvo.</p>
-      }
       <div class="order-actions">
         <button type="button" (click)="save()" [disabled]="busy()" data-save-email>Salvar e-mail de envio</button>
       </div>
@@ -127,7 +125,6 @@ export class EmailSettingsSection implements OnInit {
   protected readonly hasPassword = signal(false);
   protected readonly platformSender = signal('');
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly testResult = signal<{ ok: boolean; text: string } | null>(null);
 
@@ -141,7 +138,6 @@ export class EmailSettingsSection implements OnInit {
 
   protected async save(): Promise<void> {
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       this.apply(
@@ -152,7 +148,6 @@ export class EmailSettingsSection implements OnInit {
           password: this.password || null,
         }),
       );
-      this.saved.set(true);
     } catch (error) {
       this.error.set(problemTitle(error));
     } finally {

@@ -61,9 +61,6 @@ const MAX_PFX_BYTES = 100 * 1024;
         @if (error()) {
           <p class="error" role="alert">{{ error() }}</p>
         }
-        @if (saved()) {
-          <p class="ok" role="status">Certificado guardado.</p>
-        }
       </section>
 
       <section>
@@ -99,7 +96,6 @@ export class VaultPage implements OnInit {
   protected readonly certificate = signal<CertificateView | null>(null);
   protected readonly alert = signal<CertificateAlert | null>(null);
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
   protected pfx: string | null = null;
   protected password = '';
@@ -131,7 +127,6 @@ export class VaultPage implements OnInit {
     await this.run(async () => {
       this.certificate.set(await this.api.saveCertificate(this.pfx!, this.password));
       this.password = '';
-      this.saved.set(true);
       await this.load();
     });
   }
@@ -157,7 +152,6 @@ export class VaultPage implements OnInit {
 
   private async run(action: () => Promise<void>): Promise<void> {
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       await action();

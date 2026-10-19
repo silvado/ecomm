@@ -6,6 +6,7 @@ import { PartTraceability } from '../parts/part-traceability';
 import { PartView } from '../parts/parts.api';
 import { TraceabilitySettingsSection } from '../store/traceability-settings';
 import { DonorFormPage } from './donor-form';
+import { FEEDBACK } from '../../core/feedback';
 
 const settings = { dismantlerMode: true, fields: [{ key: 'detran', label: 'Registro Detran', required: true }] };
 
@@ -103,7 +104,7 @@ describe('Rastreabilidade (RF10)', () => {
     expect(save.request.body).toEqual({ dismantlerMode: true, fields: [{ key: '', label: 'Registro Detran', required: false }] });
     save.flush(settings);
     await settle(fixture);
-    expect(element.querySelector('[role=status]')!.textContent).toContain('salva');
+    expect(save.request.context.get(FEEDBACK)).toEqual({ success: 'Rastreabilidade salva.' }); // aviso no toast
     backend.verify();
   });
 

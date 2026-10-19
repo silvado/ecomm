@@ -36,9 +36,6 @@ import { DonorsApi, TraceabilityField } from '../donors/donors.api';
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
-      @if (saved()) {
-        <p class="ok" role="status">Rastreabilidade salva.</p>
-      }
       <div class="order-actions">
         <button type="button" (click)="save()" [disabled]="busy()" data-save-settings>Salvar rastreabilidade</button>
       </div>
@@ -51,7 +48,6 @@ export class TraceabilitySettingsSection implements OnInit {
   protected dismantlerMode = false;
   protected fields: TraceabilityField[] = [];
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
@@ -64,11 +60,9 @@ export class TraceabilitySettingsSection implements OnInit {
 
   protected async save(): Promise<void> {
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       this.apply(await this.api.saveSettings({ dismantlerMode: this.dismantlerMode, fields: this.fields.map((f) => ({ ...f, label: f.label.trim() })) }));
-      this.saved.set(true);
     } catch (error) {
       this.error.set(problemTitle(error));
     } finally {

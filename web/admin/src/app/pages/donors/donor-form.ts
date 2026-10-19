@@ -49,9 +49,6 @@ import { DonorsApi, DonorVehicleRequest, DonorVehicleView } from './donors.api';
         @if (error()) {
           <p class="error" role="alert">{{ error() }}</p>
         }
-        @if (saved()) {
-          <p class="ok" role="status">Salvo.</p>
-        }
         <div class="order-actions">
           <button type="submit" [disabled]="form.invalid || busy()">{{ vehicle() ? 'Salvar' : 'Cadastrar' }}</button>
           @if (vehicle(); as v) {
@@ -94,7 +91,6 @@ export class DonorFormPage implements OnInit {
   protected readonly statusLabels = STATUS_LABELS;
   protected readonly vehicle = signal<DonorVehicleView | null>(null);
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly form = inject(FormBuilder).nonNullable.group({
     brand: ['', [Validators.required, Validators.maxLength(60)]],
@@ -123,13 +119,11 @@ export class DonorFormPage implements OnInit {
   protected async save(): Promise<void> {
     if (this.form.invalid) return;
     this.busy.set(true);
-    this.saved.set(false);
     this.error.set(null);
     try {
       const current = this.vehicle();
       if (current) {
         this.fill(await this.api.update(current.id, this.request()));
-        this.saved.set(true);
       } else {
         const created = await this.api.create(this.request());
         await this.router.navigate(['/doadores', created.id]);

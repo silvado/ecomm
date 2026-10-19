@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PartStatus, PartView } from '../parts/parts.api';
+import { feedback } from '../../core/feedback';
 
 /** Dados do veículo doador como o formulário envia (a API normaliza e confere placa, chassi, Renavam e chave da NF). */
 export interface DonorVehicleRequest {
@@ -64,15 +65,15 @@ export class DonorsApi {
   }
 
   create(request: DonorVehicleRequest): Promise<DonorVehicleView> {
-    return firstValueFrom(this.http.post<DonorVehicleView>(this.base, request));
+    return firstValueFrom(this.http.post<DonorVehicleView>(this.base, request, { context: feedback('Veículo doador cadastrado.') }));
   }
 
   update(id: string, request: DonorVehicleRequest): Promise<DonorVehicleView> {
-    return firstValueFrom(this.http.put<DonorVehicleView>(`${this.base}/${id}`, request));
+    return firstValueFrom(this.http.put<DonorVehicleView>(`${this.base}/${id}`, request, { context: feedback('Veículo doador salvo.') }));
   }
 
   remove(id: string): Promise<void> {
-    return firstValueFrom(this.http.delete<void>(`${this.base}/${id}`));
+    return firstValueFrom(this.http.delete<void>(`${this.base}/${id}`, { context: feedback('Veículo doador removido.') }));
   }
 
   settings(): Promise<TraceabilitySettings> {
@@ -80,10 +81,10 @@ export class DonorsApi {
   }
 
   saveSettings(settings: TraceabilitySettings): Promise<TraceabilitySettings> {
-    return firstValueFrom(this.http.put<TraceabilitySettings>('/api/painel/rastreabilidade', settings));
+    return firstValueFrom(this.http.put<TraceabilitySettings>('/api/painel/rastreabilidade', settings, { context: feedback('Rastreabilidade salva.') }));
   }
 
   setPartTraceability(partId: string, body: { donorVehicleId: string | null; tag: string | null; customFields: Record<string, string> }): Promise<PartView> {
-    return firstValueFrom(this.http.put<PartView>(`/api/painel/pecas/${partId}/rastreabilidade`, body));
+    return firstValueFrom(this.http.put<PartView>(`/api/painel/pecas/${partId}/rastreabilidade`, body, { context: feedback('Rastreabilidade salva.') }));
   }
 }
