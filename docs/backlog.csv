@@ -187,7 +187,7 @@ Task,,,,Termos e política de privacidade,,,E4,,6
 Task,,,,Anonimização de cliente final,,,E4,,10
 Task,,,,Log de acesso a dados pessoais,,,E4,,6
 Task,,,,Exportação completa do tenant,,,E4,,12
-Epic,E5 — Primeiros clientes (meses 7–8),,,,"IA de atendimento, resumo diário, guardião da sincronização e 3–5 clientes beta.",,E5,116,
+Epic,E5 — Primeiros clientes (meses 7–8),,,,"IA de atendimento, resumo diário, guardião da sincronização e 3–5 clientes beta.",,E5,130,
 Feature,,IA de atendimento e alertas,,,,,E5,76,
 Product Backlog Item,,,Respostas a compradores,,Requisitos: RF31,"Usa só dados do cadastro; classifica em simples (automática se habilitada) ou complexa (rascunho); nunca afirma compatibilidade ausente, verificado por conjunto de avaliação.",E5; RF31,52,
 Task,,,,Respostas a perguntas do ML,,,E5,,16
@@ -197,7 +197,10 @@ Task,,,,Mensagens do Instagram (após App Review),,,E5,,16
 Product Backlog Item,,,Resumo diário e guardião da sincronização,,"Requisitos: RF33, RF34",Resumo diário no horário do tenant com números de consultas determinísticas; diagnóstico de falhas com ação sugerida enviado por e-mail.,E5; RF33; RF34,24,
 Task,,,,Resumo diário,,,E5,,12
 Task,,,,Guardião da sincronização,,,E5,,12
-Feature,,Programa beta,,,,,E5,40,
+Feature,,Programa beta,,,,,E5,54,
 Product Backlog Item,,,Implantação de 3 a 5 clientes beta,,Requisitos: —,Clientes beta configurados pelo onboarding sem código específico; feedback registrado no backlog.,E5,40,
 Task,,,,Acompanhamento de implantação,,,E5,,24
 Task,,,,Correções e ajustes do beta,,,E5,,16
+Product Backlog Item,,,Usabilidade do painel (testes de navegação do dono do produto),,Requisitos: —,"Menu lateral em grupos (gaveta no celular), área do usuário no topo, campos alinhados e retorno visível de cada ação (overlay e toast), no painel da loja e no da plataforma.",E5,14,
+Task,,,,"Menu lateral, área do usuário e alinhamento dos campos",,,E5,,8
+Task,,,,Overlay e toast nas ações,,,E5,,6

@@ -1,97 +1,81 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { AuthStore } from '../core/auth';
+import { AuthStore, Permission } from '../core/auth';
 import { IntegrationsApi } from '../pages/integrations/integrations.api';
 import { standingText, SubscriptionApi } from '../pages/subscription/subscription.api';
 import { alertText, CertificateAlert, VaultApi } from '../pages/vault/vault.api';
 import { RoleLabelPipe } from '../shared/role-label';
+import { Icon } from './icon';
+import { NavGroup, NavItem, SideNav } from './side-nav';
+import { UserMenu } from './user-menu';
 
 /** De quanto em quanto tempo o painel confere se há falhas de integração pendentes (RF28 CA2). */
 const FAILURE_CHECK_MS = 2 * 60 * 1000;
 
+/** "Peças" fica marcado na lista e na edição de uma peça, mas não em "Nova peça" nem em "Importar planilha". */
+const partsActive = (url: string) => url === '/pecas' || (/^\/pecas\/[^/]+$/.test(url) && !['/pecas/nova', '/pecas/importar'].includes(url));
+
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, RoleLabelPipe],
+  imports: [RouterOutlet, RouterLink, RoleLabelPipe, SideNav, UserMenu, Icon],
   template: `
     <header class="topbar">
-      <div class="store">
-        <strong>{{ auth.tenant()?.name }}</strong>
-        <span class="muted">{{ auth.tenant()?.role | roleLabel }}</span>
-      </div>
-      <nav>
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Início</a>
-        @if (auth.can('catalogManage')) {
-          <a routerLink="/pecas" routerLinkActive="active">Peças</a>
-          <a routerLink="/doadores" routerLinkActive="active">Doadores</a>
-        }
-        @if (auth.can('ordersManage')) {
-          <a routerLink="/pedidos" routerLinkActive="active">Pedidos</a>
-          <a routerLink="/balcao" routerLinkActive="active">Balcão</a>
-          <a routerLink="/integracoes" routerLinkActive="active">Integrações</a>
-        }
-        @if (auth.can('supportManage')) {
-          <a routerLink="/perguntas" routerLinkActive="active">Perguntas</a>
-        }
-        @if (auth.can('storeManage')) {
-          <a routerLink="/primeiros-passos" routerLinkActive="active">Primeiros passos</a>
-          <a routerLink="/loja" routerLinkActive="active">Dados da loja</a>
-          <a routerLink="/canais" routerLinkActive="active">Canais de venda</a>
-        }
-        @if (auth.can('vaultManage')) {
-          <a routerLink="/pagamentos" routerLinkActive="active">Pagamentos</a>
-          <a routerLink="/cofre" routerLinkActive="active">Cofre</a>
-        }
-        @if (auth.can('planManage')) {
-          <a routerLink="/assinatura" routerLinkActive="active">Assinatura</a>
-        }
-        @if (auth.can('usersManage')) {
-          <a routerLink="/usuarios" routerLinkActive="active">Usuários</a>
-        }
-        @if (auth.can('dataExport')) {
-          <a routerLink="/privacidade" routerLinkActive="active">Privacidade</a>
-        }
-      </nav>
-      <div class="account">
-        <span class="muted">{{ auth.current()?.email }}</span>
+      <button type="button" class="menu-toggle" [attr.aria-expanded]="drawerOpen()" aria-controls="side-nav" (click)="drawerOpen.set(!drawerOpen())"
+        [attr.aria-label]="drawerOpen() ? 'Fechar menu' : 'Abrir menu'" data-menu-toggle>
+        <app-icon [name]="drawerOpen() ? 'close' : 'menu'" />
+      </button>
+      <a routerLink="/" class="brand">{{ auth.tenant()?.name }}</a>
+      <app-user-menu [email]="auth.current()?.email" [subtitle]="(auth.tenant()?.role | roleLabel) ?? ''">
         @if ((auth.current()?.tenants?.length ?? 0) > 1) {
-          <a routerLink="/escolher-loja">Trocar de loja</a>
+          <a routerLink="/escolher-loja" class="menu-item" role="menuitem">Trocar de loja</a>
         }
-        <a routerLink="/trocar-senha">Trocar senha</a>
-        <button type="button" class="link" (click)="logout()">Sair</button>
-      </div>
-    </header>
-    @if (billingAlert(); as text) {
-      <p class="alert-bar" role="alert" data-billing-alert>
-        {{ text }}
         @if (auth.can('planManage')) {
-          <a routerLink="/assinatura">Ver faturas</a>
+          <a routerLink="/assinatura" class="menu-item" role="menuitem">Assinatura</a>
         }
-      </p>
-    }
-    @if (pendingFailures(); as n) {
-      <p class="alert-bar" role="alert" data-failure-alert>
-        {{ n === 1 ? '1 integração falhou' : n + ' integrações falharam' }} e precisa{{ n === 1 ? '' : 'm' }} de atenção.
-        <a routerLink="/integracoes">Ver e reprocessar</a>
-      </p>
-    }
-    @if (channelsNeedingReauth()) {
-      <p class="alert-bar" role="alert" data-reauth-alert>
-        A conexão com o Mercado Livre precisa ser autorizada de novo: os anúncios não estão sendo atualizados.
-        @if (auth.can('storeManage')) {
-          <a routerLink="/canais">Abrir Canais de venda</a>
-        } @else {
-          Avise o Dono da loja.
+        <a routerLink="/trocar-senha" class="menu-item" role="menuitem">Trocar senha</a>
+        <button type="button" class="menu-item" role="menuitem" (click)="logout()" data-logout>Sair</button>
+      </app-user-menu>
+    </header>
+    <div class="layout">
+      <app-side-nav id="side-nav" [groups]="menu()" [open]="drawerOpen()" (closed)="drawerOpen.set(false)" />
+      @if (drawerOpen()) {
+        <div class="drawer-backdrop" (click)="drawerOpen.set(false)" aria-hidden="true"></div>
+      }
+      <main class="content">
+        @if (billingAlert(); as text) {
+          <p class="alert-bar" role="alert" data-billing-alert>
+            {{ text }}
+            @if (auth.can('planManage')) {
+              <a routerLink="/assinatura">Ver faturas</a>
+            }
+          </p>
         }
-      </p>
-    }
-    @if (certificateAlert(); as a) {
-      <p class="alert-bar" role="alert" data-certificate-alert>
-        {{ certificateText(a) }} <a routerLink="/cofre">Abrir o Cofre</a>
-      </p>
-    }
-    <router-outlet />
+        @if (pendingFailures(); as n) {
+          <p class="alert-bar" role="alert" data-failure-alert>
+            {{ n === 1 ? '1 integração falhou' : n + ' integrações falharam' }} e precisa{{ n === 1 ? '' : 'm' }} de atenção.
+            <a routerLink="/integracoes">Ver e reprocessar</a>
+          </p>
+        }
+        @if (channelsNeedingReauth()) {
+          <p class="alert-bar" role="alert" data-reauth-alert>
+            A conexão com o Mercado Livre precisa ser autorizada de novo: os anúncios não estão sendo atualizados.
+            @if (auth.can('storeManage')) {
+              <a routerLink="/canais">Abrir Canais de venda</a>
+            } @else {
+              Avise o Dono da loja.
+            }
+          </p>
+        }
+        @if (certificateAlert(); as a) {
+          <p class="alert-bar" role="alert" data-certificate-alert>
+            {{ certificateText(a) }} <a routerLink="/cofre">Abrir o Cofre</a>
+          </p>
+        }
+        <router-outlet />
+      </main>
+    </div>
   `,
 })
 export class Shell implements OnInit {
@@ -109,6 +93,52 @@ export class Shell implements OnInit {
   private readonly subscription = inject(SubscriptionApi);
   /** RF38: fatura vencida, painel somente leitura ou loja suspensa — para todos os perfis. */
   protected readonly billingAlert = signal<string | null>(null);
+  /** Menu no celular (gaveta). */
+  protected readonly drawerOpen = signal(false);
+
+  /** Menu por grupos; cada item só aparece para quem tem a permissão. */
+  protected readonly menu = computed<NavGroup[]>(() => {
+    this.auth.current(); // recalcula ao trocar de loja ou de perfil
+    const only = (permission: Permission, item: NavItem) => (this.auth.can(permission) ? [item] : []);
+    return [
+      { id: 'inicio', label: 'Início', icon: 'home', items: [{ label: 'Início', link: '/' }] },
+      {
+        id: 'catalogo', label: 'Catálogo', icon: 'catalog',
+        items: [
+          ...only('catalogManage', { label: 'Peças', link: '/pecas', active: partsActive }),
+          ...only('catalogManage', { label: 'Nova peça', link: '/pecas/nova' }),
+          ...only('catalogManage', { label: 'Importar planilha', link: '/pecas/importar' }),
+          ...only('catalogManage', { label: 'Veículos doadores', link: '/doadores' }),
+        ],
+      },
+      {
+        id: 'vendas', label: 'Vendas', icon: 'sales',
+        items: [
+          ...only('ordersManage', { label: 'Pedidos', link: '/pedidos' }),
+          ...only('ordersManage', { label: 'Balcão', link: '/balcao' }),
+          ...only('supportManage', { label: 'Perguntas', link: '/perguntas' }),
+        ],
+      },
+      {
+        id: 'canais', label: 'Canais', icon: 'channels',
+        items: [
+          ...only('storeManage', { label: 'Canais de venda', link: '/canais' }),
+          ...only('ordersManage', { label: 'Integrações', link: '/integracoes' }),
+        ],
+      },
+      {
+        id: 'configuracoes', label: 'Configurações', icon: 'settings',
+        items: [
+          ...only('storeManage', { label: 'Primeiros passos', link: '/primeiros-passos' }),
+          ...only('storeManage', { label: 'Dados da loja', link: '/loja' }),
+          ...only('vaultManage', { label: 'Pagamentos', link: '/pagamentos' }),
+          ...only('vaultManage', { label: 'Cofre', link: '/cofre' }),
+          ...only('usersManage', { label: 'Usuários', link: '/usuarios' }),
+          ...only('dataExport', { label: 'Privacidade', link: '/privacidade' }),
+        ],
+      },
+    ];
+  });
 
   ngOnInit(): void {
     void this.checkBilling();
